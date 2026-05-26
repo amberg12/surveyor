@@ -8,5 +8,5 @@ add_executable(surveyor src/main.cpp
         src/uci.hpp
         src/square.hpp
         src/util/integer.hpp
-        src/util/assert.hpp
-        src/util/macro.hpp)
+        src/piece.hpp
+        src/util/constant.hpp)
