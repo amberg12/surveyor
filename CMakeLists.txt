@@ -3,4 +3,6 @@ project(surveyor)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_executable(surveyor src/main.cpp)
+add_executable(surveyor src/main.cpp
+        src/uci.cpp
+        src/uci.hpp)
