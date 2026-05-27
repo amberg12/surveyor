@@ -17,6 +17,8 @@
  */
 
 #pragma once
+#include "util/bit_iterator.hpp"
+#include "util/cast_iterator.hpp"
 #include "util/constant.hpp"
 #include "util/integer.hpp"
 
@@ -262,5 +264,76 @@ private:
   // Members
   u8 m_raw{};
 };
+
+class piece_mask {
+public:
+  // Member Types
+  using iterator = cast_iterator<bit_iterator<u16>, piece_id>;
+
+  // Constructors
+  constexpr piece_mask(piece_id id) {
+    *this = piece_mask{static_cast<u16>(1 << id.idx())};
+  }
+
+  // Methods
+  [[nodiscard]] constexpr auto has_value() const -> bool {
+    return m_mask > 0;
+  }
+
+  [[nodiscard]] constexpr auto empty() const -> bool {
+    return m_mask == 0;
+  }
+
+  [[nodiscard]] constexpr auto is_set(piece_id id) const -> bool {
+    return (*this & piece_mask{id}).has_value();
+  }
+
+  constexpr auto set(piece_id id) -> void {
+    *this |= piece_mask{id};
+  }
+
+  constexpr auto del(piece_id id) -> void {
+    *this &= ~piece_mask{id};
+  }
+
+  // Iter
+  auto begin() const {
+    return iterator{m_mask};
+  }
+
+  auto end() const {
+    return iterator{0};
+  }
+
+  // Overloads
+  [[nodiscard]] friend constexpr auto operator&(piece_mask lhs, piece_mask rhs) -> piece_mask {
+    return piece_mask{static_cast<u16>(lhs.m_mask & rhs.m_mask)};
+  }
+
+  friend constexpr auto operator&=(piece_mask& lhs, piece_mask rhs) -> piece_mask& {
+    lhs = lhs & rhs;
+    return lhs;
+  }
+
+  [[nodiscard]] friend constexpr auto operator|(piece_mask lhs, piece_mask rhs) -> piece_mask {
+    return piece_mask{static_cast<u16>(lhs.m_mask | rhs.m_mask)};
+  }
+
+  friend constexpr auto operator|=(piece_mask& lhs, piece_mask rhs) -> piece_mask& {
+    lhs = lhs | rhs;
+    return lhs;
+  }
+
+  [[nodiscard]] friend constexpr auto operator~(piece_mask pm) -> piece_mask {
+    return piece_mask{static_cast<u16>(~pm.m_mask)};
+  }
+
+private:
+  explicit constexpr piece_mask(u16 mask) : m_mask(mask) {}
+
+  u16 m_mask{};
+};
+
+static_assert(sizeof(piece_mask) == sizeof(u16));
 
 }  // namespace surveyor
