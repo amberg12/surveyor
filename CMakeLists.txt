@@ -12,4 +12,7 @@ add_executable(surveyor src/main.cpp
         src/util/constant.hpp
         src/util/bit_iterator.hpp
         src/util/bit.hpp
-        src/util/iterator_cast.hpp)
+        src/util/cast_iterator.hpp
+        src/position.cpp
+        src/position.hpp
+        src/util/parse.hpp)

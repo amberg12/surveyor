@@ -22,8 +22,11 @@
 #include "util/constant.hpp"
 #include "util/integer.hpp"
 
+#include <array>
 #include <bit>
+#include <bits/ranges_base.h>
 #include <concepts>
+#include <cstring>
 
 namespace surveyor {
 
@@ -95,6 +98,43 @@ template<typename T>
 concept color_constant =
   (std::same_as<T, white_constant> || std::same_as<T, black_constant>) && constant<T>;
 
+template<typename T>
+class color_array {
+public:
+  // Member types
+  using value_type             = T;
+  using size_type              = usize;
+  using difference_type        = isize;
+  using reference              = value_type&;
+  using const_reference        = const value_type&;
+  using pointer                = value_type*;
+  using const_pointer          = const value_type*;
+  using iterator               = std::array<T, 2>::iterator;
+  using const_iterator         = std::array<T, 2>::reverse_iterator;
+  using reverse_iterator       = std::array<T, 2>::const_iterator;
+  using const_reverse_iterator = std::array<T, 2>::const_reverse_iterator;
+
+  // Constructor
+  constexpr color_array() = default;
+
+  constexpr color_array(T white, T black) {
+    m_array = {white, black};
+  }
+
+  // Accessor
+  constexpr auto operator[](color c) -> T& {
+    return m_array[c == color::white() ? 0 : 1];
+  }
+
+  constexpr auto operator[](color c) const -> const T& {
+    return m_array[c == color::white() ? 0 : 1];
+  }
+
+private:
+  // Members
+  std::array<T, 2> m_array;
+};
+
 class piece_type {
 public:
   // Constants
@@ -104,6 +144,9 @@ public:
   // Member Types
 
   // Constructors
+  constexpr piece_type() {
+    *this = empty();
+  }
 
   static constexpr auto empty() -> piece_type {
     return piece_type{empty_bits};
@@ -220,31 +263,35 @@ public:
   };
 
   // Constructors
+  constexpr place()
+      : m_raw(0) {
+  }
+
   constexpr place(piece_id id, color c, piece_type type)
       : m_raw(id.idx() << piece_id_shift & piece_id_bits | (c == color::white() ? 0 : color_bits)
               | type.idx()) {
   }
 
   // Methods
-  [[nodiscard]] constexpr auto piece_id() const -> piece_id {
+  [[nodiscard]] constexpr auto id() const -> surveyor::piece_id {
     const u8 bits = (m_raw & piece_id_bits) >> piece_id_shift;
     return surveyor::piece_id{bits};
   }
 
-  [[nodiscard]] constexpr auto color() const -> color {
+  [[nodiscard]] constexpr auto col() const -> ::surveyor::color {
     return m_raw & color_bits ? color::black() : color::white();
   }
 
-  [[nodiscard]] constexpr auto piece_type() const -> piece_type {
+  [[nodiscard]] constexpr auto ptype() const -> ::surveyor::piece_type {
     const u8 bits = m_raw & piece_type_bits;
     return surveyor::piece_type{bits};
   }
 
   [[nodiscard]] constexpr auto unpack() const -> unpacked {
     return {
-      .id = piece_id(),
-      .c  = color(),
-      .pt = piece_type(),
+      .id = id(),
+      .c  = col(),
+      .pt = ptype(),
     };
   }
 
@@ -267,10 +314,15 @@ private:
 
 class piece_mask {
 public:
+  // Constants
+  static constexpr usize count = 16;
+
   // Member Types
   using iterator = cast_iterator<bit_iterator<u16>, piece_id>;
 
   // Constructors
+  constexpr piece_mask() = default;
+
   constexpr piece_mask(piece_id id) {
     *this = piece_mask{static_cast<u16>(1 << id.idx())};
   }
@@ -329,7 +381,9 @@ public:
   }
 
 private:
-  explicit constexpr piece_mask(u16 mask) : m_mask(mask) {}
+  explicit constexpr piece_mask(u16 mask)
+      : m_mask(mask) {
+  }
 
   u16 m_mask{};
 };

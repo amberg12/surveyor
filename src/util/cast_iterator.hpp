@@ -23,8 +23,9 @@ namespace surveyor {
 
 template<typename It, typename To>
   requires requires(It iter) {
-    { To{*iter} } -> std::same_as<To>;
-    { ++iter };
+    { ++iter } -> std::same_as<It&>;
+    { *iter };
+    requires std::constructible_from<To, decltype(*iter)>;
   }
 
 struct cast_iterator {

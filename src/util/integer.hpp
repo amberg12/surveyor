@@ -45,4 +45,10 @@ using usize = std::size_t;
 using isize = std::ptrdiff_t;
 static_assert(sizeof(usize) == sizeof(isize));
 
+template <std::integral T>
+constexpr auto to_unsigned(T val) {
+  using Out = std::make_unsigned_t<T>;
+  return static_cast<Out>(val);
+}
+
 }  // namespace surveyor

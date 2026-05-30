@@ -31,6 +31,11 @@ struct square {
   // Member Types
 
   // Constructors
+  constexpr square()
+      : idx{} {
+    *this = invalid();
+  }
+
   constexpr square(std::integral auto idx)
       : idx(idx) {
   }

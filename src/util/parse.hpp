@@ -17,36 +17,20 @@
  */
 
 #pragma once
-#include "bit.hpp"
-#include "integer.hpp"
-
-#include <bit>
-#include <concepts>
+#include <charconv>
+#include <optional>
+#include <string_view>
 
 namespace surveyor {
 
 template<std::integral T>
-struct bit_iterator {
-  using value_type = T;
+auto parse_number(std::string_view sv) -> std::optional<T> {
 
-  explicit constexpr bit_iterator(T value)
-      : m_value(value) {
+  if (T value{}; std::from_chars(sv.data(), sv.data() + sv.size(), value).ec == std::errc{}) {
+    return value;
   }
 
-  constexpr auto operator++() -> bit_iterator& {
-    m_value = clear_lsb(m_value);
-
-    return *this;
-  }
-
-  constexpr auto operator*() const {
-    return std::countr_zero(to_unsigned(lsb(m_value)));
-  }
-
-  friend constexpr auto operator==(const bit_iterator&, const bit_iterator&) -> bool = default;
-
-private:
-  T m_value;
-};
+  return std::nullopt;
+}
 
 }  // namespace surveyor
