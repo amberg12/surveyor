@@ -3,7 +3,6 @@ AlignAfterOpenBracket: true
 AlignConsecutiveAssignments: Consecutive
 AlignConsecutiveDeclarations: Consecutive
 AlignEscapedNewlines: LeftWithLastLine
-AlignOperands: AlignAfterOperator
 AlignTrailingComments: true
 AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortCaseLabelsOnASingleLine: false
@@ -33,7 +32,6 @@ BreakConstructorInitializers: BeforeComma
 PackConstructorInitializers: Never
 BreakStringLiterals: false
 ColumnLimit: 100
-ContinuationIndentWidth: 2
 Cpp11BracedListStyle: true
 IndentAccessModifiers: false
 IndentGotoLabels: false
@@ -56,3 +54,5 @@ PointerAlignment: Left
 ReferenceAlignment: Left
 FixNamespaceComments: true
 IncludeBlocks: Regroup
+AlignOperands: false
+ContinuationIndentWidth: 2

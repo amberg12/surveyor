@@ -45,6 +45,10 @@ auto uci::dispatch_command(std::string_view command, std::istringstream& argumen
     return execute_uci(arguments);
   }
 
+  if (command == "d") {
+    return execute_d(arguments);
+  }
+
   return std::make_unique<uci_error_bad_cmd>(command);
 }
 
@@ -53,6 +57,11 @@ auto uci::execute_uci(std::istringstream& arguments) -> std::optional<std::uniqu
   std::println("id name Surveyor");
   std::println("id author Amber Goulding");
   std::println("uciok");
+  return std::nullopt;
+}
+
+auto uci::execute_d(std::istringstream&) -> std::optional<std::unique_ptr<uci_error>> {
+  std::println("{}", m_pos);
   return std::nullopt;
 }
 

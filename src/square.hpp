@@ -20,6 +20,7 @@
 #include "util/integer.hpp"
 
 #include <concepts>
+#include <format>
 #include <string_view>
 
 namespace surveyor {
@@ -50,15 +51,15 @@ struct square {
 
   // Methods
   [[nodiscard]] constexpr auto has_value() const -> bool {
-    return idx >= count;
+    return idx < count;
   }
 
   [[nodiscard]] constexpr auto file() const -> i8 {
-    return idx / 8;
+    return idx % 8;
   }
 
   [[nodiscard]] constexpr auto rank() const -> i8 {
-    return idx % 8;
+    return idx / 8;
   }
 
   // Strings
@@ -75,3 +76,13 @@ struct square {
 static_assert(sizeof(square) == sizeof(u8));
 
 }  // namespace surveyor
+
+template<>
+struct std::formatter<surveyor::square> : std::formatter<std::string> {
+  auto format(const surveyor::square& sq, std::format_context& ctx) const {
+    const std::string str = sq.has_value()
+      ? std::format("{}{}", static_cast<char>(sq.file() + 'a'), static_cast<char>(sq.rank() + '1'))
+      : "-";
+    return std::formatter<std::string>::format(str, ctx);
+  }
+};

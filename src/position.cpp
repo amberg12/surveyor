@@ -54,7 +54,7 @@ auto position::parse(std::string_view sv) -> position {
 
     for (usize sq_idx = 0; sq_idx < square::count; ++sq_idx) {
       const char   ch = board[read_idx++];
-      const square sq{sq_idx};
+      const square sq{sq_idx ^ 56};
 
       switch (ch) {
       case '/':
@@ -126,11 +126,11 @@ auto position::parse(std::string_view sv) -> position {
       if (ch == 'K') {
         out.m_rook_info[color::white()].h_side = scan_for_rook(color::white(), 7, -1);
       } else if (ch == 'Q') {
-        out.m_rook_info[color::white()].h_side = scan_for_rook(color::white(), 0, 1);
+        out.m_rook_info[color::white()].a_side = scan_for_rook(color::white(), 0, 1);
       } else if (ch == 'k') {
         out.m_rook_info[color::black()].h_side = scan_for_rook(color::black(), 7, -1);
       } else if (ch == 'q') {
-        out.m_rook_info[color::black()].h_side = scan_for_rook(color::black(), 0, 1);
+        out.m_rook_info[color::black()].a_side = scan_for_rook(color::black(), 0, 1);
       } else {
         const color  stm       = std::isupper(ch) ? color::white() : color::black();
         const i32    rook_file = ch - (std::isupper(ch) ? 'A' : 'a');

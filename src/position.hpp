@@ -56,6 +56,10 @@ public:
   static auto parse(std::string_view sv) -> position;
 
   // Methods
+  [[nodiscard]] constexpr auto ep() const -> square {
+    return m_ep;
+  }
+
   [[nodiscard]] constexpr auto king_square(color stm) const -> square {
     const auto& pl = m_piece_list[stm];
     return pl.squares[piece_id::king().idx()];
@@ -73,9 +77,68 @@ private:
   color_array<piece_list> m_piece_list;
 
   color                  m_stm = color::white();
-  square                 m_ep;
+  square                 m_ep  = square::invalid();
   i32                    m_move_rule{0};
   color_array<rook_info> m_rook_info{};
 };
 
 }  // namespace surveyor
+
+template<>
+struct std::formatter<surveyor::position> : std::formatter<std::string> {
+  auto format(const surveyor::position& pos, std::format_context& ctx) const {
+    using namespace surveyor;
+
+    const std::string board = [&] {
+      std::string out;
+
+      for (int rank = 7; rank >= 0; --rank) {
+        for (int file = 0; file < 8; ++file) {
+          const square sq{file, rank};
+          const auto [col, ptype] = pos.piece_at(sq);
+
+          if (ptype == piece_type::empty()) {
+            out += " ";
+          } else {
+            const char ch = [&] {
+              if (ptype == piece_type::pawn()) {
+                return 'p';
+              }
+
+              if (ptype == piece_type::knight()) {
+                return 'n';
+              }
+
+              if (ptype == piece_type::bishop()) {
+                return 'b';
+              }
+
+              if (ptype == piece_type::rook()) {
+                return 'r';
+              }
+
+              if (ptype == piece_type::queen()) {
+                return 'q';
+              }
+
+              if (ptype == piece_type::king()) {
+                return 'k';
+              }
+
+              return '?';
+            }();
+
+            out += col == color::white() ? std::toupper(ch) : ch;
+          }
+        }
+
+        out += "\n";
+      }
+
+      return out;
+    }();
+
+    const std::string str = std::format("{}{}", board, pos.ep());
+    return std::formatter<std::string>::format(str, ctx);
+  }
+};

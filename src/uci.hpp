@@ -52,6 +52,7 @@ private:
     -> std::optional<std::unique_ptr<uci_error>>;
 
   auto execute_uci(std::istringstream& arguments) -> std::optional<std::unique_ptr<uci_error>>;
+  auto execute_d(std::istringstream&) -> std::optional<std::unique_ptr<uci_error>>;
 
   position m_pos = position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 };
