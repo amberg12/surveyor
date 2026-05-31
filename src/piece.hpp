@@ -17,15 +17,12 @@
  */
 
 #pragma once
-#include "position.hpp"
 #include "util/bit_iterator.hpp"
 #include "util/cast_iterator.hpp"
 #include "util/constant.hpp"
 #include "util/integer.hpp"
 
 #include <array>
-#include <bit>
-#include <bits/ranges_base.h>
 #include <concepts>
 #include <cstring>
 

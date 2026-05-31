@@ -25,12 +25,17 @@ namespace {
 auto generate_pawn_moves(const position& pos, move_list& ml) {
   const color stm = pos.stm();
   const piece_mask pawns = pos.ptype_mask(stm, piece_type::pawn());
+  const geometry::direction pd = geometry::pawn_direction(stm);
 
   for (const piece_id pawn_id : pawns) {
     const square src = pos.sq_of(pos.stm(), pawn_id);
 
-    if (auto dst = geometry::shift(src, geometry::pawn_direction(stm)); dst.has_value()) {
+    if (auto dst = geometry::shift(src, pd); dst.has_value()) {
       ml.emplace_back(move::make(src, *dst));
+
+      if (dst->relative_rank(stm) == 2) {
+        ml.emplace_back(move::make_double(src, *geometry::shift(*dst, pd)));
+      }
     }
   }
 }

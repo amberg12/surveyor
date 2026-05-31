@@ -58,6 +58,13 @@ public:
     return out;
   }
 
+  static constexpr auto make_double(square src, square dst) -> move {
+    move out = make(src, dst);
+    out.m_raw |= double_push;
+
+    return out;
+  }
+
   // Methods
   [[nodiscard]] constexpr auto src() const -> square {
     return square{m_raw & 0b111111};

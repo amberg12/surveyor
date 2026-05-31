@@ -17,6 +17,7 @@
  */
 
 #pragma once
+#include "piece.hpp"
 #include "util/integer.hpp"
 
 #include <concepts>
@@ -60,6 +61,14 @@ struct square {
 
   [[nodiscard]] constexpr auto rank() const -> i8 {
     return idx / 8;
+  }
+
+  [[nodiscard]] constexpr auto relative_rank(color stm) const -> i8 {
+    return stm == color::white() ? rank() : mirror().rank();
+  }
+
+  [[nodiscard]] constexpr auto mirror() const -> square {
+    return square{idx ^ 56};
   }
 
   // Strings

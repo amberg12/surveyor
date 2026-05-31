@@ -17,6 +17,7 @@
  */
 
 #pragma once
+#include "geometry.hpp"
 #include "move.hpp"
 #include "piece.hpp"
 #include "square.hpp"
@@ -128,12 +129,21 @@ private:
       move_piece(mv.src(), mv.dst());
     };
 
+    const auto double_push = [&] {
+      move_piece(mv.src(), mv.dst());
+      const square ep_sq = *geometry::shift(mv.src(), geometry::pawn_direction(m_stm));
+    };
+
     switch (mv.flags()) {
     case move::normal: {
       normal();
     } break;
-    case move::cap_normal:
-    case move::double_push:
+    case move::cap_normal: {
+
+    } break;
+    case move::double_push: {
+      double_push();
+    } break;
     case move::castle_aside:
     case move::castle_hside:
     case move::promo_q:

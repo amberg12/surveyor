@@ -18,6 +18,7 @@
 
 #pragma once
 #include "piece.hpp"
+#include "square.hpp"
 #include "util/integer.hpp"
 
 namespace surveyor::geometry {
