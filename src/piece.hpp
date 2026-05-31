@@ -17,6 +17,7 @@
  */
 
 #pragma once
+#include "position.hpp"
 #include "util/bit_iterator.hpp"
 #include "util/cast_iterator.hpp"
 #include "util/constant.hpp"
@@ -48,6 +49,10 @@ public:
 
   // Overloads
   friend constexpr auto operator==(const color&, const color&) -> bool = default;
+
+  friend constexpr auto operator~(color c) -> color {
+    return color{static_cast<u8>(c.m_raw ^ 1)};
+  }
 
 private:
   // Constants
@@ -220,6 +225,9 @@ private:
 };
 
 static_assert(sizeof(piece_type) == sizeof(u8));
+
+template <typename ...Ts>
+concept piece_type_list = (std::is_same_v<Ts, piece_type> && ...);
 
 class piece_id {
 public:

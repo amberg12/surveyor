@@ -17,6 +17,7 @@
  */
 
 #pragma once
+#include "move.hpp"
 #include "piece.hpp"
 #include "square.hpp"
 
@@ -26,6 +27,8 @@
 #include <tuple>
 
 namespace surveyor {
+
+class position;
 
 struct mail_box {
   std::array<place, square::count> byte_board{};
@@ -43,6 +46,34 @@ struct piece_list {
   piece_mask                                mask{};
   std::array<square, piece_mask::count>     squares{};
   std::array<piece_type, piece_mask::count> ptypes{};
+
+  [[nodiscard]] constexpr auto ptype_of(piece_id id) const -> const piece_type& {
+    return ptypes[id.idx()];
+  }
+
+  [[nodiscard]] constexpr auto ptype_of(piece_id id) -> piece_type& {
+    return ptypes[id.idx()];
+  }
+
+  [[nodiscard]] constexpr auto sq_of(piece_id id) const -> const square& {
+    return squares[id.idx()];
+  }
+
+  [[nodiscard]] constexpr auto sq_of(piece_id id) -> square& {
+    return squares[id.idx()];
+  }
+
+  template<piece_type_list... Pt>
+  [[nodiscard]] constexpr auto ptype_mask(Pt... pts) const -> piece_mask {
+    piece_mask out{};
+    for (const piece_id id : mask) {
+      if (((ptype_of(id) == pts) || ...)) {
+        out.set(id);
+      }
+    }
+
+    return out;
+  }
 };
 
 struct rook_info {
@@ -55,7 +86,17 @@ public:
   // Constructors
   static auto parse(std::string_view sv) -> position;
 
+  auto make_move(move mv) const -> position {
+    position out = *this;
+    out.do_move(mv);
+    return out;
+  }
+
   // Methods
+  [[nodiscard]] constexpr auto stm() const -> color {
+    return m_stm;
+  }
+
   [[nodiscard]] constexpr auto ep() const -> square {
     return m_ep;
   }
@@ -70,8 +111,51 @@ public:
     return {col, ptype};
   }
 
+  [[nodiscard]] constexpr auto sq_of(color col, piece_id id) const -> square {
+    return m_piece_list[col].sq_of(id);
+  }
+
+  template<piece_type_list... Pts>
+  constexpr auto ptype_mask(color c, Pts... ptypes) const {
+    return m_piece_list[c].ptype_mask(ptypes...);
+  }
+
 private:
   position() = default;
+
+  auto do_move(move mv) -> void {
+    const auto normal = [&] {
+      move_piece(mv.src(), mv.dst());
+    };
+
+    switch (mv.flags()) {
+    case move::normal: {
+      normal();
+    } break;
+    case move::cap_normal:
+    case move::double_push:
+    case move::castle_aside:
+    case move::castle_hside:
+    case move::promo_q:
+    case move::promo_n:
+    case move::promo_r:
+    case move::promo_b:
+    case move::cap_promo_q:
+    case move::cap_promo_n:
+    case move::cap_promo_r:
+    case move::cap_promo_b:
+    case move::en_passant:
+      break;
+    }
+
+    m_stm = ~m_stm;
+  }
+
+  auto move_piece(square src, square dst) -> void {
+    const auto [id, c, ptype] = m_mail_box[src].unpack();
+    std::swap(m_mail_box[src], m_mail_box[dst]);
+    m_piece_list[c].sq_of(id) = dst;
+  }
 
   mail_box                m_mail_box;
   color_array<piece_list> m_piece_list;
@@ -128,7 +212,7 @@ struct std::formatter<surveyor::position> : std::formatter<std::string> {
               return '?';
             }();
 
-            out += col == color::white() ? std::toupper(ch) : ch;
+            out += col == color::white() ? static_cast<char>(std::toupper(ch)) : ch;
           }
         }
 

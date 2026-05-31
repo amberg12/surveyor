@@ -15,4 +15,10 @@ add_executable(surveyor src/main.cpp
         src/util/cast_iterator.hpp
         src/position.cpp
         src/position.hpp
-        src/util/parse.hpp)
+        src/util/parse.hpp
+        src/util/static_vector.hpp
+        src/move_generation.cpp
+        src/move_generation.hpp
+        src/move.cpp
+        src/move.hpp
+        src/geometry.hpp)

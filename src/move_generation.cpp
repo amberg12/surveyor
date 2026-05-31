@@ -16,40 +16,32 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
-#include <concepts>
+#include "move_generation.hpp"
+
+#include "geometry.hpp"
 
 namespace surveyor {
+namespace {
+auto generate_pawn_moves(const position& pos, move_list& ml) {
+  const color stm = pos.stm();
+  const piece_mask pawns = pos.ptype_mask(stm, piece_type::pawn());
 
-template<typename It, typename To>
-  requires requires(It iter) {
-    { ++iter } -> std::same_as<It&>;
-    { *iter };
-    requires std::constructible_from<To, decltype(*iter)>;
+  for (const piece_id pawn_id : pawns) {
+    const square src = pos.sq_of(pos.stm(), pawn_id);
+
+    if (auto dst = geometry::shift(src, geometry::pawn_direction(stm)); dst.has_value()) {
+      ml.emplace_back(move::make(src, *dst));
+    }
   }
+}
+}
 
-struct cast_iterator {
-  using value_type = To;
+auto generate_moves(const position& pos) -> move_list {
+  move_list ml{};
 
-  template<typename... Args>
-  explicit constexpr cast_iterator(Args... args)
-      : m_it(args...) {
-  }
+  generate_pawn_moves(pos, ml);
 
-  constexpr auto operator++() -> cast_iterator& {
-    ++m_it;
-
-    return *this;
-  }
-
-  constexpr auto operator*() const {
-    return static_cast<To>(*m_it);
-  }
-
-  friend constexpr auto operator==(const cast_iterator&, const cast_iterator&) -> bool = default;
-
-private:
-  It m_it;
-};
+  return ml;
+}
 
 }  // namespace surveyor
