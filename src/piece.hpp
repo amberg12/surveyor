@@ -231,6 +231,27 @@ private:
 
 static_assert(sizeof(piece_type) == sizeof(u8));
 
+template <typename T>
+class piece_array {
+public:
+  constexpr piece_array() = default;
+
+  constexpr piece_array(T p, T n, T b, T r, T q, T k) {
+    m_array = {p, n, b, r, q, k};
+  }
+
+  constexpr auto operator[](piece_type pt) const -> const T& {
+    return m_array[pt.compressed_idx()];
+  }
+
+  constexpr auto operator[](piece_type pt) -> T& {
+    return m_array[pt.compressed_idx()];
+  }
+
+private:
+  std::array<T, 6> m_array;
+};
+
 template <typename ...Ts>
 concept piece_type_list = (std::is_same_v<Ts, piece_type> && ...);
 

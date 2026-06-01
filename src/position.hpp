@@ -17,6 +17,7 @@
  */
 
 #pragma once
+#include "bitboard.hpp"
 #include "geometry.hpp"
 #include "move.hpp"
 #include "piece.hpp"
@@ -151,6 +152,24 @@ public:
     return m_piece_list[c].ptype_mask(ptypes...);
   }
 
+  template<piece_type_list... Pts>
+  [[nodiscard]] constexpr auto ptype_bb(Pts... ptypes) const -> bitboard {
+    return (m_piece_bb[ptypes] | ...);
+  }
+
+  [[nodiscard]] constexpr auto color_bb(color c) const -> bitboard {
+    return m_color_bb[c];
+  }
+
+  [[nodiscard]] constexpr auto bb() const -> bitboard {
+    return color_bb(color::white()) | color_bb(color::black());
+  }
+
+  template<piece_type_list... Pts>
+  [[nodiscard]] constexpr auto bb(color c, Pts... ptypes) const -> bitboard {
+    return color_bb(c) | ptype_bb(ptypes...);
+  }
+
 private:
   position() = default;
 
@@ -200,12 +219,21 @@ private:
     const auto [id, c, ptype] = m_mail_box[src].unpack();
     std::swap(m_mail_box[src], m_mail_box[dst]);
     m_piece_list[c].sq_of(id) = dst;
+
+    m_color_bb[c].del(src);
+    m_color_bb[c].set(dst);
+
+    m_piece_bb[ptype].del(src);
+    m_piece_bb[ptype].set(dst);
   }
 
   auto destroy_piece(square at) -> void {
     const auto [id, c, ptype] = m_mail_box[at].unpack();
-    m_mail_box[at] = place{};
+    m_mail_box[at]            = place{};
     m_piece_list[c].mask.del(id);
+
+    m_color_bb[c].del(at);
+    m_piece_bb[ptype].del(at);
   }
 
   auto lazy_generate_attacks() -> void;
@@ -219,6 +247,9 @@ private:
   mail_box                m_mail_box;
   color_array<attack_box> m_attack_box;
   color_array<piece_list> m_piece_list;
+
+  color_array<bitboard> m_color_bb;
+  piece_array<bitboard> m_piece_bb;
 
   color                  m_stm = color::white();
   square                 m_ep  = square::invalid();

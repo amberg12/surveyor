@@ -21,4 +21,5 @@ add_executable(surveyor src/main.cpp
         src/move_generation.hpp
         src/move.cpp
         src/move.hpp
-        src/geometry.hpp)
+        src/geometry.hpp
+        src/bitboard.hpp)

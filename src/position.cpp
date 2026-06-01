@@ -44,6 +44,9 @@ auto position::parse(std::string_view sv) -> position {
       out.m_piece_list[col].mask.set(pid);
       out.m_piece_list[col].ptypes[id]  = ptype;
       out.m_piece_list[col].squares[id] = sq;
+
+      out.m_color_bb[col].set(sq);
+      out.m_piece_bb[ptype].set(sq);
     };
 
     const auto put_piece = [&](color col, piece_type ptype, square sq) {
