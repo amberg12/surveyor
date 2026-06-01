@@ -167,12 +167,13 @@ auto position::parse(std::string_view sv) -> position {
 
 auto position::lazy_generate_pinner() -> void {
   m_pin_aware_attack_table = m_attack_box[m_stm];
+  m_pinned                 = {};
 
   const color  stm     = m_stm;
   const square king_sq = king_square(stm);
 
-  const auto handle_pin = [&](piece_id id, square to) {
-    const bitboard ray = bitboard::ray_exclusive(king_sq, to);
+  const auto handle_pin = [&](square to) {
+    const bitboard ray        = bitboard::ray_exclusive(king_sq, to);
     const bitboard all_pieces = bb();
     const bitboard our_pieces = color_bb(stm);
 
@@ -184,29 +185,33 @@ auto position::lazy_generate_pinner() -> void {
       return;
     }
 
+    const square pinned = (our_pieces & ray).lsb();
+    m_pinned.set(pinned);
+
+    const piece_id pinned_id = id_at(pinned);
     const bitboard ray_incl = bitboard::ray_inclusive(king_sq, to);
 
-    m_pin_aware_attack_table.remove_attacker(id, ~ray_incl);
+    m_pin_aware_attack_table.remove_attacker(pinned_id, ~ray_incl);
   };
 
   for (const piece_id id : ptype_mask(~stm, piece_type::bishop(), piece_type::queen())) {
-    const square sq = sq_of(stm, id);
+    const square sq = sq_of(~stm, id);
 
     if (!sq.diag_to(king_sq)) {
       continue;
     }
 
-    handle_pin(id, sq);
+    handle_pin(sq);
   }
 
   for (const piece_id id : ptype_mask(~stm, piece_type::rook(), piece_type::queen())) {
-    const square sq = sq_of(stm, id);
+    const square sq = sq_of(~stm, id);
 
     if (!sq.orth_to(king_sq)) {
       continue;
     }
 
-    handle_pin(id, sq);
+    handle_pin(sq);
   }
 }
 

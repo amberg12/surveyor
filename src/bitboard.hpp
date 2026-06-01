@@ -41,12 +41,20 @@ struct bitboard {
     *this &= ~square_bb(sq);
   }
 
+  [[nodiscard]] constexpr auto has_value(square sq) const -> bool {
+    return (*this & square_bb(sq)).raw != 0;
+  }
+
   [[nodiscard]] constexpr auto popcount() const -> usize {
     return std::popcount(raw);
   }
 
   [[nodiscard]] constexpr auto ipopcount() const -> isize {
     return std::popcount(raw);
+  }
+
+  [[nodiscard]] constexpr auto lsb() const -> square {
+    return square{std::countr_zero(surveyor::lsb(raw))};
   }
 
   // Overloads

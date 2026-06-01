@@ -132,8 +132,13 @@ public:
     return m_mail_box[sq].has_value();
   }
 
+  [[nodiscard]] constexpr auto id_at(square sq) const -> piece_id {
+    const auto [pid, col, ptype] = place_at(sq);
+    return pid;
+  }
+
   [[nodiscard]] constexpr auto piece_at(square sq) const -> std::tuple<color, piece_type> {
-    const auto [pid, col, ptype] = m_mail_box[sq].unpack();
+    const auto [pid, col, ptype] = place_at(sq);
     return {col, ptype};
   }
 
@@ -179,6 +184,10 @@ public:
 
   [[nodiscard]] constexpr auto pin_at() const -> const attack_box& {
     return m_pin_aware_attack_table;
+  }
+
+  [[nodiscard]] constexpr auto pinned(square sq) const -> bool {
+    return m_pinned.has_value(sq);
   }
 
 private:
@@ -265,6 +274,7 @@ private:
   piece_array<bitboard> m_piece_bb;
 
   attack_box m_pin_aware_attack_table;
+  bitboard   m_pinned;
 
   color                  m_stm = color::white();
   square                 m_ep  = square::invalid();

@@ -26,9 +26,14 @@ auto generate_pawn_moves(const position& pos, move_list& ml) {
   const color               stm   = pos.stm();
   const piece_mask          pawns = pos.ptype_mask(stm, piece_type::pawn());
   const geometry::direction pd    = geometry::pawn_direction(stm);
+  const square king_sq = pos.king_square(stm);
 
   for (const piece_id pawn_id : pawns) {
     const square src = pos.sq_of(pos.stm(), pawn_id);
+
+    if (pos.pinned(src) && src.file() != king_sq.file()) {
+      continue;
+    }
 
     if (auto dst = geometry::shift(src, pd); dst.has_value()) {
       if (pos.has_value(*dst)) {
