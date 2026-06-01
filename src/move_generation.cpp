@@ -43,7 +43,7 @@ auto generate_pawn_moves(const position& pos, move_list& ml) {
           continue;
         }
 
-        ml.emplace_back(move::make_double(src, dst2));
+        ml.emplace_back(move::make(src, dst2, move::double_push));
       }
     }
   }
@@ -74,7 +74,11 @@ auto generate_moves_no_checkers(const position& pos, move_list& ml) {
         continue;
       }
 
-      ml.emplace_back(move::make(src, dst));
+      if (capture) {
+        ml.emplace_back(move::make(src, dst, move::cap_normal));
+      } else {
+        ml.emplace_back(move::make(src, dst));
+      }
     }
   }
 }

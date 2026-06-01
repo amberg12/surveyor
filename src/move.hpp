@@ -61,9 +61,9 @@ public:
     return out;
   }
 
-  static constexpr auto make_double(square src, square dst) -> move {
+  static constexpr auto make(square src, square dst, flags f) -> move {
     move out = make(src, dst);
-    out.m_raw |= double_push;
+    out.m_raw |= static_cast<u16>(f);
 
     return out;
   }

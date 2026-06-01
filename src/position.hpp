@@ -164,12 +164,17 @@ private:
       m_ep = *geometry::shift(mv.src(), geometry::pawn_direction(m_stm));
     };
 
+    const auto cap_normal = [&] {
+      destroy_piece(mv.dst());
+      move_piece(mv.src(), mv.dst());
+    };
+
     switch (mv.flags()) {
     case move::normal: {
       normal();
     } break;
     case move::cap_normal: {
-
+      cap_normal();
     } break;
     case move::double_push: {
       double_push();
@@ -195,6 +200,12 @@ private:
     const auto [id, c, ptype] = m_mail_box[src].unpack();
     std::swap(m_mail_box[src], m_mail_box[dst]);
     m_piece_list[c].sq_of(id) = dst;
+  }
+
+  auto destroy_piece(square at) -> void {
+    const auto [id, c, ptype] = m_mail_box[at].unpack();
+    m_mail_box[at] = place{};
+    m_piece_list[c].mask.del(id);
   }
 
   auto lazy_generate_attacks() -> void;
