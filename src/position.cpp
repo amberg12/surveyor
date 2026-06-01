@@ -160,8 +160,54 @@ auto position::parse(std::string_view sv) -> position {
   }
 
   out.lazy_generate_attacks();
+  out.lazy_generate_pinner();
 
   return out;
+}
+
+auto position::lazy_generate_pinner() -> void {
+  m_pin_aware_attack_table = m_attack_box[m_stm];
+
+  const color  stm     = m_stm;
+  const square king_sq = king_square(stm);
+
+  const auto handle_pin = [&](piece_id id, square to) {
+    const bitboard ray = bitboard::ray_exclusive(king_sq, to);
+    const bitboard all_pieces = bb();
+    const bitboard our_pieces = color_bb(stm);
+
+    if ((all_pieces & ray).popcount() != 1) {
+      return;
+    }
+
+    if ((our_pieces & ray).popcount() != 1) {
+      return;
+    }
+
+    const bitboard ray_incl = bitboard::ray_inclusive(king_sq, to);
+
+    m_pin_aware_attack_table.remove_attacker(id, ~ray_incl);
+  };
+
+  for (const piece_id id : ptype_mask(~stm, piece_type::bishop(), piece_type::queen())) {
+    const square sq = sq_of(stm, id);
+
+    if (!sq.diag_to(king_sq)) {
+      continue;
+    }
+
+    handle_pin(id, sq);
+  }
+
+  for (const piece_id id : ptype_mask(~stm, piece_type::rook(), piece_type::queen())) {
+    const square sq = sq_of(stm, id);
+
+    if (!sq.orth_to(king_sq)) {
+      continue;
+    }
+
+    handle_pin(id, sq);
+  }
 }
 
 auto position::lazy_generate_attacks() -> void {

@@ -54,6 +54,12 @@ struct attack_box {
   constexpr auto operator[](square sq) -> piece_mask& {
     return word_board[sq.idx];
   }
+
+  constexpr auto remove_attacker(piece_id atk, bitboard mask) -> void {
+    for (const square sq : mask) {
+      (*this)[sq].del(atk);
+    }
+  }
 };
 
 struct piece_list {
@@ -100,10 +106,11 @@ public:
   // Constructors
   static auto parse(std::string_view sv) -> position;
 
-  auto make_move(move mv) const -> position {
+  [[nodiscard]] auto make_move(move mv) const -> position {
     position out = *this;
     out.do_move(mv);
     out.lazy_generate_attacks();
+    out.lazy_generate_pinner();
     return out;
   }
 
@@ -168,6 +175,10 @@ public:
   template<piece_type_list... Pts>
   [[nodiscard]] constexpr auto bb(color c, Pts... ptypes) const -> bitboard {
     return color_bb(c) | ptype_bb(ptypes...);
+  }
+
+  [[nodiscard]] constexpr auto pin_at() const -> const attack_box& {
+    return m_pin_aware_attack_table;
   }
 
 private:
@@ -236,6 +247,8 @@ private:
     m_piece_bb[ptype].del(at);
   }
 
+  auto lazy_generate_pinner() -> void;
+
   auto lazy_generate_attacks() -> void;
 
   auto generate_attacks(square src) -> void;
@@ -250,6 +263,8 @@ private:
 
   color_array<bitboard> m_color_bb;
   piece_array<bitboard> m_piece_bb;
+
+  attack_box m_pin_aware_attack_table;
 
   color                  m_stm = color::white();
   square                 m_ep  = square::invalid();

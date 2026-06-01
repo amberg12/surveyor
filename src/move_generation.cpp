@@ -23,9 +23,9 @@
 namespace surveyor {
 namespace {
 auto generate_pawn_moves(const position& pos, move_list& ml) {
-  const color stm = pos.stm();
-  const piece_mask pawns = pos.ptype_mask(stm, piece_type::pawn());
-  const geometry::direction pd = geometry::pawn_direction(stm);
+  const color               stm   = pos.stm();
+  const piece_mask          pawns = pos.ptype_mask(stm, piece_type::pawn());
+  const geometry::direction pd    = geometry::pawn_direction(stm);
 
   for (const piece_id pawn_id : pawns) {
     const square src = pos.sq_of(pos.stm(), pawn_id);
@@ -37,7 +37,7 @@ auto generate_pawn_moves(const position& pos, move_list& ml) {
 
       ml.emplace_back(move::make(src, *dst));
 
-      if (dst->relative_rank(stm) == 2 ) {
+      if (dst->relative_rank(stm) == 2) {
         const square dst2 = *geometry::shift(*dst, pd);
         if (pos.has_value(dst2)) {
           continue;
@@ -50,10 +50,11 @@ auto generate_pawn_moves(const position& pos, move_list& ml) {
 }
 
 auto generate_moves_no_checkers(const position& pos, move_list& ml) {
-  const color stm = pos.stm();
+  const color       stm = pos.stm();
+  const attack_box& at  = pos.pin_at();
 
   for (const square dst : squares) {
-    const piece_mask attackers = pos.attackers_to(stm, dst);
+    const piece_mask attackers = at[dst];
 
     for (const piece_id id : attackers) {
       if (pos.has_value(dst)) {
@@ -67,7 +68,7 @@ auto generate_moves_no_checkers(const position& pos, move_list& ml) {
       // We already check to see if the dst is friendly so no need to do so here.
       const bool capture = pos.has_value(dst);
 
-      const auto src = pos.sq_of(stm, id);
+      const auto src                  = pos.sq_of(stm, id);
       const auto [src_stm, src_ptype] = pos.piece_at(src);
 
       if (src_ptype == piece_type::pawn() && !capture) {
@@ -86,7 +87,7 @@ auto generate_moves_no_checkers(const position& pos, move_list& ml) {
     }
   }
 }
-}
+}  // namespace
 
 auto generate_moves(const position& pos) -> move_list {
   move_list ml{};

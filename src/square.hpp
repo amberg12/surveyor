@@ -71,6 +71,17 @@ struct square {
     return square{idx ^ 56};
   }
 
+  [[nodiscard]] constexpr auto diag_to(square other) const -> bool {
+    const int d_f = file() - other.file();
+    const int d_r = rank() - other.rank();
+
+    return std::abs(d_f) == std::abs(d_r);
+  }
+
+  [[nodiscard]] constexpr auto orth_to(square other) const -> bool {
+    return rank() == other.rank() || file() == other.file();
+  }
+
   // Strings
   static constexpr auto parse(std::string_view s) -> square {
     const char file_char = s[0];
@@ -78,6 +89,9 @@ struct square {
 
     return {file_char - 'a', rank_char - '1'};
   }
+
+  // Overloads
+  friend constexpr auto operator==(const square& lhs, const square& rhs) -> bool = default;
 
   u8 idx;
 };

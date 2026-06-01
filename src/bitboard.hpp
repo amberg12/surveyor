@@ -23,18 +23,30 @@
 namespace surveyor {
 
 struct bitboard {
+  using iterator = cast_iterator<bit_iterator<u64>, square>;
+
   u64 raw = 0;
 
+  // Constructors
   static constexpr auto square_bb(square sq) -> bitboard {
     return {1ull << sq.idx};
   }
 
+  // Methods
   constexpr auto set(square sq) -> void {
     *this |= square_bb(sq);
   }
 
   constexpr auto del(square sq) -> void {
     *this &= ~square_bb(sq);
+  }
+
+  [[nodiscard]] constexpr auto popcount() const -> usize {
+    return std::popcount(raw);
+  }
+
+  [[nodiscard]] constexpr auto ipopcount() const -> isize {
+    return std::popcount(raw);
   }
 
   // Overloads
@@ -59,6 +71,74 @@ struct bitboard {
     lhs = lhs & rhs;
     return lhs;
   }
+
+  // Iterator
+  [[nodiscard]] constexpr auto begin() const -> iterator {
+    return iterator{raw};
+  }
+
+  [[nodiscard]] static constexpr auto end() -> iterator {
+    return iterator{0};
+  }
+
+  // Ctor (needs to be at end)
+  static constexpr auto ray_exclusive(square src, square dst) {
+    constexpr std::array<std::array<bitboard, 64>, 64> rays = [] {
+      std::array<std::array<bitboard, 64>, 64> out;
+
+      for (const square src : squares) {
+        for (const square dst : squares) {
+          if (src == dst) {
+            continue;
+          }
+
+          if (!src.diag_to(dst) && !src.orth_to(dst)) {
+            continue;
+          }
+
+          i8 d_file = signum(dst.file() - src.file());
+          i8 d_rank = signum(dst.rank() - src.rank());
+
+          i8 file = src.file() + d_file;
+          i8 rank = src.rank() + d_rank;
+
+          bitboard bb{};
+
+          while (file != dst.file() || rank != dst.rank()) {
+            bb |= square_bb(square{file, rank});
+            file += d_file;
+            rank += d_rank;
+          }
+
+          out[src.idx][dst.idx] = bb;
+        }
+      }
+
+      return out;
+    }();
+
+    return rays[src.idx][dst.idx];
+  }
+
+  static constexpr auto ray_inclusive(square src, square dst) -> bitboard {
+    constexpr std::array<std::array<bitboard, 64>, 64> rays = [] {
+      std::array<std::array<bitboard, 64>, 64> out;
+
+      for (const square src : squares) {
+        for (const square dst : squares) {
+          if (!src.diag_to(dst) && !src.orth_to(dst)) {
+            continue;
+          }
+
+          out[src.idx][dst.idx] = ray_exclusive(src, dst) | square_bb(src) | square_bb(dst);
+        }
+      }
+
+      return out;
+    }();
+
+    return rays[src.idx][dst.idx];
+  }
 };
 
-}
+}  // namespace surveyor

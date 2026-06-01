@@ -52,4 +52,9 @@ constexpr auto to_unsigned(T val) {
   return static_cast<Out>(val);
 }
 
+template <std::integral T>
+constexpr auto signum(T val) {
+  return val < 0 ? -1 : val == 0 ? 0 : 1;
+}
+
 }  // namespace surveyor
