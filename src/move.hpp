@@ -21,8 +21,11 @@
 #include "util/integer.hpp"
 
 #include <format>
+#include <string_view>
 
 namespace surveyor {
+
+class position;
 
 enum class move_type {
   normal,
@@ -94,8 +97,10 @@ public:
     return static_cast<enum flags>(m_raw & 0xF000);
   }
 
-private:
+  // String
+  [[nodiscard]] static auto parse(std::string_view sv, const position& pos) -> move;
 
+private:
   u16 m_raw{};
 };
 

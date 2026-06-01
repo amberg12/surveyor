@@ -16,8 +16,16 @@
   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-//
-// Created by amber on 31/05/2026.
-//
-
 #include "move.hpp"
+#include "position.hpp"
+
+namespace surveyor {
+
+auto move::parse(std::string_view sv, const position& pos) -> move {
+  const square src = square::parse(sv.substr(0, 2));
+  const square dst = square::parse(sv.substr(2, 2));
+
+  return make(src, dst);
+}
+
+}  // namespace surveyor

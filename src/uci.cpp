@@ -56,6 +56,10 @@ auto uci::dispatch_command(std::string_view command, std::istringstream& argumen
     return execute_perft(arguments);
   }
 
+  if (command == "position") {
+    return execute_position(arguments);
+  }
+
   return std::make_unique<uci_error_bad_cmd>(command);
 }
 
@@ -91,6 +95,38 @@ auto uci::execute_perft(std::istringstream& arguments) -> std::optional<std::uni
     } else {
       perft<perft_settings::bulk, true>(m_pos, *depth);
     }
+  }
+
+  return std::nullopt;
+}
+
+auto uci::execute_position(std::istringstream& arguments)
+  -> std::optional<std::unique_ptr<uci_error>> {
+  std::string tok;
+
+  arguments >> tok;
+
+  const std::string fen = [&] -> std::string {
+    if (tok == "startpos") {
+      return "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    }
+
+    std::string out;
+
+    for (int i = 0; i < 6; ++i) {
+      arguments >> tok;
+      out += tok + " ";
+    }
+
+    return out;
+  }();
+
+  m_pos = position::parse(fen);
+  arguments >> tok /* moves */;
+
+  while (arguments >> tok) {
+    const move m = move::parse(tok, m_pos);
+    m_pos = m_pos.make_move(m);
   }
 
   return std::nullopt;
