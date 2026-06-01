@@ -162,6 +162,8 @@ auto position::parse(std::string_view sv) -> position {
 }
 
 auto position::lazy_generate_attacks() -> void {
+  m_attack_box = {};
+
   const auto lazy_generate_attacks_for = [&](color stm) {
     const piece_mask pm = m_piece_list[stm].mask;
 
