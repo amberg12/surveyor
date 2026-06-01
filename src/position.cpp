@@ -156,7 +156,91 @@ auto position::parse(std::string_view sv) -> position {
     out.m_move_rule = 0;
   }
 
+  out.lazy_generate_attacks();
+
   return out;
+}
+
+auto position::lazy_generate_attacks() -> void {
+  const auto lazy_generate_attacks_for = [&](color stm) {
+    const piece_mask pm = m_piece_list[stm].mask;
+
+    for (const auto id : pm) {
+      const square s = sq_of(stm, id);
+      generate_attacks(s);
+    }
+  };
+
+  lazy_generate_attacks_for(color::white());
+  lazy_generate_attacks_for(color::black());
+}
+
+auto position::generate_attacks(square src) -> void {
+  const auto [id, col, ptype] = place_at(src);
+
+  if (ptype == piece_type::pawn()) {
+    if (col == color::white()) {
+      generate_leapers(col, id, src, geometry::ne_diag);
+      generate_leapers(col, id, src, geometry::nw_diag);
+    } else {
+      generate_leapers(col, id, src, geometry::se_diag);
+      generate_leapers(col, id, src, geometry::sw_diag);
+    }
+  }
+
+  if (ptype == piece_type::knight()) {
+    generate_leapers(col, id, src, geometry::nne_horsie);
+    generate_leapers(col, id, src, geometry::nee_horsie);
+    generate_leapers(col, id, src, geometry::see_horsie);
+    generate_leapers(col, id, src, geometry::sse_horsie);
+    generate_leapers(col, id, src, geometry::ssw_horsie);
+    generate_leapers(col, id, src, geometry::sww_horsie);
+    generate_leapers(col, id, src, geometry::nww_horsie);
+    generate_leapers(col, id, src, geometry::nnw_horsie);
+  }
+
+  if (ptype == piece_type::king()) {
+    generate_leapers(col, id, src, geometry::n_orth);
+    generate_leapers(col, id, src, geometry::ne_diag);
+    generate_leapers(col, id, src, geometry::e_orth);
+    generate_leapers(col, id, src, geometry::se_diag);
+    generate_leapers(col, id, src, geometry::s_orth);
+    generate_leapers(col, id, src, geometry::sw_diag);
+    generate_leapers(col, id, src, geometry::w_orth);
+    generate_leapers(col, id, src, geometry::nw_diag);
+  }
+
+  if (ptype.orth()) {
+    generate_sliders(col, id, src, geometry::n_orth);
+    generate_sliders(col, id, src, geometry::e_orth);
+    generate_sliders(col, id, src, geometry::s_orth);
+    generate_sliders(col, id, src, geometry::w_orth);
+  }
+
+  if (ptype.diag()) {
+    generate_sliders(col, id, src, geometry::ne_diag);
+    generate_sliders(col, id, src, geometry::se_diag);
+    generate_sliders(col, id, src, geometry::sw_diag);
+    generate_sliders(col, id, src, geometry::nw_diag);
+  }
+}
+
+auto position::generate_sliders(color col, piece_id id, square src, geometry::direction dir)
+  -> void {
+  for (auto s = geometry::shift(src, dir); s.has_value(); s = geometry::shift(*s, dir)) {
+    m_attack_box[col][*s].set(id);
+
+    if (m_mail_box[*s].has_value()) {
+      break;
+    }
+  }
+}
+
+auto position::generate_leapers(color col, piece_id id, square src, geometry::direction dir)
+  -> void {
+  if (const auto s = geometry::shift(src, dir); s.has_value()) {
+    m_attack_box[col][*s].set(id);
+  }
 }
 
 }  // namespace surveyor

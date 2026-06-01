@@ -84,6 +84,14 @@ struct square {
 
 static_assert(sizeof(square) == sizeof(u8));
 
+constexpr std::array<square, square::count> squares = [] {
+  std::array<square, square::count> out;
+  for (u8 i = 0; i < square::count; ++i) {
+    out[i] = square{i};
+  }
+  return out;
+}();
+
 }  // namespace surveyor
 
 template<>

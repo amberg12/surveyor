@@ -196,6 +196,14 @@ public:
     return m_raw > 0;
   }
 
+  constexpr auto orth() const -> bool {
+    return *this == queen() || *this == rook();
+  }
+
+  constexpr auto diag() const -> bool {
+    return *this == queen() || *this == bishop();
+  }
+
   // Overloads
   friend constexpr auto operator==(const piece_type&, const piece_type&) -> bool = default;
 

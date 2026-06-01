@@ -43,6 +43,18 @@ struct mail_box {
   }
 };
 
+struct attack_box {
+  std::array<piece_mask, square::count> word_board{};
+
+  constexpr auto operator[](square sq) const -> const piece_mask& {
+    return word_board[sq.idx];
+  }
+
+  constexpr auto operator[](square sq) -> piece_mask& {
+    return word_board[sq.idx];
+  }
+};
+
 struct piece_list {
   piece_mask                                mask{};
   std::array<square, piece_mask::count>     squares{};
@@ -90,6 +102,7 @@ public:
   auto make_move(move mv) const -> position {
     position out = *this;
     out.do_move(mv);
+    out.lazy_generate_attacks();
     return out;
   }
 
@@ -107,13 +120,30 @@ public:
     return pl.squares[piece_id::king().idx()];
   }
 
+  [[nodiscard]] constexpr auto has_value(square sq) const -> bool {
+    return m_mail_box[sq].has_value();
+  }
+
   [[nodiscard]] constexpr auto piece_at(square sq) const -> std::tuple<color, piece_type> {
     const auto [pid, col, ptype] = m_mail_box[sq].unpack();
     return {col, ptype};
   }
 
+  [[nodiscard]] constexpr auto place_at(square sq) const -> place::unpacked {
+    const auto result = m_mail_box[sq];
+    return result.unpack();
+  }
+
+  [[nodiscard]] constexpr auto attackers_to(color col, square sq) const -> piece_mask {
+    return m_attack_box[col][sq];
+  }
+
   [[nodiscard]] constexpr auto sq_of(color col, piece_id id) const -> square {
     return m_piece_list[col].sq_of(id);
+  }
+
+  [[nodiscard]] constexpr auto ptype_of(color col, piece_id id) const -> piece_type {
+    return m_piece_list[col].ptype_of(id);
   }
 
   template<piece_type_list... Pts>
@@ -131,7 +161,7 @@ private:
 
     const auto double_push = [&] {
       move_piece(mv.src(), mv.dst());
-      const square ep_sq = *geometry::shift(mv.src(), geometry::pawn_direction(m_stm));
+      m_ep = *geometry::shift(mv.src(), geometry::pawn_direction(m_stm));
     };
 
     switch (mv.flags()) {
@@ -167,7 +197,16 @@ private:
     m_piece_list[c].sq_of(id) = dst;
   }
 
+  auto lazy_generate_attacks() -> void;
+
+  auto generate_attacks(square src) -> void;
+
+  auto generate_sliders(color col, piece_id id, square src, geometry::direction dir) -> void;
+
+  auto generate_leapers(color col, piece_id id, square src, geometry::direction dir) -> void;
+
   mail_box                m_mail_box;
+  color_array<attack_box> m_attack_box;
   color_array<piece_list> m_piece_list;
 
   color                  m_stm = color::white();

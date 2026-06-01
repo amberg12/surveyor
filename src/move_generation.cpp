@@ -39,12 +39,43 @@ auto generate_pawn_moves(const position& pos, move_list& ml) {
     }
   }
 }
+
+auto generate_moves_no_checkers(const position& pos, move_list& ml) {
+  const color stm = pos.stm();
+
+  for (const square dst : squares) {
+    const piece_mask attackers = pos.attackers_to(stm, dst);
+
+    for (const piece_id id : attackers) {
+      if (pos.has_value(dst)) {
+        const auto [dst_stm, dst_ptype] = pos.piece_at(dst);
+
+        if (stm == dst_stm) {
+          continue;
+        }
+      }
+
+      // We already check to see if the dst is friendly so no need to do so here.
+      const bool capture = pos.has_value(dst);
+
+      const auto src = pos.sq_of(stm, id);
+      const auto [src_stm, src_ptype] = pos.piece_at(src);
+
+      if (src_ptype == piece_type::pawn() && !capture) {
+        continue;
+      }
+
+      ml.emplace_back(move::make(src, dst));
+    }
+  }
+}
 }
 
 auto generate_moves(const position& pos) -> move_list {
   move_list ml{};
 
   generate_pawn_moves(pos, ml);
+  generate_moves_no_checkers(pos, ml);
 
   return ml;
 }
