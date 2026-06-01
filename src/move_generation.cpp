@@ -74,6 +74,10 @@ auto generate_moves_no_checkers(const position& pos, move_list& ml) {
         continue;
       }
 
+      if (src_ptype == piece_type::king() && pos.attackers_to(~stm, dst).has_value()) {
+        continue;
+      }
+
       if (capture) {
         ml.emplace_back(move::make(src, dst, move::cap_normal));
       } else {
