@@ -31,10 +31,19 @@ auto generate_pawn_moves(const position& pos, move_list& ml) {
     const square src = pos.sq_of(pos.stm(), pawn_id);
 
     if (auto dst = geometry::shift(src, pd); dst.has_value()) {
+      if (pos.has_value(*dst)) {
+        continue;
+      }
+
       ml.emplace_back(move::make(src, *dst));
 
-      if (dst->relative_rank(stm) == 2) {
-        ml.emplace_back(move::make_double(src, *geometry::shift(*dst, pd)));
+      if (dst->relative_rank(stm) == 2 ) {
+        const square dst2 = *geometry::shift(*dst, pd);
+        if (pos.has_value(dst2)) {
+          continue;
+        }
+
+        ml.emplace_back(move::make_double(src, dst2));
       }
     }
   }
