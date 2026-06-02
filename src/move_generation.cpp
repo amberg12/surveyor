@@ -48,9 +48,10 @@ auto generate_king_moves(const position& pos, move_list& ml) -> void {
 
     if (king_attackers_nb >= 1 && [&] {
           for (const piece_id attacker_id : king_attackers) {
-            const square attacker_square = pos.sq_of(~stm, attacker_id);
+            const square     attacker_square = pos.sq_of(~stm, attacker_id);
+            const piece_type attacker_ptype  = pos.ptype_of(~stm, attacker_id);
 
-            if (attacker_square == sq) {
+            if (attacker_square == sq || !attacker_ptype.slider()) {
               continue;
             }
 
@@ -161,8 +162,8 @@ auto generate_en_passant_move(const position& pos, bitboard allowed, move_list& 
     return;
   }
 
-  const attack_box& at = pos.pin_at();
-  const color stm = pos.stm();
+  const attack_box& at  = pos.pin_at();
+  const color       stm = pos.stm();
 
   if (!allowed.has_value(ep)) {
     return;
