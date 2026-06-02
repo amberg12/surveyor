@@ -50,6 +50,10 @@ auto generate_king_moves(const position& pos, move_list& ml) -> void {
           for (const piece_id attacker_id : king_attackers) {
             const square attacker_square = pos.sq_of(~stm, attacker_id);
 
+            if (attacker_square == sq) {
+              continue;
+            }
+
             const bool orth_unsafe =
               king_sq.orth_to(attacker_square) && sq.orth_to(attacker_square);
             const bool diag_unsafe =
