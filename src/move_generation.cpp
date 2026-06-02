@@ -187,7 +187,7 @@ auto generate_castling(const position& pos, move_list& ml) -> void {
     const square   king_dst_square{king_dst_file, stm == color::white() ? 0 : 7};
     const bitboard king_path = bitboard::ray_exclusive(king_sq, king_dst_square);
 
-    if (pos.is_attacked(~stm, king_dst_square)) {
+    if (pos.is_attacked(~stm, king_dst_square) || pos.has_value(king_sq)) {
       return false;
     }
 
@@ -203,6 +203,10 @@ auto generate_castling(const position& pos, move_list& ml) -> void {
 
     const square   rook_dst{rook_dst_file, stm == color::white() ? 0 : 7};
     const bitboard rook_path = bitboard::ray_exclusive(rook_src, rook_dst);
+
+    if (pos.has_value(rook_dst)) {
+      return false;
+    }
 
     for (const square path_square : rook_path) {
       if (pos.has_value(path_square) && path_square != king_sq) {
