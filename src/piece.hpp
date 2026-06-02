@@ -196,12 +196,16 @@ public:
     return m_raw > 0;
   }
 
-  constexpr auto orth() const -> bool {
+  [[nodiscard]] constexpr auto orth() const -> bool {
     return *this == queen() || *this == rook();
   }
 
-  constexpr auto diag() const -> bool {
+  [[nodiscard]] constexpr auto diag() const -> bool {
     return *this == queen() || *this == bishop();
+  }
+
+  [[nodiscard]] constexpr auto slider() const -> bool {
+    return orth() || diag();
   }
 
   // Overloads
@@ -271,9 +275,11 @@ public:
   }
 
   // Methods
-  constexpr auto idx() const -> u8 {
+  [[nodiscard]] constexpr auto idx() const -> u8 {
     return m_raw;
   }
+
+  friend constexpr auto operator==(const piece_id& lhs, const piece_id& rhs) -> bool = default;
 
 private:
   // Constants
@@ -380,6 +386,19 @@ public:
 
   constexpr auto del(piece_id id) -> void {
     *this &= ~piece_mask{id};
+  }
+
+  [[nodiscard]] constexpr auto popcount() const -> usize {
+    return std::popcount(m_mask);
+  }
+
+  [[nodiscard]] constexpr auto ipopcount() const -> isize {
+    return std::popcount(m_mask);
+  }
+
+  [[nodiscard]] constexpr auto lsb() const -> piece_id {
+    const u8 id = std::countr_zero(static_cast<u32>(surveyor::lsb(m_mask)));
+    return piece_id{id};
   }
 
   // Iter

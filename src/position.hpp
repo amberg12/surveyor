@@ -123,6 +123,11 @@ public:
     return m_ep;
   }
 
+  [[nodiscard]] constexpr auto checkers() const -> usize {
+    const piece_mask king_attackers = attackers_to(~m_stm, king_square(m_stm));
+    return king_attackers.popcount();
+  }
+
   [[nodiscard]] constexpr auto king_square(color stm) const -> square {
     const auto& pl = m_piece_list[stm];
     return pl.squares[piece_id::king().idx()];

@@ -20,13 +20,63 @@
 
 #include "geometry.hpp"
 
+#include <cassert>
+
 namespace surveyor {
 namespace {
-auto generate_pawn_moves(const position& pos, move_list& ml) {
-  const color               stm   = pos.stm();
-  const piece_mask          pawns = pos.ptype_mask(stm, piece_type::pawn());
-  const geometry::direction pd    = geometry::pawn_direction(stm);
-  const square king_sq = pos.king_square(stm);
+auto generate_king_moves(const position& pos, move_list& ml) {
+  const attack_box& at      = pos.pin_at();
+  const color       stm     = pos.stm();
+  const square      king_sq = pos.king_square(stm);
+
+  const piece_mask king_attackers    = pos.attackers_to(~stm, king_sq);
+  const usize      king_attackers_nb = king_attackers.popcount();
+
+  for (const square sq : squares) {
+    if (!at[sq].is_set(piece_id::king())) {
+      continue;
+    }
+
+    if (pos.has_value(sq)) {
+      continue;
+    }
+
+    if (pos.attackers_to(~stm, sq).popcount() != 0) {
+      continue;
+    }
+
+    if (king_attackers_nb >= 1 && [&] {
+          for (const piece_id attacker_id : king_attackers) {
+            const square attacker_square = pos.sq_of(~stm, attacker_id);
+
+            const bool orth_unsafe =
+              king_sq.orth_to(attacker_square) && sq.orth_to(attacker_square);
+            const bool diag_unsafe =
+              king_sq.diag_to(attacker_square) && sq.diag_to(attacker_square);
+
+            if (orth_unsafe || diag_unsafe) {
+              return true;
+            }
+          }
+
+          return false;
+        }()) {
+      continue;
+    }
+
+    if (pos.has_value(sq)) {
+      ml.emplace_back(move::make(king_sq, sq, move::cap_normal));
+    } else {
+      ml.emplace_back(move::make(king_sq, sq, move::normal));
+    }
+  }
+}
+
+auto generate_pawn_moves_to(const position& pos, bitboard allowed, move_list& ml) {
+  const color               stm     = pos.stm();
+  const piece_mask          pawns   = pos.ptype_mask(stm, piece_type::pawn());
+  const geometry::direction pd      = geometry::pawn_direction(stm);
+  const square              king_sq = pos.king_square(stm);
 
   for (const piece_id pawn_id : pawns) {
     const square src = pos.sq_of(pos.stm(), pawn_id);
@@ -40,11 +90,13 @@ auto generate_pawn_moves(const position& pos, move_list& ml) {
         continue;
       }
 
-      ml.emplace_back(move::make(src, *dst));
+      if (allowed.has_value(*dst)) {
+        ml.emplace_back(move::make(src, *dst));
+      }
 
       if (dst->relative_rank(stm) == 2) {
         const square dst2 = *geometry::shift(*dst, pd);
-        if (pos.has_value(dst2)) {
+        if (pos.has_value(dst2) || !allowed.has_value(dst2)) {
           continue;
         }
 
@@ -54,14 +106,18 @@ auto generate_pawn_moves(const position& pos, move_list& ml) {
   }
 }
 
-auto generate_moves_no_checkers(const position& pos, move_list& ml) {
+auto generate_moves_to(const position& pos, bitboard allowed, move_list& ml) {
   const color       stm = pos.stm();
   const attack_box& at  = pos.pin_at();
 
-  for (const square dst : squares) {
+  for (const square dst : allowed) {
     const piece_mask attackers = at[dst];
 
     for (const piece_id id : attackers) {
+      if (id == piece_id::king()) {
+        continue;
+      }
+
       if (pos.has_value(dst)) {
         const auto [dst_stm, dst_ptype] = pos.piece_at(dst);
 
@@ -92,13 +148,68 @@ auto generate_moves_no_checkers(const position& pos, move_list& ml) {
     }
   }
 }
+
+auto generate_moves_no_checkers(const position& pos) -> move_list {
+  move_list ml{};
+
+  generate_moves_to(pos, bitboard::full(), ml);
+  generate_pawn_moves_to(pos, bitboard::full(), ml);
+  generate_king_moves(pos, ml);
+
+  return ml;
+}
+
+auto generate_moves_one_checker(const position& pos) -> move_list {
+  move_list ml{};
+
+  const bitboard allowed_squares = [&] {
+    const color      stm            = pos.stm();
+    const square     king_sq        = pos.king_square(stm);
+    const piece_mask king_attackers = pos.attackers_to(~stm, king_sq);
+
+    assert(king_attackers.popcount() == 1);
+
+    const piece_id king_attacker = king_attackers.lsb();
+
+    const square     attacker_square = pos.sq_of(~stm, king_attacker);
+    const piece_type attacker_ptype  = pos.ptype_of(~stm, king_attacker);
+
+    return bitboard::square_bb(attacker_square) | [&] {
+      if (!attacker_ptype.slider()) {
+        return bitboard::empty();
+      }
+
+      return bitboard::ray_exclusive(attacker_square, king_sq);
+    }();
+  }();
+
+  generate_moves_to(pos, allowed_squares, ml);
+  generate_pawn_moves_to(pos, allowed_squares, ml);
+  generate_king_moves(pos, ml);
+
+  return ml;
+}
+
+auto generate_moves_two_checkers(const position& pos) -> move_list {
+  move_list ml{};
+
+  generate_king_moves(pos, ml);
+
+  return ml;
+}
 }  // namespace
 
 auto generate_moves(const position& pos) -> move_list {
   move_list ml{};
 
-  generate_pawn_moves(pos, ml);
-  generate_moves_no_checkers(pos, ml);
+  switch (pos.checkers()) {
+  case 0:
+    return generate_moves_no_checkers(pos);
+  case 1:
+    return generate_moves_one_checker(pos);
+  case 2:
+    return generate_moves_two_checkers(pos);
+  }
 
   return ml;
 }

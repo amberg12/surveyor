@@ -32,6 +32,14 @@ struct bitboard {
     return {1ull << sq.idx};
   }
 
+  static constexpr auto full() -> bitboard {
+    return {~0ull};
+  }
+
+  static constexpr auto empty() -> bitboard {
+    return {0};
+  }
+
   // Methods
   constexpr auto set(square sq) -> void {
     *this |= square_bb(sq);
