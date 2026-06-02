@@ -187,7 +187,7 @@ auto generate_castling(const position& pos, move_list& ml) -> void {
     const square   king_dst_square{king_dst_file, stm == color::white() ? 0 : 7};
     const bitboard king_path = bitboard::ray_exclusive(king_sq, king_dst_square);
 
-    if (pos.is_attacked(~stm, king_dst_square) || pos.has_value(king_sq)) {
+    if (pos.is_attacked(~stm, king_dst_square) || pos.has_value(king_dst_square)) {
       return false;
     }
 

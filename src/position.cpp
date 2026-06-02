@@ -114,7 +114,7 @@ auto position::parse(std::string_view sv) -> position {
     const auto scan_for_rook = [&](color stm, i32 file, i32 dir) -> std::optional<square> {
       const i32 rank = stm == color::white() ? 0 : 7;
 
-      for (file += dir; file >= 0 && file < 8; file += dir) {
+      for (; file >= 0 && file < 8; file += dir) {
         const square sq{file, rank};
 
         if (const auto [c, ptype] = out.piece_at(sq); c == stm && ptype == piece_type::rook()) {
