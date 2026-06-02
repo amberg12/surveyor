@@ -179,6 +179,32 @@ auto generate_en_passant_move(const position& pos, bitboard allowed, move_list& 
   }
 }
 
+auto generate_castling(const position& pos, move_list& ml) -> void {
+  const color  stm     = pos.stm();
+  const square king_sq = pos.king_square(stm);
+
+  const auto is_valid = [&](i8 file) {
+    const square   king_dst_square{file, stm == color::white() ? 0 : 7};
+    const bitboard king_path = bitboard::ray_inclusive(king_sq, king_dst_square);
+
+    for (const square path_square : king_path) {
+      if (pos.is_attacked(~stm, path_square)) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  if (pos.a_side(stm).has_value() && is_valid(2)) {
+    ml.emplace_back(move::make(0, 0, move::castle_aside));
+  }
+
+  if (pos.h_side(stm).has_value() && is_valid(6)) {
+    ml.emplace_back(move::make(0, 0, move::castle_hside));
+  }
+}
+
 auto generate_moves_no_checkers(const position& pos) -> move_list {
   move_list ml{};
 
@@ -186,6 +212,7 @@ auto generate_moves_no_checkers(const position& pos) -> move_list {
   generate_pawn_moves_to(pos, bitboard::full(), ml);
   generate_en_passant_move(pos, bitboard::full(), ml);
   generate_king_moves(pos, ml);
+  generate_castling(pos, ml);
 
   return ml;
 }

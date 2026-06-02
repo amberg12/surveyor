@@ -99,6 +99,11 @@ struct piece_list {
 struct rook_info {
   std::optional<square> a_side = std::nullopt;
   std::optional<square> h_side = std::nullopt;
+
+  constexpr auto clear() -> void {
+    a_side = std::nullopt;
+    h_side = std::nullopt;
+  }
 };
 
 class position {
@@ -121,6 +126,14 @@ public:
 
   [[nodiscard]] constexpr auto ep() const -> square {
     return m_ep;
+  }
+
+  [[nodiscard]] constexpr auto a_side(color stm) const -> std::optional<square> {
+    return m_rook_info[stm].a_side;
+  }
+
+  [[nodiscard]] constexpr auto h_side(color stm) const -> std::optional<square> {
+    return m_rook_info[stm].h_side;
   }
 
   [[nodiscard]] constexpr auto checkers() const -> usize {
@@ -154,6 +167,10 @@ public:
 
   [[nodiscard]] constexpr auto attackers_to(color col, square sq) const -> piece_mask {
     return m_attack_box[col][sq];
+  }
+
+  [[nodiscard]] constexpr auto is_attacked(color col, square sq) const -> bool {
+    return attackers_to(col, sq).popcount() != 0;
   }
 
   [[nodiscard]] constexpr auto sq_of(color col, piece_id id) const -> square {
@@ -199,9 +216,29 @@ private:
   position() = default;
 
   auto do_move(move mv) -> void {
+    const auto fix_castling = [&](square sq) {
+      if (m_rook_info[color::white()].a_side == sq) {
+        m_rook_info[color::white()].a_side = std::nullopt;
+      }
+
+      if (m_rook_info[color::white()].h_side == sq) {
+        m_rook_info[color::white()].h_side = std::nullopt;
+      }
+
+      if (m_rook_info[color::black()].a_side == sq) {
+        m_rook_info[color::black()].a_side = std::nullopt;
+      }
+
+      if (m_rook_info[color::black()].h_side == sq) {
+        m_rook_info[color::black()].h_side = std::nullopt;
+      }
+    };
+
     const auto normal = [&] {
       move_piece(mv.src(), mv.dst());
       m_ep = square::invalid();
+
+      fix_castling(mv.src());
     };
 
     const auto double_push = [&] {
@@ -209,10 +246,33 @@ private:
       m_ep = *geometry::shift(mv.src(), geometry::pawn_direction(m_stm));
     };
 
+    const auto castle_aside = [&] {
+      const square king_dst = m_stm == color::white() ? square{2, 0} : square{2, 7};
+      const square rook_dst = m_stm == color::white() ? square{3, 0} : square{3, 7};
+
+      move_piece(*m_rook_info[m_stm].a_side, rook_dst);
+      move_piece(king_square(m_stm), king_dst);
+
+      m_rook_info[m_stm].clear();
+    };
+
+    const auto castle_hside = [&] {
+      const square king_dst = m_stm == color::white() ? square{6, 0} : square{6, 7};
+      const square rook_dst = m_stm == color::white() ? square{5, 0} : square{5, 7};
+
+      move_piece(*m_rook_info[m_stm].a_side, rook_dst);
+      move_piece(king_square(m_stm), king_dst);
+
+      m_rook_info[m_stm].clear();
+    };
+
     const auto cap_normal = [&] {
       destroy_piece(mv.dst());
       move_piece(mv.src(), mv.dst());
       m_ep = square::invalid();
+
+      fix_castling(mv.src());
+      fix_castling(mv.dst());
     };
 
     const auto en_passant = [&] {
@@ -232,8 +292,12 @@ private:
     case move::double_push: {
       double_push();
     } break;
-    case move::castle_aside:
-    case move::castle_hside:
+    case move::castle_aside: {
+      castle_aside();
+    } break;
+    case move::castle_hside: {
+      castle_hside();
+    } break;
     case move::promo_q:
     case move::promo_n:
     case move::promo_r:
