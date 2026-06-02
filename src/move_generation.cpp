@@ -183,12 +183,29 @@ auto generate_castling(const position& pos, move_list& ml) -> void {
   const color  stm     = pos.stm();
   const square king_sq = pos.king_square(stm);
 
-  const auto is_valid = [&](i8 file) {
-    const square   king_dst_square{file, stm == color::white() ? 0 : 7};
-    const bitboard king_path = bitboard::ray_inclusive(king_sq, king_dst_square);
+  const auto is_valid = [&](square rook_src, i8 king_dst_file, i8 rook_dst_file) -> bool {
+    const square   king_dst_square{king_dst_file, stm == color::white() ? 0 : 7};
+    const bitboard king_path = bitboard::ray_exclusive(king_sq, king_dst_square);
+
+    if (pos.is_attacked(~stm, king_dst_square)) {
+      return false;
+    }
 
     for (const square path_square : king_path) {
       if (pos.is_attacked(~stm, path_square)) {
+        return false;
+      }
+
+      if (pos.has_value(path_square) && path_square != rook_src) {
+        return false;
+      }
+    }
+
+    const square   rook_dst{rook_dst_file, stm == color::white() ? 0 : 7};
+    const bitboard rook_path = bitboard::ray_exclusive(rook_src, rook_dst);
+
+    for (const square path_square : rook_path) {
+      if (pos.has_value(path_square) && path_square != king_sq) {
         return false;
       }
     }
@@ -196,12 +213,14 @@ auto generate_castling(const position& pos, move_list& ml) -> void {
     return true;
   };
 
-  if (pos.a_side(stm).has_value() && is_valid(2)) {
-    ml.emplace_back(move::make(0, 0, move::castle_aside));
+  if (pos.a_side(stm).has_value() && is_valid(*pos.a_side(stm), 2, 3)) {
+    const square dst{king_sq.file() - 2, king_sq.rank()};
+    ml.emplace_back(move::make(king_sq, dst, move::castle_aside));
   }
 
-  if (pos.h_side(stm).has_value() && is_valid(6)) {
-    ml.emplace_back(move::make(0, 0, move::castle_hside));
+  if (pos.h_side(stm).has_value() && is_valid(*pos.h_side(stm), 6, 5)) {
+    const square dst{king_sq.file() + 2, king_sq.rank()};
+    ml.emplace_back(move::make(king_sq, dst, move::castle_hside));
   }
 }
 
