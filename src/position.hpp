@@ -201,6 +201,7 @@ private:
   auto do_move(move mv) -> void {
     const auto normal = [&] {
       move_piece(mv.src(), mv.dst());
+      m_ep = square::invalid();
     };
 
     const auto double_push = [&] {
@@ -211,6 +212,14 @@ private:
     const auto cap_normal = [&] {
       destroy_piece(mv.dst());
       move_piece(mv.src(), mv.dst());
+      m_ep = square::invalid();
+    };
+
+    const auto en_passant = [&] {
+      move_piece(mv.src(), mv.dst());
+      const square ep_victim = *geometry::shift(m_ep, ~geometry::pawn_direction(m_stm));
+      destroy_piece(ep_victim);
+      m_ep = square::invalid();
     };
 
     switch (mv.flags()) {
@@ -233,8 +242,9 @@ private:
     case move::cap_promo_n:
     case move::cap_promo_r:
     case move::cap_promo_b:
-    case move::en_passant:
-      break;
+    case move::en_passant: {
+      en_passant();
+    } break;
     }
 
     m_stm = ~m_stm;

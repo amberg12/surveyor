@@ -24,7 +24,7 @@
 
 namespace surveyor {
 namespace {
-auto generate_king_moves(const position& pos, move_list& ml) {
+auto generate_king_moves(const position& pos, move_list& ml) -> void {
   const attack_box& at      = pos.pin_at();
   const color       stm     = pos.stm();
   const square      king_sq = pos.king_square(stm);
@@ -72,7 +72,7 @@ auto generate_king_moves(const position& pos, move_list& ml) {
   }
 }
 
-auto generate_pawn_moves_to(const position& pos, bitboard allowed, move_list& ml) {
+auto generate_pawn_moves_to(const position& pos, bitboard allowed, move_list& ml) -> void {
   const color               stm     = pos.stm();
   const piece_mask          pawns   = pos.ptype_mask(stm, piece_type::pawn());
   const geometry::direction pd      = geometry::pawn_direction(stm);
@@ -106,7 +106,7 @@ auto generate_pawn_moves_to(const position& pos, bitboard allowed, move_list& ml
   }
 }
 
-auto generate_moves_to(const position& pos, bitboard allowed, move_list& ml) {
+auto generate_moves_to(const position& pos, bitboard allowed, move_list& ml) -> void {
   const color       stm = pos.stm();
   const attack_box& at  = pos.pin_at();
 
@@ -149,11 +149,36 @@ auto generate_moves_to(const position& pos, bitboard allowed, move_list& ml) {
   }
 }
 
+auto generate_en_passant_move(const position& pos, bitboard allowed, move_list& ml) -> void {
+  const square ep = pos.ep();
+
+  if (!ep.has_value()) {
+    return;
+  }
+
+  const attack_box& at = pos.pin_at();
+  const color stm = pos.stm();
+
+  if (!allowed.has_value(ep)) {
+    return;
+  }
+
+  for (const piece_id attacker : at[ep]) {
+    const piece_type ptype = pos.ptype_of(stm, attacker);
+
+    if (ptype == piece_type::pawn()) {
+      const square src = pos.sq_of(stm, attacker);
+      ml.emplace_back(move::make(src, ep, move::en_passant));
+    }
+  }
+}
+
 auto generate_moves_no_checkers(const position& pos) -> move_list {
   move_list ml{};
 
   generate_moves_to(pos, bitboard::full(), ml);
   generate_pawn_moves_to(pos, bitboard::full(), ml);
+  generate_en_passant_move(pos, bitboard::full(), ml);
   generate_king_moves(pos, ml);
 
   return ml;
@@ -185,6 +210,7 @@ auto generate_moves_one_checker(const position& pos) -> move_list {
 
   generate_moves_to(pos, allowed_squares, ml);
   generate_pawn_moves_to(pos, allowed_squares, ml);
+  generate_en_passant_move(pos, allowed_squares, ml);
   generate_king_moves(pos, ml);
 
   return ml;
@@ -207,7 +233,7 @@ auto generate_moves(const position& pos) -> move_list {
     return generate_moves_no_checkers(pos);
   case 1:
     return generate_moves_one_checker(pos);
-  case 2:
+  default:
     return generate_moves_two_checkers(pos);
   }
 
