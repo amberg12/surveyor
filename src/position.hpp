@@ -217,7 +217,7 @@ private:
 
     const auto en_passant = [&] {
       move_piece(mv.src(), mv.dst());
-      const square ep_victim = *geometry::shift(m_ep, ~geometry::pawn_direction(m_stm));
+      const square ep_victim = *geometry::shift(m_ep, geometry::pawn_direction(~m_stm));
       destroy_piece(ep_victim);
       m_ep = square::invalid();
     };
