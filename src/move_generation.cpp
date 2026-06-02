@@ -37,7 +37,8 @@ auto generate_king_moves(const position& pos, move_list& ml) -> void {
       continue;
     }
 
-    if (pos.has_value(sq)) {
+    if (const auto [dst_color, dst_ptype] = pos.piece_at(sq);
+        pos.has_value(sq) && dst_color == stm) {
       continue;
     }
 
