@@ -170,19 +170,16 @@ auto generate_moves_to(const position& pos, bitboard allowed, move_list& ml) -> 
 }
 
 auto generate_en_passant_move(const position& pos, bitboard allowed, move_list& ml) -> void {
-  const square ep = pos.ep();
+  const square ep        = pos.ep();
+  const color  stm       = pos.stm();
+  const square ep_victim = *geometry::shift(ep, geometry::pawn_direction(~stm));
 
-  if (!ep.has_value()) {
+  if (!ep.has_value() || !allowed.has_value(ep_victim)) {
     return;
   }
 
   const attack_box& at      = pos.pin_at();
-  const color       stm     = pos.stm();
   const square      king_sq = pos.king_square(stm);
-
-  if (!allowed.has_value(ep)) {
-    return;
-  }
 
   for (const piece_id attacker : at[ep]) {
     const piece_type ptype = pos.ptype_of(stm, attacker);
