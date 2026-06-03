@@ -216,6 +216,8 @@ private:
   position() = default;
 
   auto do_move(move mv) -> void {
+    const auto [stm, ptype] = piece_at(mv.src());
+
     const auto fix_castling = [&](square sq) {
       if (m_rook_info[color::white()].a_side == sq) {
         m_rook_info[color::white()].a_side = std::nullopt;
@@ -238,7 +240,11 @@ private:
       move_piece(mv.src(), mv.dst());
       m_ep = square::invalid();
 
-      fix_castling(mv.src());
+      if (ptype == piece_type::king()) {
+        m_rook_info[stm].clear();
+      } else {
+        fix_castling(mv.src());
+      }
     };
 
     const auto double_push = [&] {
@@ -254,16 +260,18 @@ private:
       move_piece(king_square(m_stm), king_dst);
 
       m_rook_info[m_stm].clear();
+      m_ep = square::invalid();
     };
 
     const auto castle_hside = [&] {
       const square king_dst = m_stm == color::white() ? square{6, 0} : square{6, 7};
       const square rook_dst = m_stm == color::white() ? square{5, 0} : square{5, 7};
 
-      move_piece(*m_rook_info[m_stm].a_side, rook_dst);
+      move_piece(*m_rook_info[m_stm].h_side, rook_dst);
       move_piece(king_square(m_stm), king_dst);
 
       m_rook_info[m_stm].clear();
+      m_ep = square::invalid();
     };
 
     const auto cap_normal = [&] {
@@ -271,7 +279,12 @@ private:
       move_piece(mv.src(), mv.dst());
       m_ep = square::invalid();
 
-      fix_castling(mv.src());
+      if (ptype == piece_type::king()) {
+        m_rook_info[stm].clear();
+      } else {
+        fix_castling(mv.src());
+      }
+
       fix_castling(mv.dst());
     };
 
