@@ -176,8 +176,9 @@ auto generate_en_passant_move(const position& pos, bitboard allowed, move_list& 
     return;
   }
 
-  const attack_box& at  = pos.pin_at();
-  const color       stm = pos.stm();
+  const attack_box& at      = pos.pin_at();
+  const color       stm     = pos.stm();
+  const square      king_sq = pos.king_square(stm);
 
   if (!allowed.has_value(ep)) {
     return;
@@ -188,6 +189,37 @@ auto generate_en_passant_move(const position& pos, bitboard allowed, move_list& 
 
     if (ptype == piece_type::pawn()) {
       const square src = pos.sq_of(stm, attacker);
+
+      // Consider horizontal case
+      if (king_sq.rank() == src.rank()) {
+        const i32 rank = king_sq.rank();
+        const i32 dir  = signum(src.file() - king_sq.file());
+
+        const square orth_pinner = [&] {
+          for (i32 file = king_sq.file(); dir != 0 && 0 <= file && file < 8; file += dir) {
+            const square scan{file, rank};
+
+            const auto [scan_col, scan_ptype] = pos.piece_at(scan);
+
+            if (scan_ptype.orth() && scan_col != stm) {
+              return scan;
+            }
+          }
+
+          return square::invalid();
+        }();
+
+        if (orth_pinner.has_value()) {
+          const bitboard pin_ray = bitboard::ray_exclusive(king_sq, orth_pinner);
+
+          if ((pos.bb() & pin_ray).popcount() != 2
+              || (pos.bb(stm, piece_type::pawn()) & pin_ray).popcount() != 1
+              || (pos.bb(~stm, piece_type::pawn()) & pin_ray).popcount() != 1) {
+            continue;
+          }
+        }
+      }
+
       ml.emplace_back(move::make(src, ep, move::en_passant));
     }
   }
