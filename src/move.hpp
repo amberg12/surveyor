@@ -109,7 +109,32 @@ private:
 template<>
 struct std::formatter<surveyor::move> : std::formatter<std::string> {
   auto format(const surveyor::move& mv, std::format_context& ctx) const {
-    const std::string str = std::format("{}{}", mv.src(), mv.dst());
+    using namespace surveyor;
+
+    const std::string promo = [&] {
+      switch (mv.flags()) {
+      case move::promo_q:
+        [[fallthrough]];
+      case move::cap_promo_q:
+        return "q";
+      case move::promo_r:
+        [[fallthrough]];
+      case move::cap_promo_r:
+        return "r";
+      case move::promo_b:
+        [[fallthrough]];
+      case move::cap_promo_b:
+        return "b";
+      case move::promo_n:
+        [[fallthrough]];
+      case move::cap_promo_n:
+        return "n";
+      default:
+        return "";
+      }
+    }();
+
+    const std::string str = std::format("{}{}{}", mv.src(), mv.dst(), promo);
     return std::formatter<std::string>::format(str, ctx);
   }
 };

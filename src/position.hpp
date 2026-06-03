@@ -298,7 +298,9 @@ private:
       destroy_piece(mv.dst());
       move_piece(mv.src(), mv.dst());
       mutate_piece(mv.dst(), to);
+
       m_ep = square::invalid();
+      fix_castling(mv.dst());
     };
 
     const auto en_passant = [&] {
@@ -358,7 +360,10 @@ private:
 
   auto move_piece(square src, square dst) -> void {
     const auto [id, c, ptype] = m_mail_box[src].unpack();
-    std::swap(m_mail_box[src], m_mail_box[dst]);
+
+    m_mail_box[dst] = m_mail_box[src];
+    m_mail_box[src] = {};
+
     m_piece_list[c].sq_of(id) = dst;
 
     m_color_bb[c].del(src);
@@ -381,6 +386,9 @@ private:
     const auto [id, c, ptype]        = place_at(at);
     m_mail_box[at]                   = place{id, c, to};
     m_piece_list[c].ptypes[id.idx()] = to;
+
+    m_piece_bb[ptype].del(at);
+    m_piece_bb[to].set(at);
   }
 
   auto lazy_generate_pinner() -> void;
