@@ -288,6 +288,19 @@ private:
       fix_castling(mv.dst());
     };
 
+    const auto promo = [&](piece_type to) {
+      move_piece(mv.src(), mv.dst());
+      mutate_piece(mv.dst(), to);
+      m_ep = square::invalid();
+    };
+
+    const auto cap_promo = [&](piece_type to) {
+      destroy_piece(mv.dst());
+      move_piece(mv.src(), mv.dst());
+      mutate_piece(mv.dst(), to);
+      m_ep = square::invalid();
+    };
+
     const auto en_passant = [&] {
       move_piece(mv.src(), mv.dst());
       const square ep_victim = *geometry::shift(m_ep, geometry::pawn_direction(~m_stm));
@@ -311,14 +324,30 @@ private:
     case move::castle_hside: {
       castle_hside();
     } break;
-    case move::promo_q:
-    case move::promo_n:
-    case move::promo_r:
-    case move::promo_b:
-    case move::cap_promo_q:
-    case move::cap_promo_n:
-    case move::cap_promo_r:
-    case move::cap_promo_b:
+    case move::promo_q: {
+      promo(piece_type::queen());
+    } break;
+    case move::promo_n: {
+      promo(piece_type::knight());
+    } break;
+    case move::promo_r: {
+      promo(piece_type::rook());
+    } break;
+    case move::promo_b: {
+      promo(piece_type::bishop());
+    } break;
+    case move::cap_promo_q: {
+      cap_promo(piece_type::queen());
+    } break;
+    case move::cap_promo_n: {
+      cap_promo(piece_type::knight());
+    } break;
+    case move::cap_promo_r: {
+      cap_promo(piece_type::rook());
+    } break;
+    case move::cap_promo_b: {
+      cap_promo(piece_type::bishop());
+    } break;
     case move::en_passant: {
       en_passant();
     } break;
@@ -346,6 +375,12 @@ private:
 
     m_color_bb[c].del(at);
     m_piece_bb[ptype].del(at);
+  }
+
+  auto mutate_piece(square at, piece_type to) -> void {
+    const auto [id, c, ptype]        = place_at(at);
+    m_mail_box[at]                   = place{id, c, to};
+    m_piece_list[c].ptypes[id.idx()] = to;
   }
 
   auto lazy_generate_pinner() -> void;

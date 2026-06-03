@@ -97,7 +97,14 @@ auto generate_pawn_moves_to(const position& pos, bitboard allowed, move_list& ml
       }
 
       if (allowed.has_value(*dst)) {
-        ml.emplace_back(move::make(src, *dst));
+        if (dst->relative_rank(stm) != 7) {
+          ml.emplace_back(move::make(src, *dst));
+        } else {
+          ml.emplace_back(move::make(src, *dst, move::promo_q));
+          ml.emplace_back(move::make(src, *dst, move::promo_b));
+          ml.emplace_back(move::make(src, *dst, move::promo_n));
+          ml.emplace_back(move::make(src, *dst, move::promo_r));
+        }
       }
 
       if (dst->relative_rank(stm) == 2) {
@@ -147,7 +154,14 @@ auto generate_moves_to(const position& pos, bitboard allowed, move_list& ml) -> 
       }
 
       if (capture) {
-        ml.emplace_back(move::make(src, dst, move::cap_normal));
+        if (src_ptype == piece_type::pawn() && dst.relative_rank(stm) == 7) {
+          ml.emplace_back(move::make(src, dst, move::cap_promo_q));
+          ml.emplace_back(move::make(src, dst, move::cap_promo_b));
+          ml.emplace_back(move::make(src, dst, move::cap_promo_n));
+          ml.emplace_back(move::make(src, dst, move::cap_promo_r));
+        } else {
+          ml.emplace_back(move::make(src, dst, move::cap_normal));
+        }
       } else {
         ml.emplace_back(move::make(src, dst));
       }
