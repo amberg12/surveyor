@@ -190,34 +190,35 @@ auto generate_en_passant_move(const position& pos, bitboard allowed, move_list& 
     if (ptype == piece_type::pawn()) {
       const square src = pos.sq_of(stm, attacker);
 
-      // Consider horizontal case
-      if (king_sq.rank() == src.rank()) {
-        const i32 rank = king_sq.rank();
-        const i32 dir  = signum(src.file() - king_sq.file());
+      if ([&]() -> bool {
+            const square cap{ep.file(), src.rank()};
 
-        const square orth_pinner = [&] {
-          for (i32 file = king_sq.file(); dir != 0 && 0 <= file && file < 8; file += dir) {
-            const square scan{file, rank};
-
-            const auto [scan_col, scan_ptype] = pos.piece_at(scan);
-
-            if (scan_ptype.orth() && scan_col != stm) {
-              return scan;
+            if (king_sq.rank() != src.rank()) {
+              return false;
             }
-          }
 
-          return square::invalid();
-        }();
+            const i32 rank = king_sq.rank();
 
-        if (orth_pinner.has_value()) {
-          const bitboard pin_ray = bitboard::ray_exclusive(king_sq, orth_pinner);
+            for (i32 dir : {-1, 1}) {
+              for (i32 file = king_sq.file() + dir; 0 <= file && file < 8; file += dir) {
+                const square s{file, rank};
 
-          if ((pos.bb() & pin_ray).popcount() != 2
-              || (pos.bb(stm, piece_type::pawn()) & pin_ray).popcount() != 1
-              || (pos.bb(~stm, piece_type::pawn()) & pin_ray).popcount() != 1) {
-            continue;
-          }
-        }
+                if (s == src || s == cap) {
+                  continue;
+                }
+
+                if (!pos.has_value(s)) {
+                  continue;
+                }
+
+                const auto [c, pt] = pos.piece_at(s);
+                return c != stm && (pt == piece_type::rook() || pt == piece_type::queen());
+              }
+            }
+
+            return false;
+          }()) {
+        continue;
       }
 
       ml.emplace_back(move::make(src, ep, move::en_passant));
