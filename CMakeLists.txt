@@ -5,4 +5,21 @@ set(CMAKE_CXX_STANDARD 23)
 
 add_executable(surveyor src/main.cpp
         src/uci.cpp
-        src/uci.hpp)
+        src/uci.hpp
+        src/square.hpp
+        src/util/integer.hpp
+        src/piece.hpp
+        src/util/constant.hpp
+        src/util/bit_iterator.hpp
+        src/util/bit.hpp
+        src/util/cast_iterator.hpp
+        src/position.cpp
+        src/position.hpp
+        src/util/parse.hpp
+        src/util/static_vector.hpp
+        src/move_generation.cpp
+        src/move_generation.hpp
+        src/move.cpp
+        src/move.hpp
+        src/geometry.hpp
+        src/bitboard.hpp)
