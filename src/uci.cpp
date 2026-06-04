@@ -268,7 +268,7 @@ auto uci::execute_bench(std::istringstream&) -> std::optional<std::unique_ptr<uc
     "2r2n2/8/3k4/8/8/4KN2/8/6R1 w - - 0 1",
   }};
 
-  const search_limits sl = {.depth = 4};
+  const search_limits sl = {.depth = 5};
 
   nodes                  n     = 0;
   const time::time_point start = time::clock::now();
