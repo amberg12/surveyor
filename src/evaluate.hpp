@@ -130,7 +130,7 @@ auto trace_eval(const position& pos, E& tracer) -> void {
 
 inline auto evaluate(const position& pos) -> score {
   struct tracer {
-    score s;
+    score s = 0;
 
     constexpr auto trace_pawn_material(color stm) -> void {
       if (stm == color::white()) {

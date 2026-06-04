@@ -85,7 +85,7 @@ public:
     } else {
       return max_score().m_value + m_value;
     }
-  }
+}
 
   // Overloads
   friend constexpr auto operator-(const score& s) -> score {
