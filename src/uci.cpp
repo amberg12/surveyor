@@ -68,6 +68,10 @@ auto uci::dispatch_command(std::string_view command, std::istringstream& argumen
     std::println("readyok");
   }
 
+  if (command == "stop") {
+    return execute_stop(arguments);
+  }
+
   return std::make_unique<uci_error_bad_cmd>(command);
 }
 
@@ -193,6 +197,12 @@ auto uci::execute_go(std::istringstream& arguments) -> std::optional<std::unique
     ;
 
   m_manager.go(limits);
+
+  return std::nullopt;
+}
+
+auto uci::execute_stop(std::istringstream&) -> std::optional<std::unique_ptr<uci_error>> {
+  m_manager.stop();
 
   return std::nullopt;
 }

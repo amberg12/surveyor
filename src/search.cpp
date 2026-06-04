@@ -22,6 +22,7 @@
 #include "move_generation.hpp"
 
 #include <print>
+#include <thread>
 
 namespace surveyor {
 
@@ -152,24 +153,26 @@ auto searcher<Ctrls>::search(const position& pos, line& pv, i32 depth, i32 ply) 
 }
 
 auto search_manager::go(search_limits limits) -> void {
-  m_stopped = false;
+  m_thread = std::jthread([&, this] {
+    m_stopped = false;
 
-  if (limits.infinite) {
-    m_searcher = std::make_unique<searcher<search_ctrls::infinite>>(this);
-  } else if (limits.node_limit.has_value()) {
-    m_searcher =
-      std::make_unique<searcher<search_ctrls::hard_nodes>>(this, limits.node_limit.value());
-  } else if (limits.depth.has_value()) {
-    m_searcher = std::make_unique<searcher<search_ctrls::depth>>(this, limits.depth.value());
-  } else {
-    const time::milliseconds t =
-      m_pos.stm() == color::white() ? limits.wtime.value() : limits.btime.value();
-    const time::milliseconds i =
-      m_pos.stm() == color::white() ? limits.winc.value() : limits.binc.value();
-    m_searcher = std::make_unique<searcher<search_ctrls::clock>>(this, time::clock::now(), t, i);
-  }
+    if (limits.infinite) {
+      m_searcher = std::make_unique<searcher<search_ctrls::infinite>>(this);
+    } else if (limits.node_limit.has_value()) {
+      m_searcher =
+        std::make_unique<searcher<search_ctrls::hard_nodes>>(this, limits.node_limit.value());
+    } else if (limits.depth.has_value()) {
+      m_searcher = std::make_unique<searcher<search_ctrls::depth>>(this, limits.depth.value());
+    } else {
+      const time::milliseconds t =
+        m_pos.stm() == color::white() ? limits.wtime.value() : limits.btime.value();
+      const time::milliseconds i =
+        m_pos.stm() == color::white() ? limits.winc.value() : limits.binc.value();
+      m_searcher = std::make_unique<searcher<search_ctrls::clock>>(this, time::clock::now(), t, i);
+    }
 
-  m_searcher->begin();
+    m_searcher->begin();
+  });
 }
 
 auto search_manager::set_position(position pos) -> void {

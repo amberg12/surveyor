@@ -22,6 +22,8 @@
 #include "search_controls.hpp"
 #include "util/static_vector.hpp"
 
+#include <thread>
+
 namespace surveyor {
 
 using line = static_vector<move, 512>;
@@ -107,7 +109,9 @@ public:
   }
 
 private:
-  bool m_stopped = false;
+  std::atomic_bool m_stopped = false;
+
+  std::jthread m_thread;
 
   std::unique_ptr<searcher_base> m_searcher = nullptr;
   position m_pos = position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
