@@ -70,7 +70,6 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
       return std::format("pv {}", line);
     }();
 
-
     // TODO: we currently do not print the pv line as the engine does not yet check for threefold.
     // TODO: this should be re-enabled in the future.
     std::cout << "info " << depth_string << " " << seldepth_string << " " << score_string << " "
@@ -80,7 +79,7 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
   for (m_depth = 1; m_depth < 256; ++m_depth) {
     line pv;
 
-    const score s = search(m_shared->root(), pv, m_depth, 0);
+    const score s = search(m_shared->root(), pv, -score::inf(), score::inf(), m_depth, 0);
 
     if (m_shared->stopped()) {
       break;
@@ -106,7 +105,8 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
 }
 
 template<search_controls Ctrls>
-auto searcher<Ctrls>::search(const position& pos, line& pv, i32 depth, i32 ply) -> score {
+auto searcher<Ctrls>::search(
+  const position& pos, line& pv, score alpha, score beta, i32 depth, i32 ply) -> score {
   const bool is_root = ply == 0;
 
   m_nodes += 1;
@@ -128,7 +128,7 @@ auto searcher<Ctrls>::search(const position& pos, line& pv, i32 depth, i32 ply) 
 
     const position child = pos.make_move(mv);
 
-    const score search_score = -search(child, child_pv, depth - 1, ply + 1);
+    const score search_score = -search(child, child_pv, -beta, -alpha, depth - 1, ply + 1);
 
     if (m_shared->stopped()) {
       return 0;
@@ -136,12 +136,20 @@ auto searcher<Ctrls>::search(const position& pos, line& pv, i32 depth, i32 ply) 
 
     if (search_score > best_score) {
       best_score = search_score;
+    }
+
+    if (search_score > alpha) {
+      alpha = search_score;
 
       pv.clear();
       pv.emplace_back(mv);
       for (const move pv_move : child_pv) {
         pv.emplace_back(pv_move);
       }
+    }
+
+    if (search_score >= beta) {
+      break;
     }
   }
 
