@@ -101,6 +101,14 @@ public:
     ++m_size;
   }
 
+  constexpr auto operator[](usize idx) -> T& {
+    return ref(idx);
+  }
+
+  constexpr auto operator[](usize idx) const -> const T& {
+    return ref(idx);
+  }
+
   // Iterator
   constexpr auto begin() -> T* {
     return ptr(0);

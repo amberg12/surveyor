@@ -28,4 +28,5 @@ add_executable(surveyor src/main.cpp
         src/score.hpp
         src/search_controls.hpp
         src/search.cpp
-        src/search.hpp)
+        src/search.hpp
+        src/move_picker.hpp)
