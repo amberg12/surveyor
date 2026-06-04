@@ -67,19 +67,19 @@ public:
   }
 
   // Methods
-  constexpr auto is_winning() const -> bool {
+  [[nodiscard]] constexpr auto is_winning() const -> bool {
     return m_value > max_normal_score().m_value;
   }
 
-  constexpr auto is_losing() const -> bool {
+  [[nodiscard]] constexpr auto is_losing() const -> bool {
     return m_value < min_normal_score().m_value;
   }
 
-  constexpr auto is_mate() const -> bool {
+  [[nodiscard]] constexpr auto is_mate() const -> bool {
     return is_winning() || is_losing();
   }
 
-  constexpr auto plies_to_mate() const -> i32 {
+  [[nodiscard]] constexpr auto plies_to_mate() const -> i32 {
     if (m_value < 0) {
       return m_value - min_score().m_value;
     } else {
@@ -90,6 +90,24 @@ public:
   // Overloads
   friend constexpr auto operator-(const score& s) -> score {
     return -s.m_value;
+  }
+
+  friend constexpr auto operator+(const score& lhs, const score& rhs) -> score {
+    return lhs.m_value + rhs.m_value;
+  }
+
+  friend constexpr auto operator+=(score& lhs, const score& rhs) -> score& {
+    lhs = lhs + rhs;
+    return lhs;
+  }
+
+  friend constexpr auto operator-(const score& lhs, const score& rhs) -> score {
+    return lhs.m_value - rhs.m_value;
+  }
+
+  friend constexpr auto operator-=(score& lhs, const score& rhs) -> score& {
+    lhs = lhs - rhs;
+    return lhs;
   }
 
   friend constexpr auto operator<=>(const score& lhs, const score& rhs)
