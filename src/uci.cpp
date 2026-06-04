@@ -60,6 +60,10 @@ auto uci::dispatch_command(std::string_view command, std::istringstream& argumen
     return execute_position(arguments);
   }
 
+  if (command == "go") {
+    return execute_go(arguments);
+  }
+
   return std::make_unique<uci_error_bad_cmd>(command);
 }
 
@@ -128,6 +132,17 @@ auto uci::execute_position(std::istringstream& arguments)
     const move m = move::parse(tok, m_pos);
     m_pos = m_pos.make_move(m);
   }
+
+  return std::nullopt;
+}
+
+auto uci::execute_go(std::istringstream& arguments) -> std::optional<std::unique_ptr<uci_error>> {
+  m_manager.set_position(m_pos);
+
+  search_limits sl;
+  sl.infinite = true;
+
+  m_manager.go(sl);
 
   return std::nullopt;
 }
