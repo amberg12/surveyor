@@ -70,7 +70,7 @@ public:
 private:
   auto iterative_deepening() -> void;
 
-  auto search(const position& pos, line& pv, i32 depth, i32 ply) -> score;
+  auto search(const position& pos, line& pv, score alpha, score beta, i32 depth, i32 ply) -> score;
 
   Ctrls           m_ctrls;
   search_manager* m_shared;
