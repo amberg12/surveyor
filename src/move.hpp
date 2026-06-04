@@ -68,6 +68,12 @@ public:
     return out;
   }
 
+  static constexpr auto null() -> move {
+    move out;
+    out.m_raw = 0;
+    return out;
+  }
+
   // Methods
   [[nodiscard]] constexpr auto src() const -> square {
     return square{m_raw & 0b111111};
@@ -75,6 +81,10 @@ public:
 
   [[nodiscard]] constexpr auto dst() const -> square {
     return square{m_raw >> 6 & 0b111111};
+  }
+
+  [[nodiscard]] constexpr auto has_value() const -> bool {
+    return m_raw != 0;
   }
 
   [[nodiscard]] constexpr auto is_capture() const -> bool {
@@ -91,6 +101,10 @@ public:
 
   [[nodiscard]] constexpr auto is_castle() const -> bool {
     return (m_raw & 0xE000) == 0x2000;
+  }
+
+  [[nodiscard]] constexpr auto is_noisy() const -> bool {
+    return is_capture() || flags() == promo_q;
   }
 
   [[nodiscard]] constexpr auto flags() const -> flags {

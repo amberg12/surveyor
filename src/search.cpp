@@ -20,6 +20,7 @@
 
 #include "evaluate.hpp"
 #include "move_generation.hpp"
+#include "move_picker.hpp"
 
 #include <iostream>
 #include <thread>
@@ -119,11 +120,11 @@ auto searcher<Ctrls>::search(
     return evaluate(pos);
   }
 
-  move_list moves = generate_moves(pos);
+  move_picker mp{pos};
 
   score best_score = score::none();
 
-  for (move mv : moves) {
+  for (move mv = mp.next_move(); mv.has_value(); mv = mp.next_move()) {
     line child_pv;
 
     const position child = pos.make_move(mv);
