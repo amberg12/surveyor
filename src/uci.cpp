@@ -80,7 +80,8 @@ auto uci::execute_d(std::istringstream&) -> std::optional<std::unique_ptr<uci_er
   return std::nullopt;
 }
 
-auto uci::execute_perft(std::istringstream& arguments) -> std::optional<std::unique_ptr<uci_error>> {
+auto uci::execute_perft(std::istringstream& arguments)
+  -> std::optional<std::unique_ptr<uci_error>> {
   std::string tok;
   arguments >> tok;
 
@@ -130,19 +131,64 @@ auto uci::execute_position(std::istringstream& arguments)
 
   while (arguments >> tok) {
     const move m = move::parse(tok, m_pos);
-    m_pos = m_pos.make_move(m);
+    m_pos        = m_pos.make_move(m);
   }
 
   return std::nullopt;
 }
 
 auto uci::execute_go(std::istringstream& arguments) -> std::optional<std::unique_ptr<uci_error>> {
+  std::string tok;
   m_manager.set_position(m_pos);
 
-  search_limits sl;
-  sl.infinite = true;
+  search_limits limits;
 
-  m_manager.go(sl);
+  while (arguments >> tok) {
+    if (tok == "infinite") {
+      limits.infinite = true;
+    }
+
+    if (tok == "depth") {
+      i32 depth;
+      arguments >> depth;
+      limits.depth = depth;
+    }
+
+    if (tok == "nodes") {
+      nodes n;
+      arguments >> n;
+      limits.node_limit = n;
+    }
+
+    if (tok == "wtime") {
+      u64 n;
+      arguments >> n;
+      limits.wtime = time::milliseconds{n};
+    }
+
+    if (tok == "btime") {
+      u64 n;
+      arguments >> n;
+      limits.btime = time::milliseconds{n};
+    }
+
+    if (tok == "winc") {
+      u64 n;
+      arguments >> n;
+      limits.winc = time::milliseconds{n};
+    }
+
+    if (tok == "binc") {
+      u64 n;
+      arguments >> n;
+      limits.binc = time::milliseconds{n};
+    }
+  }
+
+  while (arguments >> tok)
+    ;
+
+  m_manager.go(limits);
 
   return std::nullopt;
 }

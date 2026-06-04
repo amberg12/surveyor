@@ -51,7 +51,7 @@ public:
     const time::milliseconds safe_time  = std::max(m_time - 50ms, 0ms);
     const time::milliseconds soft_limit = safe_time / 20 + m_inc / 2;
 
-    return m_start + soft_limit > ss.current_time;
+    return ss.current_time > m_start + soft_limit;
   }
 
   auto hard_stop(const search_stats& ss) const -> bool {
@@ -59,7 +59,7 @@ public:
     const time::milliseconds safe_time  = std::max(m_time - 50ms, 0ms);
     const time::milliseconds hard_limit = safe_time / 20 + m_inc / 2;
 
-    return m_start + hard_limit > ss.current_time;
+    return ss.current_time > m_start + hard_limit;
   }
 
 private:

@@ -27,13 +27,13 @@ namespace surveyor {
 using line = static_vector<move, 512>;
 
 struct search_limits {
-  std::optional<time::milliseconds> wtime;
-  std::optional<time::milliseconds> btime;
-  std::optional<time::milliseconds> winc;
-  std::optional<time::milliseconds> binc;
-  std::optional<i32>                depth;
-  std::optional<nodes>              node_limit;
-  bool                              infinite = false;
+  std::optional<time::milliseconds> wtime      = std::nullopt;
+  std::optional<time::milliseconds> btime      = std::nullopt;
+  std::optional<time::milliseconds> winc       = std::nullopt;
+  std::optional<time::milliseconds> binc       = std::nullopt;
+  std::optional<i32>                depth      = std::nullopt;
+  std::optional<nodes>              node_limit = std::nullopt;
+  bool                              infinite   = false;
 };
 
 class search_manager;

@@ -92,8 +92,6 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
     if (m_ctrls.soft_stop(m_shared->stats())) {
       break;
     }
-
-    print_line();
   }
 
   m_shared->stop();
@@ -108,8 +106,9 @@ auto searcher<Ctrls>::search(const position& pos, line& pv, i32 depth, i32 ply) 
   const bool is_root = ply == 0;
 
   m_nodes += 1;
-  if (m_ctrls.hard_stop(m_shared->stats())) {
+  if (m_shared->stopped() || m_ctrls.hard_stop(m_shared->stats())) {
     m_shared->stop();
+    return 0;
   }
 
   if (depth <= 0) {
@@ -126,6 +125,10 @@ auto searcher<Ctrls>::search(const position& pos, line& pv, i32 depth, i32 ply) 
     const position child = pos.make_move(mv);
 
     const score search_score = -search(child, child_pv, depth - 1, ply + 1);
+
+    if (m_shared->stopped()) {
+      return 0;
+    }
 
     if (search_score > best_score) {
       best_score = search_score;
@@ -146,6 +149,8 @@ auto searcher<Ctrls>::search(const position& pos, line& pv, i32 depth, i32 ply) 
 }
 
 auto search_manager::go(search_limits limits) -> void {
+  m_stopped = false;
+
   if (limits.infinite) {
     m_searcher = std::make_unique<searcher<search_ctrls::infinite>>(this);
   } else if (limits.node_limit.has_value()) {
