@@ -37,7 +37,7 @@ auto evaluate(const position& pos) -> score {
       * (pos.ptype_count(color::white(), piece_type::queen())
          - pos.ptype_count(color::black(), piece_type::queen()));
 
-  return out;
+  return pos.stm() == color::white() ? out : -out;
 }
 
 }  // namespace surveyor

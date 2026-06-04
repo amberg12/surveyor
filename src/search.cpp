@@ -69,8 +69,11 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
       return std::format("pv {}", line);
     }();
 
-    std::println("{} {} {} {} {} {}", depth_string, seldepth_string, score_string, nodes_string,
-                 nps_string, pv_string);
+
+    // TODO: we currently do not print the pv line as the engine does not yet check for threefold.
+    // TODO: this should be re-enabled in the future.
+    std::println("info {} {} {} {} {}", depth_string, seldepth_string, score_string, nodes_string,
+                 nps_string);
   };
 
   for (m_depth = 1; m_depth < 256; ++m_depth) {

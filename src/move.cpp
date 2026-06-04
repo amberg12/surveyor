@@ -33,7 +33,7 @@ auto move::parse(std::string_view sv, const position& pos) -> move {
   }
 
   if (ptype == piece_type::king() && std::abs(src.file() - dst.file()) >= 2) {
-    if (src.file() > dst.file()) {
+    if (src.file() < dst.file()) {
       return make(src, dst, castle_hside);
     } else {
       return make(src, dst, castle_aside);

@@ -64,6 +64,10 @@ auto uci::dispatch_command(std::string_view command, std::istringstream& argumen
     return execute_go(arguments);
   }
 
+  if (command == "isready") {
+    std::println("readyok");
+  }
+
   return std::make_unique<uci_error_bad_cmd>(command);
 }
 
