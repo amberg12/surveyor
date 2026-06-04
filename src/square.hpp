@@ -71,6 +71,10 @@ struct square {
     return square{idx ^ 56};
   }
 
+  [[nodiscard]] constexpr auto relative(color stm) const -> square {
+    return stm == color::white() ? *this : mirror();
+  }
+
   [[nodiscard]] constexpr auto diag_to(square other) const -> bool {
     const int d_f = file() - other.file();
     const int d_r = rank() - other.rank();

@@ -3,7 +3,7 @@ project(surveyor)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_executable(surveyor src/main.cpp
+set(SRCS
         src/uci.cpp
         src/uci.hpp
         src/square.hpp
@@ -29,3 +29,9 @@ add_executable(surveyor src/main.cpp
         src/search.cpp
         src/search.hpp
         src/evaluation_constants.hpp)
+
+add_executable(surveyor src/main.cpp
+        ${SRCS})
+
+add_executable(surveyor_tuner src/evaluation_tuner/evaluation_tuner_main.cpp
+        ${SRCS})
