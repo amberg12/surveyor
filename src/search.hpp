@@ -108,8 +108,14 @@ public:
     return m_pos;
   }
 
+  auto wait() -> void {
+    if (m_thread.joinable()) {
+      m_thread.join();
+    }
+  }
+
 private:
-  std::atomic_bool m_stopped = false;
+  volatile std::atomic_bool m_stopped = false;
 
   std::jthread m_thread;
 

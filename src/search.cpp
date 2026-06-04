@@ -21,7 +21,7 @@
 #include "evaluate.hpp"
 #include "move_generation.hpp"
 
-#include <print>
+#include <iostream>
 #include <thread>
 
 namespace surveyor {
@@ -73,8 +73,8 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
 
     // TODO: we currently do not print the pv line as the engine does not yet check for threefold.
     // TODO: this should be re-enabled in the future.
-    std::println("info {} {} {} {} {}", depth_string, seldepth_string, score_string, nodes_string,
-                 nps_string);
+    std::cout << "info " << depth_string << " " << seldepth_string << " " << score_string << " "
+              << nodes_string << " " << nps_string << '\n';
   };
 
   for (m_depth = 1; m_depth < 256; ++m_depth) {
@@ -102,7 +102,7 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
 
   print_line();
 
-  std::println("bestmove {}", *last_pv.begin());
+  std::cout << "bestmove " << std::format("{}", *last_pv.begin()) << '\n' << std::flush;
 }
 
 template<search_controls Ctrls>
@@ -153,7 +153,7 @@ auto searcher<Ctrls>::search(const position& pos, line& pv, i32 depth, i32 ply) 
 }
 
 auto search_manager::go(search_limits limits) -> void {
-  m_thread = std::jthread([&, this] {
+  m_thread = std::jthread([limits, this] {
     m_stopped = false;
 
     if (limits.infinite) {
