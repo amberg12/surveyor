@@ -22,4 +22,10 @@ add_executable(surveyor src/main.cpp
         src/move.cpp
         src/move.hpp
         src/geometry.hpp
-        src/bitboard.hpp)
+        src/bitboard.hpp
+        src/evaluate.cpp
+        src/evaluate.hpp
+        src/score.hpp
+        src/search_controls.hpp
+        src/search.cpp
+        src/search.hpp)

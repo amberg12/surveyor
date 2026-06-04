@@ -1,0 +1,126 @@
+/*
+  Surveyor - A UCI chess engine.
+  Copyright (C) 2026 Amber Goulding
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+#include "position.hpp"
+#include "score.hpp"
+#include "search_controls.hpp"
+#include "util/static_vector.hpp"
+
+#include <thread>
+
+namespace surveyor {
+
+using line = static_vector<move, 512>;
+
+struct search_limits {
+  std::optional<time::milliseconds> wtime      = std::nullopt;
+  std::optional<time::milliseconds> btime      = std::nullopt;
+  std::optional<time::milliseconds> winc       = std::nullopt;
+  std::optional<time::milliseconds> binc       = std::nullopt;
+  std::optional<i32>                depth      = std::nullopt;
+  std::optional<nodes>              node_limit = std::nullopt;
+  bool                              infinite   = false;
+};
+
+class search_manager;
+
+class searcher_base {
+public:
+  virtual ~searcher_base()                = default;
+  virtual auto begin() -> void            = 0;
+  virtual auto get_nodes() const -> nodes = 0;
+  virtual auto get_depth() const -> i32   = 0;
+};
+
+template<search_controls Ctrls>
+class searcher : public searcher_base {
+public:
+  template<typename... CtrlArgs>
+  searcher(search_manager* shared, CtrlArgs... ctrl_args)
+      : m_ctrls(std::forward<CtrlArgs>(ctrl_args)...)
+      , m_shared(shared) {
+  }
+
+  auto begin() -> void final;
+
+  auto get_nodes() const -> nodes final {
+    return m_nodes;
+  }
+
+  auto get_depth() const -> i32 final {
+    return m_depth;
+  }
+
+private:
+  auto iterative_deepening() -> void;
+
+  auto search(const position& pos, line& pv, i32 depth, i32 ply) -> score;
+
+  Ctrls           m_ctrls;
+  search_manager* m_shared;
+  nodes           m_nodes = 0;
+  i32             m_depth = 0;
+};
+
+class search_manager {
+public:
+  auto go(search_limits limits) -> void;
+
+  auto set_position(position pos) -> void;
+
+  auto stop() -> void {
+    m_stopped = true;
+  }
+
+  [[nodiscard]] auto stats() const -> search_stats {
+    return {
+      .node_limit   = m_searcher->get_nodes(),
+      .current_time = time::clock::now(),
+      .depth        = m_searcher->get_depth(),
+    };
+  }
+
+  [[nodiscard]] auto get_nodes() const -> nodes {
+    return m_searcher->get_nodes();
+  }
+
+  [[nodiscard]] auto stopped() const -> bool {
+    return m_stopped;
+  }
+
+  [[nodiscard]] auto root() const -> position {
+    return m_pos;
+  }
+
+  auto wait() -> void {
+    if (m_thread.joinable()) {
+      m_thread.join();
+    }
+  }
+
+private:
+  volatile std::atomic_bool m_stopped = false;
+
+  std::jthread m_thread;
+
+  std::unique_ptr<searcher_base> m_searcher = nullptr;
+  position m_pos = position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+};
+
+}  // namespace surveyor

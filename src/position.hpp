@@ -182,7 +182,7 @@ public:
   }
 
   template<piece_type_list... Pts>
-  constexpr auto ptype_mask(color c, Pts... ptypes) const {
+  constexpr auto ptype_mask(color c, Pts... ptypes) const -> piece_mask {
     return m_piece_list[c].ptype_mask(ptypes...);
   }
 
@@ -202,6 +202,11 @@ public:
   template<piece_type_list... Pts>
   [[nodiscard]] constexpr auto bb(color c, Pts... ptypes) const -> bitboard {
     return color_bb(c) | ptype_bb(ptypes...);
+  }
+
+  template<piece_type_list... Pts>
+  [[nodiscard]] constexpr auto ptype_count(color c, Pts... ptypes) const -> i32 {
+    return ptype_mask(c, ptypes...).ipopcount();
   }
 
   [[nodiscard]] constexpr auto pin_at() const -> const attack_box& {
