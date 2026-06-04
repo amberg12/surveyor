@@ -28,7 +28,8 @@ set(SRCS
         src/search_controls.hpp
         src/search.cpp
         src/search.hpp
-        src/evaluation_constants.hpp)
+        src/evaluation_constants.hpp
+        src/move_picker.hpp)
 
 add_executable(surveyor src/main.cpp
         ${SRCS})
