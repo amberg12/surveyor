@@ -28,23 +28,6 @@ public:
   }
 
   auto next_move() -> move {
-    const auto next_move = [&](move_list& ml, std::array<i32, 256>& scores, usize& idx) -> move {
-      usize best_idx   = idx;
-      i32   best_score = scores[idx];
-
-      for (usize i = idx; i < ml.size(); ++i) {
-        if (scores[i] > best_score) {
-          best_idx   = i;
-          best_score = scores[i];
-        }
-      }
-
-      std::swap(ml[idx], ml[best_idx]);
-      std::swap(scores[idx], scores[best_idx]);
-
-      return ml[idx++];
-    };
-
     switch (m_phase) {
     case phase::generate_moves: {
       const move_list all_moves = generate_moves(m_pos);
@@ -57,28 +40,12 @@ public:
         }
       }
 
-      m_phase = phase::score_noisy;
-      [[fallthrough]];
-    }
-    case phase::score_noisy: {
-      for (usize i = 0; i < m_noisy_moves.size(); ++i) {
-        const move mv = m_noisy_moves[i];
-
-        const auto [victim_stm, victim_ptype] = mv.is_en_passant()
-          ? std::tuple{~m_pos.stm(), piece_type::pawn()}
-          : m_pos.piece_at(mv.dst());
-
-        const auto [attacker_stm, attacker_ptype] = m_pos.piece_at(mv.src());
-
-        m_noisy_scores[i] = victim_ptype.compressed_idx() * 10 - attacker_ptype.compressed_idx();
-      }
-
       m_phase = phase::emit_noisy;
       [[fallthrough]];
     }
     case phase::emit_noisy: {
       if (m_noisy_idx < m_noisy_moves.size()) {
-        return next_move(m_noisy_moves, m_noisy_scores, m_noisy_idx);
+        return m_noisy_moves[m_noisy_idx++];
       }
 
       m_phase = phase::emit_quiet;
@@ -86,7 +53,7 @@ public:
     }
     case phase::emit_quiet: {
       if (m_quiet_idx < m_quiet_moves.size()) {
-        return next_move(m_quiet_moves, m_quiet_scores, m_quiet_idx);
+        return m_quiet_moves[m_quiet_idx++];
       }
     } break;
     }
@@ -97,7 +64,6 @@ public:
 private:
   enum class phase {
     generate_moves,
-    score_noisy,
     emit_noisy,
     emit_quiet,
   };
@@ -106,13 +72,11 @@ private:
 
   phase m_phase = phase::generate_moves;
 
-  move_list            m_noisy_moves;
-  std::array<i32, 256> m_noisy_scores;
-  usize                m_noisy_idx = 0;
+  move_list m_noisy_moves;
+  usize     m_noisy_idx = 0;
 
-  move_list            m_quiet_moves;
-  std::array<i32, 256> m_quiet_scores;
-  usize                m_quiet_idx = 0;
+  move_list m_quiet_moves;
+  usize     m_quiet_idx = 0;
 };
 
 }  // namespace surveyor
