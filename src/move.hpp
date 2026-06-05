@@ -111,6 +111,9 @@ public:
     return static_cast<enum flags>(m_raw & 0xF000);
   }
 
+  // Overloads
+  friend constexpr auto operator==(const move&, const move&) -> bool = default;
+
   // String
   [[nodiscard]] static auto parse(std::string_view sv, const position& pos) -> move;
 

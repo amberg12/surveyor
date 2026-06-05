@@ -137,6 +137,10 @@ public:
     return m_rook_info[stm].h_side;
   }
 
+  [[nodiscard]] constexpr auto key() const -> z_key {
+    return m_key;
+  }
+
   [[nodiscard]] constexpr auto checkers() const -> usize {
     const piece_mask king_attackers = attackers_to(~m_stm, king_square(m_stm));
     return king_attackers.popcount();

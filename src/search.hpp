@@ -20,6 +20,7 @@
 #include "position.hpp"
 #include "score.hpp"
 #include "search_controls.hpp"
+#include "transposition_table.hpp"
 #include "util/static_vector.hpp"
 
 #include <thread>
@@ -82,6 +83,10 @@ class search_manager {
 public:
   auto go(search_limits limits) -> void;
 
+  auto new_game() -> void {
+    m_tt.clear();
+  }
+
   auto set_position(position pos) -> void;
 
   auto stop() -> void {
@@ -108,6 +113,10 @@ public:
     return m_pos;
   }
 
+  [[nodiscard]] auto tt() -> tt::transposition_table& {
+    return m_tt;
+  }
+
   auto wait() -> void {
     if (m_thread.joinable()) {
       m_thread.join();
@@ -118,6 +127,8 @@ private:
   volatile std::atomic_bool m_stopped = false;
 
   std::jthread m_thread;
+
+  tt::transposition_table m_tt{16};
 
   std::unique_ptr<searcher_base> m_searcher = nullptr;
   position m_pos = position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");

@@ -76,6 +76,10 @@ auto uci::dispatch_command(std::string_view command, std::istringstream& argumen
     return execute_bench(arguments);
   }
 
+  if (command == "ucinewgame") {
+    m_manager.new_game();
+  }
+
   return std::make_unique<uci_error_bad_cmd>(command);
 }
 
@@ -281,6 +285,8 @@ auto uci::execute_bench(std::istringstream&) -> std::optional<std::unique_ptr<uc
     m_manager.wait();
 
     n += m_manager.get_nodes();
+
+    m_manager.new_game();
   }
 
   const time::milliseconds elapsed = time::cast<time::milliseconds>(time::clock::now() - start);

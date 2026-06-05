@@ -1,5 +1,5 @@
 /*
-  Shellac - A UCI chess engine.
+  Surveyor - A UCI chess engine.
   Copyright (C) 2026 Amber Goulding
 
   This program is free software: you can redistribute it and/or modify
@@ -80,6 +80,5 @@ constexpr std::array<z_key, 8> en_passant = [] {
 constexpr z_key stm = 0b1111111111111111111111111111111111111111111111111111111111111111;
 
 }  // namespace zobrist
-
 
 }  // namespace surveyor

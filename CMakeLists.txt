@@ -31,10 +31,13 @@ set(SRCS
         src/evaluation_constants.hpp
         src/move_picker.hpp
         src/zobrist.hpp
-        src/util/multi_array.hpp)
+        src/util/multi_array.hpp
+        src/transposition_table.cpp
+        src/transposition_table.hpp)
 
 add_executable(surveyor src/main.cpp
-        ${SRCS})
+        ${SRCS}
+        src/node_type.hpp)
 
 add_executable(surveyor_tuner src/evaluation_tuner/evaluation_tuner_main.cpp
         ${SRCS})
