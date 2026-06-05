@@ -161,8 +161,57 @@ auto position::parse(std::string_view sv) -> position {
 
   out.lazy_generate_attacks();
   out.lazy_generate_pinner();
+  out.lazy_generate_key();
 
   return out;
+}
+
+auto position::lazy_generate_key() -> void {
+  m_key = 0;
+
+  for (const piece_id id : m_piece_list[color::white()].mask) {
+    const usize ptype_idx = ptype_of(color::white(), id).compressed_idx();
+    const usize sq_idx = sq_of(color::white(), id).idx;
+    m_key ^= zobrist::pieces[0][ptype_idx][sq_idx];
+  }
+
+  for (const piece_id id : m_piece_list[color::black()].mask) {
+    const usize ptype_idx = ptype_of(color::black(), id).compressed_idx();
+    const usize sq_idx = sq_of(color::black(), id).idx;
+    m_key ^= zobrist::pieces[1][ptype_idx][sq_idx];
+  }
+
+  if (m_ep.has_value()) {
+    m_key ^= zobrist::en_passant[m_ep.file()];
+  }
+
+  const usize castling_idx = [&] {
+    usize out = 0;
+
+    if (m_rook_info[color::white()].a_side.has_value()) {
+      out |= 0b0001;
+    }
+
+    if (m_rook_info[color::white()].h_side.has_value()) {
+      out |= 0b0010;
+    }
+
+    if (m_rook_info[color::black()].a_side.has_value()) {
+      out |= 0b0100;
+    }
+
+    if (m_rook_info[color::black()].h_side.has_value()) {
+      out |= 0b1000;
+    }
+
+    return out;
+  }();
+
+  m_key ^= zobrist::castling[castling_idx];
+
+  if (m_stm == color::white()) {
+    m_key ^= zobrist::stm;
+  }
 }
 
 auto position::lazy_generate_pinner() -> void {

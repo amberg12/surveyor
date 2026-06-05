@@ -22,6 +22,7 @@
 #include "move.hpp"
 #include "piece.hpp"
 #include "square.hpp"
+#include "zobrist.hpp"
 
 #include <array>
 #include <optional>
@@ -361,6 +362,8 @@ private:
     }
 
     m_stm = ~m_stm;
+
+    lazy_generate_key();
   }
 
   auto move_piece(square src, square dst) -> void {
@@ -396,6 +399,8 @@ private:
     m_piece_bb[to].set(at);
   }
 
+  auto lazy_generate_key() -> void;
+
   auto lazy_generate_pinner() -> void;
 
   auto lazy_generate_attacks() -> void;
@@ -416,6 +421,7 @@ private:
   attack_box m_pin_aware_attack_table;
   bitboard   m_pinned;
 
+  z_key                  m_key = 0;
   color                  m_stm = color::white();
   square                 m_ep  = square::invalid();
   i32                    m_move_rule{0};

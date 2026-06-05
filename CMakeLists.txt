@@ -29,7 +29,9 @@ set(SRCS
         src/search.cpp
         src/search.hpp
         src/evaluation_constants.hpp
-        src/move_picker.hpp)
+        src/move_picker.hpp
+        src/zobrist.hpp
+        src/util/multi_array.hpp)
 
 add_executable(surveyor src/main.cpp
         ${SRCS})
