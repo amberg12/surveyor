@@ -30,10 +30,6 @@ public:
 
   auto next_move() -> move {
     const auto next_move = [&](move_list& ml, std::array<i32, 256>& scores, usize& idx) -> move {
-      while (ml[idx] == m_tt_move) {
-        ++idx;
-      }
-
       usize best_idx   = idx;
       i32   best_score = scores[idx];
 
@@ -47,7 +43,7 @@ public:
       std::swap(ml[idx], ml[best_idx]);
       std::swap(scores[idx], scores[best_idx]);
 
-      return idx < ml.size() ? ml[idx++] : move::null();
+      return ml[idx++];
     };
 
     switch (m_phase) {
@@ -97,7 +93,11 @@ public:
     }
     case phase::emit_noisy: {
       if (m_noisy_idx < m_noisy_moves.size()) {
-        const move nm = next_move(m_noisy_moves, m_noisy_scores, m_noisy_idx);
+        move nm = move::null();
+
+        do {
+          nm = next_move(m_noisy_moves, m_noisy_scores, m_noisy_idx);
+        } while (nm == m_tt_move && m_noisy_idx < m_noisy_moves.size());
 
         if (nm.has_value()) {
           return nm;
@@ -109,7 +109,11 @@ public:
     }
     case phase::emit_quiet: {
       if (m_quiet_idx < m_quiet_moves.size()) {
-        const move nm = next_move(m_quiet_moves, m_quiet_scores, m_quiet_idx);
+        move nm = move::null();
+
+        do {
+          nm = next_move(m_quiet_moves, m_quiet_scores, m_quiet_idx);
+        } while (nm == m_tt_move && m_quiet_idx < m_quiet_moves.size());
 
         if (nm.has_value()) {
           return nm;
