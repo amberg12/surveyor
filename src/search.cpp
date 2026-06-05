@@ -57,9 +57,10 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
 
       return std::format("score cp {}", last_score);
     }();
-    const std::string nodes_string = std::format("nodes {}", last_nodes);
-    const std::string nps_string   = std::format("nps {}", time::nps(last_nodes, elapsed));
-    const std::string pv_string    = [&] {
+    const std::string nodes_string    = std::format("nodes {}", last_nodes);
+    const std::string nps_string      = std::format("nps {}", time::nps(last_nodes, elapsed));
+    const std::string hashfull_string = std::format("hashfull {}", m_shared->tt().hashfull());
+    const std::string pv_string       = [&] {
       std::string line;
 
       for (const move& mv : last_pv) {
@@ -74,7 +75,7 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
     // TODO: we currently do not print the pv line as the engine does not yet check for threefold.
     // TODO: this should be re-enabled in the future.
     std::cout << "info " << depth_string << " " << seldepth_string << " " << score_string << " "
-              << nodes_string << " " << nps_string << '\n';
+              << nodes_string << " " << nps_string << " " << hashfull_string << '\n';
   };
 
   for (m_depth = 1; m_depth < 256; ++m_depth) {
@@ -120,9 +121,15 @@ auto searcher<Ctrls>::search(
     return evaluate(pos);
   }
 
-  move_picker mp{pos};
+  std::optional<tt::entry> entry = m_shared->tt().probe(pos);
 
-  score best_score = score::none();
+  const move tt_move = entry.has_value() ? entry->mv : move::null();
+
+  move_picker mp{pos, tt_move};
+
+  score     best_score       = score::none();
+  move      best_move        = move::null();
+  node_type actual_node_type = node_type::all();
 
   for (move mv = mp.next_move(); mv.has_value(); mv = mp.next_move()) {
     line child_pv;
@@ -140,7 +147,9 @@ auto searcher<Ctrls>::search(
     }
 
     if (search_score > alpha) {
-      alpha = search_score;
+      actual_node_type = node_type::pv();
+      alpha            = search_score;
+      best_move        = mv;
 
       pv.clear();
       pv.emplace_back(mv);
@@ -150,9 +159,12 @@ auto searcher<Ctrls>::search(
     }
 
     if (search_score >= beta) {
+      actual_node_type = node_type::cut();
       break;
     }
   }
+
+  m_shared->tt().write(pos, best_move, actual_node_type);
 
   if (best_score == score::none()) {
     return pos.checkers() ? score::mated_in(ply) : 0;
@@ -162,6 +174,8 @@ auto searcher<Ctrls>::search(
 }
 
 auto search_manager::go(search_limits limits) -> void {
+  m_tt.age();
+
   m_thread = std::jthread([limits, this] {
     m_stopped = false;
 

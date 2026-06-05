@@ -23,8 +23,9 @@ namespace surveyor {
 
 class move_picker {
 public:
-  explicit move_picker(const position& pos)
-      : m_pos(pos) {
+  move_picker(const position& pos, move tt_move)
+      : m_pos(pos)
+      , m_tt_move(tt_move) {
   }
 
   auto next_move() -> move {
@@ -55,9 +56,23 @@ public:
         } else {
           m_quiet_moves.emplace_back(mv);
         }
+
+        if (mv == m_tt_move) {
+          m_tt_move_valid = true;
+        }
       }
 
+      m_phase = phase::emit_tt;
+      [[fallthrough]];
+    }
+    case phase::emit_tt: {
       m_phase = phase::score_noisy;
+
+      if (m_tt_move_valid) {
+        return m_tt_move;
+      }
+
+      m_tt_move = move::null();
       [[fallthrough]];
     }
     case phase::score_noisy: {
@@ -78,7 +93,15 @@ public:
     }
     case phase::emit_noisy: {
       if (m_noisy_idx < m_noisy_moves.size()) {
-        return next_move(m_noisy_moves, m_noisy_scores, m_noisy_idx);
+        move nm = move::null();
+
+        do {
+          nm = next_move(m_noisy_moves, m_noisy_scores, m_noisy_idx);
+        } while (nm == m_tt_move && m_noisy_idx < m_noisy_moves.size());
+
+        if (nm.has_value()) {
+          return nm;
+        }
       }
 
       m_phase = phase::emit_quiet;
@@ -86,7 +109,15 @@ public:
     }
     case phase::emit_quiet: {
       if (m_quiet_idx < m_quiet_moves.size()) {
-        return next_move(m_quiet_moves, m_quiet_scores, m_quiet_idx);
+        move nm = move::null();
+
+        do {
+          nm = next_move(m_quiet_moves, m_quiet_scores, m_quiet_idx);
+        } while (nm == m_tt_move && m_quiet_idx < m_quiet_moves.size());
+
+        if (nm.has_value()) {
+          return nm;
+        }
       }
     } break;
     }
@@ -97,12 +128,15 @@ public:
 private:
   enum class phase {
     generate_moves,
+    emit_tt,
     score_noisy,
     emit_noisy,
     emit_quiet,
   };
 
   const position& m_pos;
+  move            m_tt_move       = move::null();
+  bool            m_tt_move_valid = false;
 
   phase m_phase = phase::generate_moves;
 
