@@ -59,6 +59,7 @@ private:
   auto execute_go(std::istringstream& arguments) -> std::optional<std::unique_ptr<uci_error>>;
   auto execute_stop(std::istringstream&) -> std::optional<std::unique_ptr<uci_error>>;
   auto execute_bench(std::istringstream&) -> std::optional<std::unique_ptr<uci_error>>;
+  auto execute_setoption(std::istringstream& arguments) -> std::optional<std::unique_ptr<uci_error>>;
 
   search_manager m_manager{};
   position m_pos = position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");

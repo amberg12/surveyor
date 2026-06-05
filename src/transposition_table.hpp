@@ -33,7 +33,7 @@ constexpr u8 max_age = 0b00011111;
 
 struct entry {
   z_key key{};
-  move  mv    = move::null();
+  move  mv   = move::null();
   u8    info = 0;
 
   constexpr auto node() const -> node_type {
@@ -82,13 +82,15 @@ struct entry {
 
 class transposition_table {
 public:
+  // Constructors
   explicit transposition_table(usize mb)
-      : m_clusters(new entry[mb_to_cluster_count(mb)])
+      : m_clusters(std::make_unique<entry[]>(mb_to_cluster_count(mb)))
       , m_cluster_count(mb_to_cluster_count(mb)) {
   }
 
+  // Methods
   auto clear() -> void {
-    std::memset(m_clusters, 0, sizeof(*m_clusters) * m_cluster_count);
+    std::memset(m_clusters.get(), 0, sizeof(entry) * m_cluster_count);
   }
 
   auto age() -> void {
@@ -97,10 +99,10 @@ public:
     }
   }
 
-  auto write(const position& pos, move mv, node_type nt) -> void;
-  auto probe(const position& pos) const -> std::optional<entry>;
+  auto               write(const position& pos, move mv, node_type nt) -> void;
+  [[nodiscard]] auto probe(const position& pos) const -> std::optional<entry>;
 
-  auto hashfull() const -> usize {
+  [[nodiscard]] auto hashfull() const -> usize {
     usize out = 0;
     for (usize i = 0; i < 1000; ++i) {
       const entry& e = m_clusters[i];
@@ -115,13 +117,13 @@ public:
 
 private:
   static constexpr auto mb_to_cluster_count(usize mb) -> usize {
-    return mb * 1024 * 1024 / sizeof(*m_clusters);
+    return mb * 1024 * 1024 / sizeof(entry);
   }
 
   u8 m_age = 0;
 
-  entry* m_clusters      = nullptr;
-  usize  m_cluster_count = 0;
+  std::unique_ptr<entry[]> m_clusters      = nullptr;
+  usize                    m_cluster_count = 0;
 };
 
 }  // namespace surveyor::tt

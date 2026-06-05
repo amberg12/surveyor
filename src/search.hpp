@@ -83,6 +83,10 @@ class search_manager {
 public:
   auto go(search_limits limits) -> void;
 
+  auto resize_tt(usize mb) -> void {
+    m_tt = tt::transposition_table(mb);
+  }
+
   auto new_game() -> void {
     m_tt.clear();
   }

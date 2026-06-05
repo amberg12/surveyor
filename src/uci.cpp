@@ -80,6 +80,10 @@ auto uci::dispatch_command(std::string_view command, std::istringstream& argumen
     m_manager.new_game();
   }
 
+  if (command == "setoption") {
+    return execute_setoption(arguments);
+  }
+
   return std::make_unique<uci_error_bad_cmd>(command);
 }
 
@@ -87,6 +91,7 @@ auto uci::execute_uci(std::istringstream& arguments) -> std::optional<std::uniqu
   (void)arguments;
   std::println("id name Surveyor");
   std::println("id author Amber Goulding");
+  std::println("option name Hash type spin default 16 min 1 max 16384");
   std::println("uciok");
   return std::nullopt;
 }
@@ -292,6 +297,21 @@ auto uci::execute_bench(std::istringstream&) -> std::optional<std::unique_ptr<uc
   const time::milliseconds elapsed = time::cast<time::milliseconds>(time::clock::now() - start);
 
   std::println("{} nodes {} nps", n, time::nps(n, elapsed));
+
+  return std::nullopt;
+}
+
+auto uci::execute_setoption(std::istringstream& arguments)
+  -> std::optional<std::unique_ptr<uci_error>> {
+  std::string tok;
+  arguments >> tok; // name
+  arguments >> tok;
+
+  if (tok == "Hash") {
+    arguments >> tok; // value
+    arguments >> tok;
+    m_manager.resize_tt(*parse_number<usize>(tok));
+  }
 
   return std::nullopt;
 }
