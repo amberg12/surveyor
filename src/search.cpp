@@ -35,7 +35,7 @@ auto searcher<Ctrls>::begin() -> void {
 template<search_controls Ctrls>
 auto searcher<Ctrls>::iterative_deepening() -> void {
   auto [root, repetitions] = m_shared->root();
-  m_repetition_table = repetitions;
+  m_repetition_table       = repetitions;
 
   line  last_pv;
   score last_score = score::none();
@@ -78,7 +78,8 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
     // TODO: we currently do not print the pv line as the engine does not yet check for threefold.
     // TODO: this should be re-enabled in the future.
     std::cout << "info " << depth_string << " " << seldepth_string << " " << score_string << " "
-              << nodes_string << " " << nps_string << " " << hashfull_string << '\n';
+              << nodes_string << " " << nps_string << " " << hashfull_string << " " << pv_string
+              << '\n';
   };
 
   for (m_depth = 1; m_depth < 256; ++m_depth) {
@@ -192,6 +193,10 @@ auto searcher<Ctrls>::quiesce(const position& pos, line& pv, score alpha, score 
     return 0;
   }
 
+  if (m_repetition_table.is_repetition(pos)) {
+    return 0;
+  }
+
   score best_score = pos.checkers() >= 1 ? score::mated_in(ply) : evaluate(pos);
   alpha            = std::max(best_score, alpha);
 
@@ -245,7 +250,7 @@ auto searcher<Ctrls>::quiesce(const position& pos, line& pv, score alpha, score 
 
 template<search_controls Ctrls>
 auto searcher<Ctrls>::make_move(const position& pos, move mv, i32 ply) -> position {
-  m_seldepth = std::max(m_seldepth, ply + 1);
+  m_seldepth     = std::max(m_seldepth, ply + 1);
   position child = pos.make_move(mv);
   m_repetition_table.push(child);
   return child;
