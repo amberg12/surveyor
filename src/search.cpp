@@ -34,6 +34,9 @@ auto searcher<Ctrls>::begin() -> void {
 
 template<search_controls Ctrls>
 auto searcher<Ctrls>::iterative_deepening() -> void {
+  auto [root, repetitions] = m_shared->root();
+  m_repetition_table = repetitions;
+
   line  last_pv;
   score last_score = score::none();
   i32   last_depth{};
@@ -81,7 +84,7 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
   for (m_depth = 1; m_depth < 256; ++m_depth) {
     line pv;
 
-    const score s = search(m_shared->root(), pv, -score::inf(), score::inf(), m_depth, 0);
+    const score s = search(root, pv, -score::inf(), score::inf(), m_depth, 0);
 
     if (m_shared->stopped()) {
       break;
@@ -117,6 +120,12 @@ auto searcher<Ctrls>::search(
     return 0;
   }
 
+  if (!is_root) {
+    if (m_repetition_table.is_repetition(pos)) {
+      return 0;
+    }
+  }
+
   if (depth <= 0) {
     return quiesce(pos, pv, alpha, beta, ply);
   }
@@ -137,6 +146,8 @@ auto searcher<Ctrls>::search(
     const position child = make_move(pos, mv, ply);
 
     const score search_score = -search(child, child_pv, -beta, -alpha, depth - 1, ply + 1);
+
+    unmake_move();
 
     if (m_shared->stopped()) {
       return 0;
@@ -182,7 +193,7 @@ auto searcher<Ctrls>::quiesce(const position& pos, line& pv, score alpha, score 
   }
 
   score best_score = pos.checkers() >= 1 ? score::mated_in(ply) : evaluate(pos);
-  alpha = std::max(best_score, alpha);
+  alpha            = std::max(best_score, alpha);
 
   if (best_score >= beta) {
     return best_score;
@@ -202,6 +213,8 @@ auto searcher<Ctrls>::quiesce(const position& pos, line& pv, score alpha, score 
     const position child = make_move(pos, mv, ply);
 
     const score search_score = -quiesce(child, child_pv, -beta, -alpha, ply + 1);
+
+    unmake_move();
 
     if (m_shared->stopped()) {
       return 0;
@@ -233,7 +246,14 @@ auto searcher<Ctrls>::quiesce(const position& pos, line& pv, score alpha, score 
 template<search_controls Ctrls>
 auto searcher<Ctrls>::make_move(const position& pos, move mv, i32 ply) -> position {
   m_seldepth = std::max(m_seldepth, ply + 1);
-  return pos.make_move(mv);
+  position child = pos.make_move(mv);
+  m_repetition_table.push(child);
+  return child;
+}
+
+template<search_controls Ctrls>
+auto searcher<Ctrls>::unmake_move() -> void {
+  m_repetition_table.pop();
 }
 
 auto search_manager::go(search_limits limits) -> void {
@@ -261,8 +281,9 @@ auto search_manager::go(search_limits limits) -> void {
   });
 }
 
-auto search_manager::set_position(position pos) -> void {
-  m_pos = pos;
+auto search_manager::set_position(position pos, repetition_table repetitions) -> void {
+  m_pos         = pos;
+  m_repetitions = repetitions;
 }
 
 template class searcher<search_ctrls::clock>;

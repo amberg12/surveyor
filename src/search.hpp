@@ -18,6 +18,7 @@
 
 #pragma once
 #include "position.hpp"
+#include "repetition_table.hpp"
 #include "score.hpp"
 #include "search_controls.hpp"
 #include "transposition_table.hpp"
@@ -77,11 +78,15 @@ private:
 
   auto make_move(const position& pos, move mv, i32 ply) -> position;
 
+  auto unmake_move() -> void;
+
   Ctrls           m_ctrls;
   search_manager* m_shared;
   nodes           m_nodes    = 0;
   i32             m_depth    = 0;
   i32             m_seldepth = 0;
+
+  repetition_table m_repetition_table = {};
 };
 
 class search_manager {
@@ -96,7 +101,7 @@ public:
     m_tt.clear();
   }
 
-  auto set_position(position pos) -> void;
+  auto set_position(position pos, repetition_table) -> void;
 
   auto stop() -> void {
     m_stopped = true;
@@ -118,8 +123,8 @@ public:
     return m_stopped;
   }
 
-  [[nodiscard]] auto root() const -> position {
-    return m_pos;
+  [[nodiscard]] auto root() const -> std::tuple<position, repetition_table> {
+    return {m_pos, m_repetitions};
   }
 
   [[nodiscard]] auto tt() -> tt::transposition_table& {
@@ -141,6 +146,7 @@ private:
 
   std::unique_ptr<searcher_base> m_searcher = nullptr;
   position m_pos = position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+  repetition_table m_repetitions = {};
 };
 
 }  // namespace surveyor
