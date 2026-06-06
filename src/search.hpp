@@ -73,6 +73,8 @@ private:
 
   auto search(const position& pos, line& pv, score alpha, score beta, i32 depth, i32 ply) -> score;
 
+  auto quiesce(const position& pos, line& pv, score alpha, score beta, i32 ply) -> score;
+
   Ctrls           m_ctrls;
   search_manager* m_shared;
   nodes           m_nodes = 0;

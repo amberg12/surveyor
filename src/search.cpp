@@ -118,7 +118,7 @@ auto searcher<Ctrls>::search(
   }
 
   if (depth <= 0) {
-    return evaluate(pos);
+    return quiesce(pos, pv, alpha, beta, ply + 1);
   }
 
   std::optional<tt::entry> entry = m_shared->tt().probe(pos);
@@ -168,6 +168,62 @@ auto searcher<Ctrls>::search(
 
   if (best_score == score::none()) {
     return pos.checkers() ? score::mated_in(ply) : 0;
+  }
+
+  return best_score;
+}
+template<search_controls Ctrls>
+auto searcher<Ctrls>::quiesce(const position& pos, line& pv, score alpha, score beta, i32 ply)
+  -> score {
+  m_nodes += 1;
+  if (m_shared->stopped() || m_ctrls.hard_stop(m_shared->stats())) {
+    m_shared->stop();
+    return 0;
+  }
+
+  score best_score = pos.checkers() >= 1 ? score::mated_in(ply) : evaluate(pos);
+
+  if (best_score >= beta) {
+    return best_score;
+  }
+
+  move_picker mp{pos, move::null()};
+
+  if (pos.checkers() == 0) {
+    mp.skip_quiet();
+  }
+
+  move best_move = move::null();
+
+  for (move mv = mp.next_move(); mv.has_value(); mv = mp.next_move()) {
+    line child_pv;
+
+    const position child = pos.make_move(mv);
+
+    const score search_score = -quiesce(child, child_pv, -beta, -alpha, ply + 1);
+
+    if (m_shared->stopped()) {
+      return 0;
+    }
+
+    if (search_score > best_score) {
+      best_score = search_score;
+    }
+
+    if (search_score > alpha) {
+      alpha     = search_score;
+      best_move = mv;
+
+      pv.clear();
+      pv.emplace_back(mv);
+      for (const move pv_move : child_pv) {
+        pv.emplace_back(pv_move);
+      }
+    }
+
+    if (search_score >= beta) {
+      break;
+    }
   }
 
   return best_score;
