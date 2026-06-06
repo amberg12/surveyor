@@ -33,7 +33,8 @@ set(SRCS
         src/zobrist.hpp
         src/util/multi_array.hpp
         src/transposition_table.cpp
-        src/transposition_table.hpp)
+        src/transposition_table.hpp
+        src/repetition_table.hpp)
 
 add_executable(surveyor src/main.cpp
         ${SRCS}

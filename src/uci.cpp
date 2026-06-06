@@ -147,12 +147,15 @@ auto uci::execute_position(std::istringstream& arguments)
     return out;
   }();
 
-  m_pos = position::parse(fen);
+  m_repetitions = {};
+  m_pos         = position::parse(fen);
+  m_repetitions.push(m_pos);
   arguments >> tok /* moves */;
 
   while (arguments >> tok) {
     const move m = move::parse(tok, m_pos);
     m_pos        = m_pos.make_move(m);
+    m_repetitions.push(m_pos);
   }
 
   return std::nullopt;
@@ -160,7 +163,7 @@ auto uci::execute_position(std::istringstream& arguments)
 
 auto uci::execute_go(std::istringstream& arguments) -> std::optional<std::unique_ptr<uci_error>> {
   std::string tok;
-  m_manager.set_position(m_pos);
+  m_manager.set_position(m_pos, m_repetitions);
 
   search_limits limits;
 
@@ -283,8 +286,11 @@ auto uci::execute_bench(std::istringstream&) -> std::optional<std::unique_ptr<uc
   const time::time_point start = time::clock::now();
 
   for (const std::string& fen : fens) {
-    m_pos = position::parse(fen);
-    m_manager.set_position(m_pos);
+    m_pos                        = position::parse(fen);
+    const repetition_table dummy = {};
+
+    m_manager.set_position(m_pos, dummy);
+
     m_manager.go(sl);
 
     m_manager.wait();
@@ -304,11 +310,11 @@ auto uci::execute_bench(std::istringstream&) -> std::optional<std::unique_ptr<uc
 auto uci::execute_setoption(std::istringstream& arguments)
   -> std::optional<std::unique_ptr<uci_error>> {
   std::string tok;
-  arguments >> tok; // name
+  arguments >> tok;  // name
   arguments >> tok;
 
   if (tok == "Hash") {
-    arguments >> tok; // value
+    arguments >> tok;  // value
     arguments >> tok;
     m_manager.resize_tt(*parse_number<usize>(tok));
   }
