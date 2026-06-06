@@ -28,6 +28,10 @@ public:
       , m_tt_move(tt_move) {
   }
 
+  auto skip_quiet() -> void {
+    m_skip_quiet = true;
+  }
+
   auto next_move() -> move {
     const auto next_move = [&](move_list& ml, std::array<i32, 256>& scores, usize& idx) -> move {
       usize best_idx   = idx;
@@ -104,7 +108,12 @@ public:
         }
       }
 
-      m_phase = phase::emit_quiet;
+      if (m_skip_quiet) {
+        m_phase = phase::exit;
+        goto exit;
+      } else {
+        m_phase = phase::emit_quiet;
+      }
       [[fallthrough]];
     }
     case phase::emit_quiet: {
@@ -119,6 +128,12 @@ public:
           return nm;
         }
       }
+
+      m_phase = phase::exit;
+      [[fallthrough]];
+    }
+    case phase::exit: {
+exit:
     } break;
     }
 
@@ -132,7 +147,10 @@ private:
     score_noisy,
     emit_noisy,
     emit_quiet,
+    exit,
   };
+
+  bool m_skip_quiet = false;
 
   const position& m_pos;
   move            m_tt_move       = move::null();
@@ -141,11 +159,11 @@ private:
   phase m_phase = phase::generate_moves;
 
   move_list            m_noisy_moves;
-  std::array<i32, 256> m_noisy_scores;
+  std::array<i32, 256> m_noisy_scores{};
   usize                m_noisy_idx = 0;
 
   move_list            m_quiet_moves;
-  std::array<i32, 256> m_quiet_scores;
+  std::array<i32, 256> m_quiet_scores{};
   usize                m_quiet_idx = 0;
 };
 

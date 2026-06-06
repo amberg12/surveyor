@@ -90,7 +90,7 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
     last_pv       = pv;
     last_score    = s;
     last_depth    = m_depth;
-    last_seldepth = m_depth;
+    last_seldepth = m_seldepth;
     last_nodes    = m_shared->get_nodes();
     elapsed       = time::cast<time::milliseconds>(time::clock::now() - start_time);
 
@@ -118,7 +118,7 @@ auto searcher<Ctrls>::search(
   }
 
   if (depth <= 0) {
-    return evaluate(pos);
+    return quiesce(pos, pv, alpha, beta, ply);
   }
 
   std::optional<tt::entry> entry = m_shared->tt().probe(pos);
@@ -134,7 +134,7 @@ auto searcher<Ctrls>::search(
   for (move mv = mp.next_move(); mv.has_value(); mv = mp.next_move()) {
     line child_pv;
 
-    const position child = pos.make_move(mv);
+    const position child = make_move(pos, mv, ply);
 
     const score search_score = -search(child, child_pv, -beta, -alpha, depth - 1, ply + 1);
 
@@ -171,6 +171,69 @@ auto searcher<Ctrls>::search(
   }
 
   return best_score;
+}
+template<search_controls Ctrls>
+auto searcher<Ctrls>::quiesce(const position& pos, line& pv, score alpha, score beta, i32 ply)
+  -> score {
+  m_nodes += 1;
+  if (m_shared->stopped() || m_ctrls.hard_stop(m_shared->stats())) {
+    m_shared->stop();
+    return 0;
+  }
+
+  score best_score = pos.checkers() >= 1 ? score::mated_in(ply) : evaluate(pos);
+  alpha = std::max(best_score, alpha);
+
+  if (best_score >= beta) {
+    return best_score;
+  }
+
+  move_picker mp{pos, move::null()};
+
+  if (pos.checkers() == 0) {
+    mp.skip_quiet();
+  }
+
+  move best_move = move::null();
+
+  for (move mv = mp.next_move(); mv.has_value(); mv = mp.next_move()) {
+    line child_pv;
+
+    const position child = make_move(pos, mv, ply);
+
+    const score search_score = -quiesce(child, child_pv, -beta, -alpha, ply + 1);
+
+    if (m_shared->stopped()) {
+      return 0;
+    }
+
+    if (search_score > best_score) {
+      best_score = search_score;
+    }
+
+    if (search_score > alpha) {
+      alpha     = search_score;
+      best_move = mv;
+
+      pv.clear();
+      pv.emplace_back(mv);
+      for (const move pv_move : child_pv) {
+        pv.emplace_back(pv_move);
+      }
+    }
+
+    if (search_score >= beta) {
+      break;
+    }
+  }
+
+  return best_score;
+}
+
+template<search_controls Ctrls>
+auto searcher<Ctrls>::make_move(const position& pos, move mv, i32 ply) -> position {
+  m_seldepth = std::max(m_seldepth, ply + 1);
+  return pos.make_move(mv);
 }
 
 auto search_manager::go(search_limits limits) -> void {
