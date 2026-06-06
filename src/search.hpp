@@ -75,10 +75,13 @@ private:
 
   auto quiesce(const position& pos, line& pv, score alpha, score beta, i32 ply) -> score;
 
+  auto make_move(const position& pos, move mv, i32 ply) -> position;
+
   Ctrls           m_ctrls;
   search_manager* m_shared;
-  nodes           m_nodes = 0;
-  i32             m_depth = 0;
+  nodes           m_nodes    = 0;
+  i32             m_depth    = 0;
+  i32             m_seldepth = 0;
 };
 
 class search_manager {

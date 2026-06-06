@@ -129,7 +129,7 @@ public:
         }
       }
 
-      m_phase = phase::emit_noisy;
+      m_phase = phase::exit;
       [[fallthrough]];
     }
     case phase::exit: {
