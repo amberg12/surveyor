@@ -44,6 +44,11 @@ public:
     return color{black_bits};
   }
 
+  // Methods
+  constexpr auto idx() const -> usize {
+    return *this == white() ? 0 : 1;
+  }
+
   // Overloads
   friend constexpr auto operator==(const color&, const color&) -> bool = default;
 

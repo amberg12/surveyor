@@ -75,8 +75,6 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
       return std::format("pv {}", line);
     }();
 
-    // TODO: we currently do not print the pv line as the engine does not yet check for threefold.
-    // TODO: this should be re-enabled in the future.
     std::cout << "info " << depth_string << " " << seldepth_string << " " << score_string << " "
               << nodes_string << " " << nps_string << " " << hashfull_string << " " << pv_string
               << '\n';
@@ -135,11 +133,13 @@ auto searcher<Ctrls>::search(
 
   const move tt_move = entry.has_value() ? entry->mv : move::null();
 
-  move_picker mp{pos, tt_move};
+  move_picker mp{pos, tt_move, m_sd.piece_to};
 
   score     best_score       = score::none();
   move      best_move        = move::null();
   node_type actual_node_type = node_type::all();
+
+  move_list fail_low_quiets{};
 
   for (move mv = mp.next_move(); mv.has_value(); mv = mp.next_move()) {
     line child_pv;
@@ -172,6 +172,9 @@ auto searcher<Ctrls>::search(
 
     if (search_score >= beta) {
       actual_node_type = node_type::cut();
+
+      m_sd.piece_to.write(pos, mv, bonus(depth));
+
       break;
     }
   }
@@ -204,7 +207,7 @@ auto searcher<Ctrls>::quiesce(const position& pos, line& pv, score alpha, score 
     return best_score;
   }
 
-  move_picker mp{pos, move::null()};
+  move_picker mp{pos, move::null(), m_sd.piece_to};
 
   if (pos.checkers() == 0) {
     mp.skip_quiet();
@@ -268,18 +271,20 @@ auto search_manager::go(search_limits limits) -> void {
     m_stopped = false;
 
     if (limits.infinite) {
-      m_searcher = std::make_unique<searcher<search_ctrls::infinite>>(this);
+      m_searcher = std::make_unique<searcher<search_ctrls::infinite>>(this, m_sd);
     } else if (limits.node_limit.has_value()) {
       m_searcher =
-        std::make_unique<searcher<search_ctrls::hard_nodes>>(this, limits.node_limit.value());
+        std::make_unique<searcher<search_ctrls::hard_nodes>>(this, m_sd, limits.node_limit.value());
     } else if (limits.depth.has_value()) {
-      m_searcher = std::make_unique<searcher<search_ctrls::depth>>(this, limits.depth.value());
+      m_searcher =
+        std::make_unique<searcher<search_ctrls::depth>>(this, m_sd, limits.depth.value());
     } else {
       const time::milliseconds t =
         m_pos.stm() == color::white() ? limits.wtime.value() : limits.btime.value();
       const time::milliseconds i =
         m_pos.stm() == color::white() ? limits.winc.value() : limits.binc.value();
-      m_searcher = std::make_unique<searcher<search_ctrls::clock>>(this, time::clock::now(), t, i);
+      m_searcher =
+        std::make_unique<searcher<search_ctrls::clock>>(this, m_sd, time::clock::now(), t, i);
     }
 
     m_searcher->begin();
