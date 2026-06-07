@@ -107,6 +107,7 @@ public:
 
   auto new_game() -> void {
     m_tt.clear();
+    m_sd = {};
   }
 
   auto set_position(position pos, repetition_table) -> void;
