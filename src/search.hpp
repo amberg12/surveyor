@@ -17,6 +17,7 @@
  */
 
 #pragma once
+#include "history.hpp"
 #include "position.hpp"
 #include "repetition_table.hpp"
 #include "score.hpp"
@@ -42,6 +43,10 @@ struct search_limits {
 
 class search_manager;
 
+struct search_data {
+  piece_to_history piece_to;
+};
+
 class searcher_base {
 public:
   virtual ~searcher_base()                = default;
@@ -54,9 +59,10 @@ template<search_controls Ctrls>
 class searcher : public searcher_base {
 public:
   template<typename... CtrlArgs>
-  searcher(search_manager* shared, CtrlArgs... ctrl_args)
+  searcher(search_manager* shared, search_data& sd, CtrlArgs... ctrl_args)
       : m_ctrls(std::forward<CtrlArgs>(ctrl_args)...)
-      , m_shared(shared) {
+      , m_shared(shared)
+      , m_sd(sd) {
   }
 
   auto begin() -> void final;
@@ -87,6 +93,8 @@ private:
   i32             m_seldepth = 0;
 
   repetition_table m_repetition_table = {};
+
+  search_data& m_sd;
 };
 
 class search_manager {
@@ -99,6 +107,7 @@ public:
 
   auto new_game() -> void {
     m_tt.clear();
+    m_sd = {};
   }
 
   auto set_position(position pos, repetition_table) -> void;
@@ -141,6 +150,7 @@ private:
   volatile std::atomic_bool m_stopped = false;
 
   std::jthread m_thread;
+  search_data  m_sd;
 
   tt::transposition_table m_tt{16};
 
