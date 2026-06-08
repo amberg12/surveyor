@@ -34,6 +34,8 @@ auto searcher<Ctrls>::begin() -> void {
 
 template<search_controls Ctrls>
 auto searcher<Ctrls>::iterative_deepening() -> void {
+  m_sd = {}; // TODO: remove when maluses are done
+
   auto [root, repetitions] = m_shared->root();
   m_repetition_table       = repetitions;
 

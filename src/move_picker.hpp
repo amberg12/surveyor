@@ -123,6 +123,7 @@ public:
       }
 
       m_phase = phase::emit_quiet;
+      [[fallthrough]];
     }
     case phase::emit_quiet: {
       if (m_quiet_idx < m_quiet_moves.size()) {
