@@ -198,7 +198,7 @@ auto tune(std::vector<dataset_entry>& ds,
       const position pos = position::parse(e.fen);
       trace_eval(pos, xi);
 
-      f64 phase = 1;
+      f64 phase = static_cast<f64>(pos.phase()) / static_cast<f64>(position::max_phase);
 
       f64 dot_mg = 0, dot_eg = 0;
 
@@ -231,7 +231,7 @@ auto tune(std::vector<dataset_entry>& ds,
 
       for (i32 i = 0; i < static_cast<usize>(feature_idx::nb); ++i) {
         grad_mg[i] += diff * phase * xi.w[i];
-        grad_eg[i] += diff * (phase - 1.0) * xi.w[i];
+        grad_eg[i] += diff * (1.0 - phase) * xi.w[i];
       }
 
       ++batch_pos;
@@ -284,6 +284,9 @@ auto tune(std::vector<dataset_entry>& ds,
 
     std::println("Delta sum epoch {}: {:4f} Delta mean {:4f} Magnitude {:4f} Mean {:4f}", epoch,
                  delta_sum, d_mean, magnitude, magnitude / static_cast<usize>(feature_idx::nb));
+
+    w_mg_prev = w_mg;
+    w_eg_prev = w_eg;
   }
 
   auto scale = [](f64 n) {
@@ -292,14 +295,17 @@ auto tune(std::vector<dataset_entry>& ds,
 
   auto print_feature = [&](std::string name, feature_idx feature) {
     const f64 mg = w_mg[static_cast<usize>(feature)];
-    std::println("constexpr score {} = {}", name, scale(mg));
+    const f64 eg = w_eg[static_cast<usize>(feature)];
+    std::println("constexpr std::pair<score, score> {} = {{{}, {}}}", name, scale(mg), scale(eg));
   };
 
   auto print_psqt = [&](std::string name, feature_idx feature, usize nb) {
-    std::println("constexpr std::array<score, {}> {} = {{", nb, name);
+    std::println("constexpr std::array<std::pair<score, score>, {}> {} = {{", nb, name);
     for (i32 i = 0; i < nb; ++i) {
       const f64 mg = w_mg[static_cast<usize>(feature) + i];
-      std::print("{}, ", scale(mg));
+      const f64 eg = w_eg[static_cast<usize>(feature) + i];
+
+      std::print("{{{}, {}}}, ", scale(mg), scale(eg));
 
       if (i != 0 && i % 8 == 0) {
         std::print("//\n");
@@ -336,5 +342,5 @@ auto main(int argc, char** argv) -> int {
 
   std::vector<dataset_entry> dataset = load_dataset(dataset_path);
 
-  tune(dataset, 10, 0.001, 0.9, 0.999, 1e-7, 0.004, 6432);
+  tune(dataset, 30, 0.001, 0.9, 0.999, 1e-7, 0.004, 6432);
 }

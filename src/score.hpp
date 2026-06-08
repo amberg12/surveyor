@@ -110,6 +110,10 @@ public:
     return lhs;
   }
 
+  friend constexpr auto operator*(score lhs, std::integral auto rhs) {
+    return lhs.m_value * rhs;
+  }
+
   friend constexpr auto operator<=>(const score& lhs, const score& rhs)
     -> std::strong_ordering = default;
 
