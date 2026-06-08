@@ -34,12 +34,12 @@ set(SRCS
         src/util/multi_array.hpp
         src/transposition_table.cpp
         src/transposition_table.hpp
-        src/repetition_table.hpp)
-
-add_executable(surveyor src/main.cpp
-        ${SRCS}
+        src/repetition_table.hpp
         src/node_type.hpp
         src/history.hpp)
+
+add_executable(surveyor src/main.cpp
+        ${SRCS})
 
 add_executable(surveyor_tuner src/evaluation_tuner/evaluation_tuner_main.cpp
         ${SRCS})

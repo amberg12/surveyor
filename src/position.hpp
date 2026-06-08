@@ -109,6 +109,9 @@ struct rook_info {
 
 class position {
 public:
+  // Constants
+  static constexpr i32 max_phase = 24;
+
   // Constructors
   static auto parse(std::string_view sv) -> position;
 
@@ -212,6 +215,15 @@ public:
   template<piece_type_list... Pts>
   [[nodiscard]] constexpr auto ptype_count(color c, Pts... ptypes) const -> i32 {
     return ptype_mask(c, ptypes...).ipopcount();
+  }
+
+  [[nodiscard]] constexpr auto phase() const -> i32 {
+    const auto stm_phase = [&](color stm) {
+      return ptype_count(stm, piece_type::knight()) + ptype_count(stm, piece_type::bishop())
+        + ptype_count(stm, piece_type::rook()) * 2 + ptype_count(stm, piece_type::queen()) * 4;
+    };
+
+    return stm_phase(color::white()) + stm_phase(color::black());
   }
 
   [[nodiscard]] constexpr auto pin_at() const -> const attack_box& {
