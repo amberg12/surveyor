@@ -19,6 +19,7 @@
 #include "uci.hpp"
 
 #include "move_generation.hpp"
+#include "move_picker.hpp"
 #include "util/parse.hpp"
 
 #include <iostream>
@@ -26,6 +27,39 @@
 #include <sstream>
 
 namespace surveyor {
+
+namespace {
+template<bool is_root = true>
+constexpr auto perft(const position& pos, i32 depth) -> u64 {
+  static piece_to_history piece_to = {};
+
+  if (depth <= 0) {
+    return 1;
+  }
+
+  const move_list ml = generate_moves(pos);
+  move_picker     mp{pos, ml[0], piece_to};
+
+  u64 nodes = 0;
+
+  for (const move mv : ml) {
+    const position child       = pos.make_move(mv);
+    const u64      child_nodes = perft<false>(child, depth - 1);
+
+    if constexpr (is_root) {
+      std::println("{}: {}", mv, child_nodes);
+    }
+
+    nodes += child_nodes;
+  }
+
+  if constexpr (is_root) {
+    std::println("nodes: {}", nodes);
+  }
+
+  return nodes;
+}
+}  // namespace
 
 auto uci::loop() -> void {
   std::string line, cmd;
@@ -106,21 +140,10 @@ auto uci::execute_perft(std::istringstream& arguments)
   std::string tok;
   arguments >> tok;
 
-  perft_settings ps = perft_settings::standard;
-
-  if (tok == "bulk") {
-    ps = perft_settings::bulk;
-    arguments >> tok;
-  }
-
   const auto depth = parse_number<i32>(tok);
 
   if (depth.has_value()) {
-    if (ps == perft_settings::standard) {
-      perft<perft_settings::standard, true>(m_pos, *depth);
-    } else {
-      perft<perft_settings::bulk, true>(m_pos, *depth);
-    }
+    perft<true>(m_pos, *depth);
   }
 
   return std::nullopt;
