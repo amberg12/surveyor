@@ -78,9 +78,9 @@ public:
 private:
   auto iterative_deepening() -> void;
 
-  auto search(const position& pos, line& pv, score alpha, score beta, i32 depth, i32 ply) -> score;
+  auto search(node_type expected, const position& pos, line& pv, score alpha, score beta, i32 depth, i32 ply) -> score;
 
-  auto quiesce(const position& pos, line& pv, score alpha, score beta, i32 ply) -> score;
+  auto quiesce(node_type expected, const position& pos, line& pv, score alpha, score beta, i32 ply) -> score;
 
   auto make_move(const position& pos, move mv, i32 ply) -> position;
 

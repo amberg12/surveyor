@@ -34,7 +34,7 @@ auto searcher<Ctrls>::begin() -> void {
 
 template<search_controls Ctrls>
 auto searcher<Ctrls>::iterative_deepening() -> void {
-  m_sd = {}; // TODO: remove when maluses are done
+  m_sd = {};  // TODO: remove when maluses are done
 
   auto [root, repetitions] = m_shared->root();
   m_repetition_table       = repetitions;
@@ -85,7 +85,7 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
   for (m_depth = 1; m_depth < 256; ++m_depth) {
     line pv;
 
-    const score s = search(root, pv, -score::inf(), score::inf(), m_depth, 0);
+    const score s = search(node_type::pv(), root, pv, -score::inf(), score::inf(), m_depth, 0);
 
     if (m_shared->stopped()) {
       break;
@@ -112,7 +112,8 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
 
 template<search_controls Ctrls>
 auto searcher<Ctrls>::search(
-  const position& pos, line& pv, score alpha, score beta, i32 depth, i32 ply) -> score {
+  node_type expected, const position& pos, line& pv, score alpha, score beta, i32 depth, i32 ply)
+  -> score {
   const bool is_root = ply == 0;
 
   m_nodes += 1;
@@ -129,26 +130,26 @@ auto searcher<Ctrls>::search(
 
 
   if (depth <= 0) {
-    return quiesce(pos, pv, alpha, beta, ply);
+    return quiesce(expected, pos, pv, alpha, beta, ply);
   }
 
   std::optional<tt::entry> entry = m_shared->tt().probe(pos, ply);
 
-  if (!is_root && entry.has_value() && entry->depth >= depth && [&] {
-    if (entry->node() == node_type::pv()) {
-      return true;
-    }
+  if (expected != node_type::pv() && entry.has_value() && entry->depth >= depth && [&] {
+        if (entry->node() == node_type::pv()) {
+          return true;
+        }
 
-    if (entry->node() == node_type::all()) {
-      return entry->sc <= alpha;
-    }
+        if (entry->node() == node_type::all()) {
+          return entry->sc <= alpha;
+        }
 
-    if (entry->node() == node_type::cut()) {
-      return entry->sc >= beta;
-    }
+        if (entry->node() == node_type::cut()) {
+          return entry->sc >= beta;
+        }
 
-    return false;
-  }()) {
+        return false;
+      }()) {
     return entry->sc;
   }
 
@@ -159,15 +160,25 @@ auto searcher<Ctrls>::search(
   score     best_score       = score::none();
   move      best_move        = move::null();
   node_type actual_node_type = node_type::all();
+  usize     move_idx         = 0;
 
   move_list fail_low_quiets{};
 
   for (move mv = mp.next_move(); mv.has_value(); mv = mp.next_move()) {
     line child_pv;
 
+    ++move_idx;
     const position child = make_move(pos, mv, ply);
 
-    const score search_score = -search(child, child_pv, -beta, -alpha, depth - 1, ply + 1);
+    score search_score;
+    if (expected != node_type::pv() || (expected == node_type::pv() && move_idx > 1)) {
+      search_score =
+        -search(expected.next(), child, child_pv, -alpha - 1, -alpha, depth - 1, ply + 1);
+    }
+
+    if (expected == node_type::pv() && (move_idx == 1 || search_score > alpha)) {
+      search_score = -search(node_type::pv(), child, child_pv, -beta, -alpha, depth - 1, ply + 1);
+    }
 
     unmake_move();
 
@@ -209,8 +220,8 @@ auto searcher<Ctrls>::search(
   return best_score;
 }
 template<search_controls Ctrls>
-auto searcher<Ctrls>::quiesce(const position& pos, line& pv, score alpha, score beta, i32 ply)
-  -> score {
+auto searcher<Ctrls>::quiesce(
+  node_type expected, const position& pos, line& pv, score alpha, score beta, i32 ply) -> score {
   m_nodes += 1;
   if (m_shared->stopped() || m_ctrls.hard_stop(m_shared->stats())) {
     m_shared->stop();
@@ -241,7 +252,7 @@ auto searcher<Ctrls>::quiesce(const position& pos, line& pv, score alpha, score 
 
     const position child = make_move(pos, mv, ply);
 
-    const score search_score = -quiesce(child, child_pv, -beta, -alpha, ply + 1);
+    const score search_score = -quiesce(expected, child, child_pv, -beta, -alpha, ply + 1);
 
     unmake_move();
 
