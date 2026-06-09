@@ -25,22 +25,44 @@ namespace {
 constexpr auto idx(u64 key, u64 cluster_count) -> u64 {
   return static_cast<u64>(static_cast<u128>(key) * static_cast<u128>(cluster_count) >> 64);
 }
-}
+}  // namespace
 
-auto transposition_table::write(const position& pos, move mv, node_type nt) -> void {
+auto transposition_table::write(
+  const position& pos, i32 ply, move mv, score sc, i32 depth, node_type nt) -> void {
   entry& cluster = m_clusters[idx(pos.key(), m_cluster_count)];
 
   const entry new_entry = {
     .key = pos.key(),
-    .mv = mv,
-    .info = entry::construct_info(nt, m_age),
+    .sc =
+      [&] {
+        if (sc.is_winning()) {
+          return sc + ply;
+        }
+
+        if (sc.is_losing()) {
+          return sc - ply;
+        }
+
+        return sc;
+      }(),
+    .mv    = mv,
+    .info  = entry::construct_info(nt, m_age),
+    .depth = static_cast<u8>(depth),
   };
 
   cluster = new_entry;
 }
 
-auto transposition_table::probe(const position& pos) const -> std::optional<entry> {
-  const entry& e = m_clusters[idx(pos.key(), m_cluster_count)];
+auto transposition_table::probe(const position& pos, i32 ply) const -> std::optional<entry> {
+  entry e = m_clusters[idx(pos.key(), m_cluster_count)];
+
+  if (e.sc.is_winning()) {
+    e.sc -= ply;
+  }
+
+  if (e.sc.is_losing()) {
+    e.sc += ply;
+  }
 
   if (e.key == pos.key() && e.node().has_value()) {
     return e;
@@ -49,4 +71,4 @@ auto transposition_table::probe(const position& pos) const -> std::optional<entr
   return std::nullopt;
 }
 
-}  // namespace surveyor
+}  // namespace surveyor::tt

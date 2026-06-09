@@ -127,11 +127,30 @@ auto searcher<Ctrls>::search(
     }
   }
 
+
   if (depth <= 0) {
     return quiesce(pos, pv, alpha, beta, ply);
   }
 
-  std::optional<tt::entry> entry = m_shared->tt().probe(pos);
+  std::optional<tt::entry> entry = m_shared->tt().probe(pos, ply);
+
+  if (!is_root && entry.has_value() && entry->depth >= depth && [&] {
+    if (entry->node() == node_type::pv()) {
+      return true;
+    }
+
+    if (entry->node() == node_type::all()) {
+      return entry->sc <= alpha;
+    }
+
+    if (entry->node() == node_type::cut()) {
+      return entry->sc >= beta;
+    }
+
+    return false;
+  }()) {
+    return entry->sc;
+  }
 
   const move tt_move = entry.has_value() ? entry->mv : move::null();
 
@@ -181,11 +200,11 @@ auto searcher<Ctrls>::search(
     }
   }
 
-  m_shared->tt().write(pos, best_move, actual_node_type);
-
   if (best_score == score::none()) {
-    return pos.checkers() ? score::mated_in(ply) : 0;
+    best_score = pos.checkers() ? score::mated_in(ply) : 0;
   }
+
+  m_shared->tt().write(pos, ply, best_move, best_score, depth, actual_node_type);
 
   return best_score;
 }

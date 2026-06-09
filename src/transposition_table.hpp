@@ -19,6 +19,7 @@
 #pragma once
 #include "move.hpp"
 #include "node_type.hpp"
+#include "score.hpp"
 #include "zobrist.hpp"
 
 #include <utility>
@@ -33,10 +34,12 @@ constexpr u8 max_age = 0b00011111;
 
 struct entry {
   z_key key{};
-  move  mv   = move::null();
-  u8    info = 0;
+  score sc    = score::none();
+  move  mv    = move::null();
+  u8    info  = 0;
+  u8    depth = 0;
 
-  constexpr auto node() const -> node_type {
+  [[nodiscard]] constexpr auto node() const -> node_type {
     switch (info & 0b11000000) {
     case 0b00000000:
       return node_type::none();
@@ -51,7 +54,7 @@ struct entry {
     }
   }
 
-  constexpr auto age() const -> u8 {
+  [[nodiscard]] constexpr auto age() const -> u8 {
     return info & 0b00011111;
   }
 
@@ -99,8 +102,8 @@ public:
     }
   }
 
-  auto               write(const position& pos, move mv, node_type nt) -> void;
-  [[nodiscard]] auto probe(const position& pos) const -> std::optional<entry>;
+  auto write(const position& pos, i32 ply, move mv, score sc, i32 depth, node_type nt) -> void;
+  [[nodiscard]] auto probe(const position& pos, i32 ply) const -> std::optional<entry>;
 
   [[nodiscard]] auto hashfull() const -> usize {
     usize out = 0;
