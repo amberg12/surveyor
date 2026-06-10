@@ -129,6 +129,7 @@ public:
     out.m_ep     = square::invalid();
     out.lazy_generate_attacks();
     out.lazy_generate_pinner();
+    out.lazy_generate_key();
     return out;
   }
 
