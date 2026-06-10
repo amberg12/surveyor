@@ -177,7 +177,8 @@ auto searcher<Ctrls>::search(
       }
 
       if (null_score >= beta) {
-        return beta;
+        // We want to do fail soft, but we also cannot trust mate scores from nmp.
+        return null_score.is_mate() ? beta : null_score;
       }
     }
   }
