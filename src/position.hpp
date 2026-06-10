@@ -123,6 +123,15 @@ public:
     return out;
   }
 
+  [[nodiscard]] auto make_null_move() const -> position {
+    position out = *this;
+    out.m_stm    = ~m_stm;
+    out.m_ep     = square::invalid();
+    out.lazy_generate_attacks();
+    out.lazy_generate_pinner();
+    return out;
+  }
+
   // Methods
   [[nodiscard]] constexpr auto stm() const -> color {
     return m_stm;

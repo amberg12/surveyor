@@ -161,6 +161,24 @@ auto searcher<Ctrls>::search(
     if (static_eval - 128 * depth >= beta && depth <= 6) {
       return static_eval;
     }
+
+    // Null move pruning.
+    if (m_nmp_ply > ply + 1 && depth >= 3) {
+      const position null_child = make_null_move(pos, ply);
+      
+      auto prev_nmp_ply = m_nmp_ply;
+      m_nmp_ply = ply;
+
+      const i32 r = 4;
+
+      const score null_score = -search(node_type::all(), null_child, pv, -beta, -beta + 1, depth - r, ply + 1);
+
+      m_nmp_ply = prev_nmp_ply;
+
+      if (null_score >= beta) {
+        return null_score.is_mate() ? beta : null_score;
+      }
+    }
   }
 
   const move tt_move = entry.has_value() ? entry->mv : move::null();
@@ -296,7 +314,15 @@ auto searcher<Ctrls>::quiesce(
 template<search_controls Ctrls>
 auto searcher<Ctrls>::make_move(const position& pos, move mv, i32 ply) -> position {
   m_seldepth     = std::max(m_seldepth, ply + 1);
-  position child = pos.make_move(mv);
+  const position child = pos.make_move(mv);
+  m_repetition_table.push(child);
+  return child;
+}
+
+template<search_controls Ctrls>
+auto searcher<Ctrls>::make_null_move(const position& pos, i32 ply) -> position {
+  m_seldepth = std::max(m_seldepth, ply + 1);
+  const position child = pos.make_null_move();
   m_repetition_table.push(child);
   return child;
 }

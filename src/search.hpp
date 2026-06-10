@@ -78,19 +78,25 @@ public:
 private:
   auto iterative_deepening() -> void;
 
-  auto search(node_type expected, const position& pos, line& pv, score alpha, score beta, i32 depth, i32 ply) -> score;
+  auto search(
+    node_type expected, const position& pos, line& pv, score alpha, score beta, i32 depth, i32 ply)
+    -> score;
 
-  auto quiesce(node_type expected, const position& pos, line& pv, score alpha, score beta, i32 ply) -> score;
+  auto quiesce(node_type expected, const position& pos, line& pv, score alpha, score beta, i32 ply)
+    -> score;
 
   auto make_move(const position& pos, move mv, i32 ply) -> position;
 
+  auto make_null_move(const position& pos, i32 ply) -> position;
+
   auto unmake_move() -> void;
 
-  Ctrls           m_ctrls;
-  search_manager* m_shared;
-  nodes           m_nodes    = 0;
-  i32             m_depth    = 0;
-  i32             m_seldepth = 0;
+  Ctrls              m_ctrls;
+  search_manager*    m_shared;
+  nodes              m_nodes    = 0;
+  i32                m_depth    = 0;
+  i32                m_seldepth = 0;
+  std::optional<i32> m_nmp_ply  = std::nullopt;
 
   repetition_table m_repetition_table = {};
 
