@@ -163,7 +163,7 @@ auto searcher<Ctrls>::search(
     }
 
     // Null move pruning.
-    if (m_nmp_ply > ply + 1 && depth >= 3) {
+    if ((!m_nmp_ply.has_value() || m_nmp_ply > ply + 1) && depth >= 3) {
       const position null_child = make_null_move(pos, ply);
       
       auto prev_nmp_ply = m_nmp_ply;
@@ -173,10 +173,11 @@ auto searcher<Ctrls>::search(
 
       const score null_score = -search(node_type::all(), null_child, pv, -beta, -beta + 1, depth - r, ply + 1);
 
+      unmake_move();
       m_nmp_ply = prev_nmp_ply;
 
       if (null_score >= beta) {
-        return null_score.is_mate() ? beta : null_score;
+        return beta;
       }
     }
   }
