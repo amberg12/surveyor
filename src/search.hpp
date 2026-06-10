@@ -96,7 +96,6 @@ private:
   nodes              m_nodes    = 0;
   i32                m_depth    = 0;
   i32                m_seldepth = 0;
-  std::optional<i32> m_nmp_ply  = std::nullopt;
 
   repetition_table m_repetition_table = {};
 
