@@ -153,6 +153,16 @@ auto searcher<Ctrls>::search(
     return entry->sc;
   }
 
+  const score static_eval = evaluate(pos);
+
+  // whole-node pruning is not valid in pv nodes or when in check.
+  if (expected != node_type::pv() && !pos.checkers()) {
+    // Reverse futility pruning.
+    if (static_eval - 128 * depth >= beta && depth <= 6) {
+      return static_eval;
+    }
+  }
+
   const move tt_move = entry.has_value() ? entry->mv : move::null();
 
   move_picker mp{pos, tt_move, m_sd.piece_to};
