@@ -43,6 +43,22 @@ public:
     return *this != node_type::none();
   }
 
+  [[nodiscard]] constexpr auto next() const -> node_type {
+    if (*this == pv()) {
+      return cut();
+    }
+
+    if (*this == cut()) {
+      return all();
+    }
+
+    if (*this == all()) {
+      return cut();
+    }
+
+    return none();
+  }
+
   // Overloads
   friend constexpr auto operator==(const node_type& lhs, const node_type& rhs) -> bool = default;
 
