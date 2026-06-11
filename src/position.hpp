@@ -119,7 +119,7 @@ public:
     position out = *this;
     out.do_move(mv);
     out.lazy_generate_attacks();
-    out.lazy_generate_pinner();
+    out.m_pin_cache_updated = false;
     return out;
   }
 
@@ -128,8 +128,8 @@ public:
     out.m_stm    = ~m_stm;
     out.m_ep     = square::invalid();
     out.lazy_generate_attacks();
-    out.lazy_generate_pinner();
     out.lazy_generate_key();
+    out.m_pin_cache_updated = false;
     return out;
   }
 
@@ -237,10 +237,18 @@ public:
   }
 
   [[nodiscard]] constexpr auto pin_at() const -> const attack_box& {
+    if (!m_pin_cache_updated) {
+      lazy_generate_pinner();
+    }
+
     return m_pin_aware_attack_table;
   }
 
   [[nodiscard]] constexpr auto pinned(square sq) const -> bool {
+    if (!m_pin_cache_updated) {
+      lazy_generate_pinner();
+    }
+
     return m_pinned.has_value(sq);
   }
 
@@ -427,7 +435,7 @@ private:
 
   auto lazy_generate_key() -> void;
 
-  auto lazy_generate_pinner() -> void;
+  auto lazy_generate_pinner() const -> void;
 
   auto lazy_generate_attacks() -> void;
 
@@ -444,8 +452,9 @@ private:
   color_array<bitboard> m_color_bb;
   piece_array<bitboard> m_piece_bb;
 
-  attack_box m_pin_aware_attack_table;
-  bitboard   m_pinned;
+  mutable attack_box m_pin_aware_attack_table;
+  mutable bitboard   m_pinned;
+  mutable bool       m_pin_cache_updated = false;
 
   z_key                  m_key = 0;
   color                  m_stm = color::white();

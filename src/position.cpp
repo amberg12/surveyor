@@ -214,7 +214,7 @@ auto position::lazy_generate_key() -> void {
   }
 }
 
-auto position::lazy_generate_pinner() -> void {
+auto position::lazy_generate_pinner() const -> void {
   m_pin_aware_attack_table = m_attack_box[m_stm];
   m_pinned                 = {};
 
@@ -241,6 +241,8 @@ auto position::lazy_generate_pinner() -> void {
     const bitboard ray_incl = bitboard::ray_inclusive(king_sq, to);
 
     m_pin_aware_attack_table.remove_attacker(pinned_id, ~ray_incl);
+
+    m_pin_cache_updated = true;
   };
 
   for (const piece_id id : ptype_mask(~stm, piece_type::bishop(), piece_type::queen())) {
