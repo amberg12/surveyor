@@ -214,7 +214,7 @@ auto position::lazy_generate_key() -> void {
   }
 }
 
-auto position::lazy_generate_pinner() -> void {
+auto position::lazy_generate_pinner() const -> void {
   m_pin_aware_attack_table = m_attack_box[m_stm];
   m_pinned                 = {};
 
@@ -262,6 +262,7 @@ auto position::lazy_generate_pinner() -> void {
 
     handle_pin(sq);
   }
+  m_pin_cache_updated = true;
 }
 
 auto position::lazy_generate_attacks() -> void {
