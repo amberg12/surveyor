@@ -235,7 +235,9 @@ auto searcher<Ctrls>::search(
     if (search_score >= beta) {
       actual_node_type = node_type::cut();
 
-      m_sd.piece_to.write(pos, mv, bonus(depth));
+      if (!mv.is_noisy()) {
+        m_sd.piece_to.write(pos, mv, bonus(depth));
+      }
 
       break;
     }
