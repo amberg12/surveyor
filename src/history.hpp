@@ -37,7 +37,7 @@ constexpr auto gravity(i16& value, i32 bonus) {
 }  // namespace history_detail
 
 constexpr auto bonus(i32 depth) -> i32 {
-  return std::clamp(320 * depth - 400, 0, 1280);
+  return std::clamp(320 * depth - 400, 0, 2400);
 }
 
 class piece_to_history {
