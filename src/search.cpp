@@ -88,7 +88,7 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
     score s;
     score alpha = -score::inf();
     score beta  = score::inf();
-    score delta = 25;
+    score delta = 100;
 
     if (m_depth >= 5) {
       alpha = last_score - delta;
