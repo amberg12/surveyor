@@ -85,7 +85,31 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
   for (m_depth = 1; m_depth < 256; ++m_depth) {
     line pv;
 
-    const score s = search(node_type::pv(), root, pv, -score::inf(), score::inf(), m_depth, 0);
+    score s;
+    score alpha = -score::inf();
+    score beta  = score::inf();
+    score delta = 25;
+
+    if (m_depth >= 5) {
+      alpha = last_score - delta;
+      beta  = last_score + delta;
+    }
+
+    while (true) {
+      s = search(node_type::pv(), root, pv, alpha, beta, m_depth, 0);
+
+      if (s <= alpha) {
+        alpha = -score::inf();
+      } else if (s >= beta) {
+        beta = score::inf();
+      } else {
+        break;
+      }
+
+      if (m_shared->stopped()) {
+        break;
+      }
+    }
 
     if (m_shared->stopped()) {
       break;
