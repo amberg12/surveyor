@@ -40,6 +40,10 @@ constexpr auto bonus(i32 depth) -> i32 {
   return std::clamp(320 * depth - 400, 0, 2400);
 }
 
+constexpr auto malus(i32 depth) -> i32 {
+  return std::clamp(240 * depth - 400, 0, 1200);
+}
+
 class piece_to_history {
 public:
   auto read(const position& pos, move m) -> i16 {
