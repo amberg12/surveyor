@@ -41,7 +41,7 @@ constexpr auto bonus(i32 depth) -> i32 {
 }
 
 constexpr auto malus(i32 depth) -> i32 {
-  return std::clamp(240 * depth - 400, 0, 1200);
+  return -std::clamp(240 * depth - 400, 0, 1200);
 }
 
 class piece_to_history {

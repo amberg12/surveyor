@@ -261,7 +261,7 @@ auto searcher<Ctrls>::search(
         m_sd.piece_to.write(pos, mv, bonus(depth));
 
         for (const move fail_low : fail_low_quiets) {
-          m_sd.piece_to.write(pos, mv, malus(depth));
+          m_sd.piece_to.write(pos, fail_low, malus(depth));
         }
       }
 
