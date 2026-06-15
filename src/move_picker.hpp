@@ -23,7 +23,7 @@ namespace surveyor {
 
 class move_picker {
 public:
-  move_picker(const position& pos, move tt_move, piece_to_history piece_to)
+  move_picker(const position& pos, move tt_move, piece_to_history& piece_to)
       : m_pos(pos)
       , m_tt_move(tt_move)
       , m_piece_to(piece_to) {
