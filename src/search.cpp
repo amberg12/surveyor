@@ -21,6 +21,7 @@
 #include "evaluate.hpp"
 #include "move_generation.hpp"
 #include "move_picker.hpp"
+#include "util/math.hpp"
 
 #include <iostream>
 #include <thread>
@@ -223,13 +224,31 @@ auto searcher<Ctrls>::search(
     const position child = make_move(pos, mv, ply);
 
     score search_score;
-    if (expected != node_type::pv() || (expected == node_type::pv() && move_idx > 1)) {
-      search_score =
-        -search(expected.next(), child, child_pv, -alpha - 1, -alpha, depth - 1, ply + 1);
-    }
 
+    const i32 new_depth = depth - 1;
+
+    // Late move reductions
+    if (depth >= 3 && move_idx > 3) {
+      i32 r = 2048 + log2(depth) * log2(move_idx) * 256;
+
+      const i32 lmr_depth = std::clamp(new_depth - r / 1024, 0, new_depth);
+
+      search_score =
+        -search(expected.next(), child, child_pv, -alpha - 1, -alpha, lmr_depth, ply + 1);
+
+      if (search_score > alpha && lmr_depth < new_depth) {
+        search_score =
+                -search(expected.next(), child, child_pv, -alpha - 1, -alpha, new_depth, ply + 1);
+      }
+    }
+    // PV search
+    else if (expected != node_type::pv() || (expected == node_type::pv() && move_idx > 1)) {
+      search_score =
+        -search(expected.next(), child, child_pv, -alpha - 1, -alpha, new_depth, ply + 1);
+    }
+    // Full Window Search
     if (expected == node_type::pv() && (move_idx == 1 || search_score > alpha)) {
-      search_score = -search(node_type::pv(), child, child_pv, -beta, -alpha, depth - 1, ply + 1);
+      search_score = -search(node_type::pv(), child, child_pv, -beta, -alpha, new_depth, ply + 1);
     }
 
     unmake_move();
