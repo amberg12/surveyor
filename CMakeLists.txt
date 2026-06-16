@@ -39,7 +39,8 @@ set(SRCS
         src/history.hpp)
 
 add_executable(surveyor src/main.cpp
-        ${SRCS})
+        ${SRCS}
+        src/util/math.hpp)
 
 add_executable(surveyor_tuner src/evaluation_tuner/evaluation_tuner_main.cpp
         ${SRCS})
