@@ -218,6 +218,14 @@ auto searcher<Ctrls>::search(
   move_list fail_low_quiets{};
 
   for (move mv = mp.next_move(); mv.has_value(); mv = mp.next_move()) {
+    if (!best_score.is_losing() && !is_root && !pos.checkers()) {
+      // Late move pruning
+      if (!mv.is_noisy() && move_idx > 5 + depth * depth) {
+        mp.skip_quiet();
+        continue;
+      }
+    }
+
     line child_pv;
 
     ++move_idx;
