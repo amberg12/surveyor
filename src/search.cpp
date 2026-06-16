@@ -34,8 +34,6 @@ auto searcher<Ctrls>::begin() -> void {
 
 template<search_controls Ctrls>
 auto searcher<Ctrls>::iterative_deepening() -> void {
-  m_sd = {};  // TODO: remove when maluses are done
-
   auto [root, repetitions] = m_shared->root();
   m_repetition_table       = repetitions;
 
@@ -261,9 +259,19 @@ auto searcher<Ctrls>::search(
 
       if (!mv.is_noisy()) {
         m_sd.piece_to.write(pos, mv, bonus(depth));
+
+        for (const move fail_low : fail_low_quiets) {
+          m_sd.piece_to.write(pos, fail_low, malus(depth));
+        }
       }
 
       break;
+    }
+
+    if (mv != best_move) {
+      if (!mv.is_noisy()) {
+        fail_low_quiets.emplace_back(mv);
+      }
     }
   }
 
