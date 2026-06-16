@@ -186,7 +186,7 @@ auto searcher<Ctrls>::search(
     }
 
     // Null move pruning.
-    if (depth >= 3) {
+    if (depth >= 3 && beta >= static_eval) {
       const position null_child = make_null_move(pos, ply);
 
       const i32 r = 4;
