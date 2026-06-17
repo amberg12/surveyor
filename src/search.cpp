@@ -224,6 +224,12 @@ auto searcher<Ctrls>::search(
         mp.skip_quiet();
         continue;
       }
+
+      // Futility pruning
+      if (!mv.is_noisy() && static_eval + 256 + 128 * depth < alpha && abs(alpha) < 2000 && depth <= 6) {
+        mp.skip_quiet();
+        continue;
+      }
     }
 
     line child_pv;

@@ -118,10 +118,15 @@ public:
     -> std::strong_ordering = default;
 
 private:
+  friend constexpr auto abs(score) -> score;
   friend struct std::formatter<score>;
 
   i16 m_value = 0;
 };
+
+constexpr auto abs(score sc) -> score {
+  return sc.m_value > 0 ? sc : -sc;
+}
 
 }  // namespace surveyor
 
