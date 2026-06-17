@@ -178,6 +178,11 @@ auto searcher<Ctrls>::search(
 
   const score static_eval = evaluate(pos);
 
+  // Internal iterative reductions
+  if (expected != node_type::all() && depth >= 8 && (!entry || !entry->mv.has_value())) {
+    --depth;
+  }
+
   // whole-node pruning is not valid in pv nodes or when in check.
   if (expected != node_type::pv() && !pos.checkers()) {
     // Reverse futility pruning.
