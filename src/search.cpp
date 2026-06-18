@@ -334,6 +334,8 @@ auto searcher<Ctrls>::quiesce(
     return 0;
   }
 
+  const std::optional<tt::entry> entry = m_shared->tt().probe(pos, ply);
+
   score best_score = pos.checkers() >= 1 ? score::mated_in(ply) : evaluate(pos);
   alpha            = std::max(best_score, alpha);
 
@@ -341,7 +343,9 @@ auto searcher<Ctrls>::quiesce(
     return best_score;
   }
 
-  move_picker mp{pos, move::null(), m_sd.piece_to};
+  const move tt_move = entry.has_value() ? entry->mv : move::null();
+
+  move_picker mp{pos, tt_move, m_sd.piece_to};
 
   if (pos.checkers() == 0) {
     mp.skip_quiet();
