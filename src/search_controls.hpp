@@ -57,7 +57,7 @@ public:
   auto hard_stop(const search_stats& ss) const -> bool {
     using namespace std::chrono_literals;
     const time::milliseconds safe_time  = std::max(m_time - 50ms, 0ms);
-    const time::milliseconds hard_limit = safe_time / 20 + m_inc / 2;
+    const time::milliseconds hard_limit = safe_time / 3 + m_inc;
 
     return ss.current_time > m_start + hard_limit;
   }
