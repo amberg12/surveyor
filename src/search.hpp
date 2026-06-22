@@ -44,7 +44,12 @@ struct search_limits {
 class search_manager;
 
 struct search_data {
-  piece_to_history piece_to;
+  piece_to_history     piece_to;
+  continuation_history conthist;
+};
+
+struct search_stack {
+  piece_to_history* conthist_subtable = nullptr;
 };
 
 class searcher_base {
@@ -78,24 +83,34 @@ public:
 private:
   auto iterative_deepening() -> void;
 
-  auto search(
-    node_type expected, const position& pos, line& pv, score alpha, score beta, i32 depth, i32 ply)
-    -> score;
+  auto search(node_type       expected,
+              const position& pos,
+              line&           pv,
+              score           alpha,
+              score           beta,
+              search_stack*   ss,
+              i32             depth,
+              i32             ply) -> score;
 
-  auto quiesce(node_type expected, const position& pos, line& pv, score alpha, score beta, i32 ply)
-    -> score;
+  auto quiesce(node_type       expected,
+               const position& pos,
+               line&           pv,
+               score           alpha,
+               score           beta,
+               search_stack*   ss,
+               i32             ply) -> score;
 
-  auto make_move(const position& pos, move mv, i32 ply) -> position;
+  auto make_move(const position& pos, move mv, i32 ply, search_stack* ss) -> position;
 
   auto make_null_move(const position& pos, i32 ply) -> position;
 
   auto unmake_move() -> void;
 
-  Ctrls              m_ctrls;
-  search_manager*    m_shared;
-  nodes              m_nodes    = 0;
-  i32                m_depth    = 0;
-  i32                m_seldepth = 0;
+  Ctrls           m_ctrls;
+  search_manager* m_shared;
+  nodes           m_nodes    = 0;
+  i32             m_depth    = 0;
+  i32             m_seldepth = 0;
 
   repetition_table m_repetition_table = {};
 

@@ -82,6 +82,8 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
               << '\n';
   };
 
+  std::array<search_stack, 300> ss;
+
   for (m_depth = 1; m_depth < 256; ++m_depth) {
     line pv;
 
@@ -96,7 +98,7 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
     }
 
     while (true) {
-      s = search(node_type::pv(), root, pv, alpha, beta, m_depth, 0);
+      s = search(node_type::pv(), root, pv, alpha, beta, ss.data() + 10, m_depth, 0);
 
       if (s <= alpha) {
         alpha = -score::inf();
@@ -135,9 +137,14 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
 }
 
 template<search_controls Ctrls>
-auto searcher<Ctrls>::search(
-  node_type expected, const position& pos, line& pv, score alpha, score beta, i32 depth, i32 ply)
-  -> score {
+auto searcher<Ctrls>::search(node_type       expected,
+                             const position& pos,
+                             line&           pv,
+                             score           alpha,
+                             score           beta,
+                             search_stack*   ss,
+                             i32             depth,
+                             i32             ply) -> score {
   const bool is_root = ply == 0;
 
   m_nodes += 1;
@@ -154,7 +161,7 @@ auto searcher<Ctrls>::search(
 
 
   if (depth <= 0) {
-    return quiesce(expected, pos, pv, alpha, beta, ply);
+    return quiesce(expected, pos, pv, alpha, beta, ss, ply);
   }
 
   std::optional<tt::entry> entry = m_shared->tt().probe(pos, ply);
@@ -194,10 +201,12 @@ auto searcher<Ctrls>::search(
     // Null move pruning.
     if (depth >= 3 && static_eval >= beta) {
       const position null_child = make_null_move(pos, ply);
+      ss->conthist_subtable     = nullptr;
 
       const i32 r = 4;
 
-      const score null_score = -search(node_type::all(), null_child, pv, -beta, -beta + 1, depth - r, ply + 1);
+      const score null_score =
+        -search(node_type::all(), null_child, pv, -beta, -beta + 1, ss + 1, depth - r, ply + 1);
 
       unmake_move();
 
@@ -214,7 +223,7 @@ auto searcher<Ctrls>::search(
 
   const move tt_move = entry.has_value() ? entry->mv : move::null();
 
-  move_picker mp{pos, tt_move, m_sd.piece_to};
+  move_picker mp{pos, tt_move, m_sd.piece_to, ss};
 
   score     best_score       = score::none();
   move      best_move        = move::null();
@@ -232,7 +241,8 @@ auto searcher<Ctrls>::search(
       }
 
       // Futility pruning
-      if (!mv.is_noisy() && static_eval + 256 + 128 * depth < alpha && abs(alpha) < 2000 && depth <= 6) {
+      if (!mv.is_noisy() && static_eval + 256 + 128 * depth < alpha && abs(alpha) < 2000
+          && depth <= 6) {
         mp.skip_quiet();
         continue;
       }
@@ -241,7 +251,7 @@ auto searcher<Ctrls>::search(
     line child_pv;
 
     ++move_idx;
-    const position child = make_move(pos, mv, ply);
+    const position child = make_move(pos, mv, ply, ss);
 
     score search_score;
 
@@ -254,21 +264,22 @@ auto searcher<Ctrls>::search(
       const i32 lmr_depth = std::clamp(new_depth - r / 1024, 0, new_depth);
 
       search_score =
-        -search(expected.next(), child, child_pv, -alpha - 1, -alpha, lmr_depth, ply + 1);
+        -search(expected.next(), child, child_pv, -alpha - 1, -alpha, ss + 1, lmr_depth, ply + 1);
 
       if (search_score > alpha && lmr_depth < new_depth) {
         search_score =
-                -search(expected.next(), child, child_pv, -alpha - 1, -alpha, new_depth, ply + 1);
+          -search(expected.next(), child, child_pv, -alpha - 1, -alpha, ss + 1, new_depth, ply + 1);
       }
     }
     // PV search
     else if (expected != node_type::pv() || (expected == node_type::pv() && move_idx > 1)) {
       search_score =
-        -search(expected.next(), child, child_pv, -alpha - 1, -alpha, new_depth, ply + 1);
+        -search(expected.next(), child, child_pv, -alpha - 1, -alpha, ss + 1, new_depth, ply + 1);
     }
     // Full Window Search
     if (expected == node_type::pv() && (move_idx == 1 || search_score > alpha)) {
-      search_score = -search(node_type::pv(), child, child_pv, -beta, -alpha, new_depth, ply + 1);
+      search_score =
+        -search(node_type::pv(), child, child_pv, -beta, -alpha, ss + 1, new_depth, ply + 1);
     }
 
     unmake_move();
@@ -299,8 +310,20 @@ auto searcher<Ctrls>::search(
       if (!mv.is_noisy()) {
         m_sd.piece_to.write(pos, mv, bonus(depth));
 
+        for (i32 conthist_ply : conthist_plies) {
+          if (ss[-conthist_ply].conthist_subtable) {
+            ss[-conthist_ply].conthist_subtable->write(pos, mv, bonus(depth));
+          }
+        }
+
         for (const move fail_low : fail_low_quiets) {
           m_sd.piece_to.write(pos, fail_low, malus(depth));
+
+          for (i32 conthist_ply : conthist_plies) {
+            if (ss[-conthist_ply].conthist_subtable) {
+              ss[-conthist_ply].conthist_subtable->write(pos, fail_low, malus(depth));
+            }
+          }
         }
       }
 
@@ -323,8 +346,13 @@ auto searcher<Ctrls>::search(
   return best_score;
 }
 template<search_controls Ctrls>
-auto searcher<Ctrls>::quiesce(
-  node_type expected, const position& pos, line& pv, score alpha, score beta, i32 ply) -> score {
+auto searcher<Ctrls>::quiesce(node_type       expected,
+                              const position& pos,
+                              line&           pv,
+                              score           alpha,
+                              score           beta,
+                              search_stack*   ss,
+                              i32             ply) -> score {
   m_nodes += 1;
   if (m_shared->stopped() || m_ctrls.hard_stop(m_shared->stats())) {
     m_shared->stop();
@@ -346,7 +374,7 @@ auto searcher<Ctrls>::quiesce(
 
   const move tt_move = entry.has_value() ? entry->mv : move::null();
 
-  move_picker mp{pos, tt_move, m_sd.piece_to};
+  move_picker mp{pos, tt_move, m_sd.piece_to, ss};
 
   if (pos.checkers() == 0) {
     mp.skip_quiet();
@@ -363,9 +391,9 @@ auto searcher<Ctrls>::quiesce(
       }
     }
 
-    const position child = make_move(pos, mv, ply);
+    const position child = make_move(pos, mv, ply, ss);
 
-    const score search_score = -quiesce(expected, child, child_pv, -beta, -alpha, ply + 1);
+    const score search_score = -quiesce(expected, child, child_pv, -beta, -alpha, ss + 1, ply + 1);
 
     unmake_move();
 
@@ -397,8 +425,11 @@ auto searcher<Ctrls>::quiesce(
 }
 
 template<search_controls Ctrls>
-auto searcher<Ctrls>::make_move(const position& pos, move mv, i32 ply) -> position {
-  m_seldepth     = std::max(m_seldepth, ply + 1);
+auto searcher<Ctrls>::make_move(const position& pos, move mv, i32 ply, search_stack* ss)
+  -> position {
+  ss->conthist_subtable = m_sd.conthist.read(pos, mv);
+
+  m_seldepth           = std::max(m_seldepth, ply + 1);
   const position child = pos.make_move(mv);
   m_repetition_table.push(child);
   return child;
@@ -406,7 +437,7 @@ auto searcher<Ctrls>::make_move(const position& pos, move mv, i32 ply) -> positi
 
 template<search_controls Ctrls>
 auto searcher<Ctrls>::make_null_move(const position& pos, i32 ply) -> position {
-  m_seldepth = std::max(m_seldepth, ply + 1);
+  m_seldepth           = std::max(m_seldepth, ply + 1);
   const position child = pos.make_null_move();
   m_repetition_table.push(child);
   return child;
