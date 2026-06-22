@@ -173,6 +173,11 @@ public:
     return pid;
   }
 
+  [[nodiscard]] constexpr auto ptype_at(square sq) const -> piece_type {
+    const auto [pid, col, ptype] = place_at(sq);
+    return ptype;
+  }
+
   [[nodiscard]] constexpr auto piece_at(square sq) const -> std::tuple<color, piece_type> {
     const auto [pid, col, ptype] = place_at(sq);
     return {col, ptype};

@@ -40,7 +40,8 @@ set(SRCS
 
 add_executable(surveyor src/main.cpp
         ${SRCS}
-        src/util/math.hpp)
+        src/util/math.hpp
+        src/see.hpp)
 
 add_executable(surveyor_tuner src/evaluation_tuner/evaluation_tuner_main.cpp
         ${SRCS})

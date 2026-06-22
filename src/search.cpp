@@ -21,6 +21,7 @@
 #include "evaluate.hpp"
 #include "move_generation.hpp"
 #include "move_picker.hpp"
+#include "see.hpp"
 #include "util/math.hpp"
 
 #include <iostream>
@@ -355,6 +356,12 @@ auto searcher<Ctrls>::quiesce(
 
   for (move mv = mp.next_move(); mv.has_value(); mv = mp.next_move()) {
     line child_pv;
+
+    if (!pos.checkers()) {
+      if (see(pos, mv) < -10) {
+        continue;
+      }
+    }
 
     const position child = make_move(pos, mv, ply);
 
