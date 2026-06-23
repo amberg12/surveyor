@@ -22,6 +22,7 @@
 #include "util/multi_array.hpp"
 
 namespace surveyor {
+constexpr std::array conthist_plies = {1};
 
 namespace history_detail {
 constexpr i16 history_max = 16384;
@@ -62,6 +63,21 @@ private:
   }
 
   multi_array_t<i16, 2, 6, 64> m_piece_to_history{};
+};
+
+class continuation_history {
+public:
+  auto read(const position& pos, move m) -> piece_to_history* {
+    return entry(pos, m);
+  }
+
+private:
+  auto entry(const position& pos, move m) -> piece_to_history* {
+    const auto [stm, ptype] = pos.piece_at(m.src());
+    return &m_conthist_tables[pos.stm().idx()][ptype.compressed_idx()][m.dst().idx];
+  }
+
+  multi_array_t<piece_to_history, 2, 6, 64> m_conthist_tables;
 };
 
 }  // namespace surveyor

@@ -32,13 +32,14 @@ namespace {
 template<bool is_root = true>
 constexpr auto perft(const position& pos, i32 depth) -> u64 {
   static piece_to_history piece_to = {};
+  static std::array<search_stack, 200> ss;
 
   if (depth <= 0) {
     return 1;
   }
 
   const move_list ml = generate_moves(pos);
-  move_picker     mp{pos, ml[0], piece_to};
+  move_picker     mp{pos, ml[0], piece_to, ss.data() + 10};
 
   u64 nodes = 0;
 

@@ -23,10 +23,11 @@ namespace surveyor {
 
 class move_picker {
 public:
-  move_picker(const position& pos, move tt_move, piece_to_history& piece_to)
+  move_picker(const position& pos, move tt_move, piece_to_history& piece_to, search_stack* ss)
       : m_pos(pos)
       , m_tt_move(tt_move)
-      , m_piece_to(piece_to) {
+      , m_piece_to(piece_to)
+      , m_ss(ss) {
   }
 
   auto skip_quiet() -> void {
@@ -120,6 +121,12 @@ public:
     case phase::score_quiet: {
       for (usize i = 0; i < m_quiet_moves.size(); ++i) {
         m_quiet_scores[i] = m_piece_to.read(m_pos, m_quiet_moves[i]);
+
+        for (i32 ply : conthist_plies) {
+          if (m_ss[-ply].conthist_subtable != nullptr) {
+            m_quiet_scores[i] += m_ss[-ply].conthist_subtable->read(m_pos, m_quiet_moves[i]);
+          }
+        }
       }
 
       m_phase = phase::emit_quiet;
@@ -165,6 +172,7 @@ private:
   const position& m_pos;
   move            m_tt_move       = move::null();
   bool            m_tt_move_valid = false;
+  search_stack*   m_ss;
 
   piece_to_history& m_piece_to;
 
