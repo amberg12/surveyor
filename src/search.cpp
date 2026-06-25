@@ -233,6 +233,22 @@ auto searcher<Ctrls>::search(node_type       expected,
   move_list fail_low_quiets{};
 
   for (move mv = mp.next_move(); mv.has_value(); mv = mp.next_move()) {
+    const i32 history = [&] {
+      i32 out = 0;
+
+      if (!mv.is_noisy()) {
+        out += m_sd.piece_to.read(pos, mv);
+
+        for (const i32 conthist_ply : conthist_plies) {
+          if (ss[-conthist_ply].conthist_subtable != nullptr) {
+            out += ss[-conthist_ply].conthist_subtable->read(pos, mv);
+          }
+        }
+      }
+
+      return out;
+    }();
+
     if (!best_score.is_losing() && !is_root && !pos.checkers()) {
       // Late move pruning
       if (!mv.is_noisy() && move_idx > 5 + depth * depth) {
@@ -244,6 +260,10 @@ auto searcher<Ctrls>::search(node_type       expected,
       if (!mv.is_noisy() && static_eval + 256 + 128 * depth < alpha && abs(alpha) < 2000
           && depth <= 6) {
         mp.skip_quiet();
+        continue;
+      }
+
+      if (move_idx > 1 && depth <= 4 && history <= -2048 * depth * depth) {
         continue;
       }
     }
