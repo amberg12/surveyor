@@ -18,14 +18,15 @@
 
 #pragma once
 #include "position.hpp"
+#include "transposition_table.hpp"
 #include "util/integer.hpp"
 #include "util/multi_array.hpp"
 
 namespace surveyor {
 constexpr std::array conthist_plies = {1, 2};
+constexpr i16        history_max    = 16384;
 
 namespace history_detail {
-constexpr i16 history_max = 16384;
 static_assert(history_max < std::numeric_limits<i16>::max());
 static_assert(-history_max > std::numeric_limits<i16>::min());
 
@@ -78,6 +79,33 @@ private:
   }
 
   multi_array_t<piece_to_history, 2, 6, 64> m_conthist_tables;
+};
+
+class capture_history {
+public:
+  auto read(const position& pos, move m) -> i16 {
+    return m.is_capture() ? entry(pos, m) : 0;
+  }
+
+  auto write(const position& pos, move m, i32 score) -> void {
+    if (!m.is_capture()) {
+      return;
+    }
+
+    i16& e = entry(pos, m);
+    history_detail::gravity(e, score);
+  }
+
+private:
+  auto entry(const position& pos, move m) -> i16& {
+    const piece_type victim   = m.is_en_passant() ? piece_type::pawn() : pos.ptype_at(m.dst());
+    const piece_type attacker = pos.ptype_at(m.src());
+
+    return m_capture_history[pos.stm().idx()][attacker.compressed_idx()][m.dst().idx]
+                            [victim.compressed_idx()];
+  }
+
+  multi_array_t<i16, 2, 6, 64, 6> m_capture_history{};
 };
 
 }  // namespace surveyor

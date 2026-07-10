@@ -23,10 +23,15 @@ namespace surveyor {
 
 class move_picker {
 public:
-  move_picker(const position& pos, move tt_move, piece_to_history& piece_to, search_stack* ss)
+  move_picker(const position&   pos,
+              move              tt_move,
+              piece_to_history& piece_to,
+              capture_history&  capthist,
+              search_stack*     ss)
       : m_pos(pos)
       , m_tt_move(tt_move)
       , m_piece_to(piece_to)
+      , m_capthist(capthist)
       , m_ss(ss) {
   }
 
@@ -85,13 +90,18 @@ public:
       for (usize i = 0; i < m_noisy_moves.size(); ++i) {
         const move mv = m_noisy_moves[i];
 
+        if (!mv.is_capture()) {
+          continue;
+        }
+
         const auto [victim_stm, victim_ptype] = mv.is_en_passant()
           ? std::tuple{~m_pos.stm(), piece_type::pawn()}
           : m_pos.piece_at(mv.dst());
 
         const auto [attacker_stm, attacker_ptype] = m_pos.piece_at(mv.src());
 
-        m_noisy_scores[i] = victim_ptype.compressed_idx() * 10 - attacker_ptype.compressed_idx();
+        m_noisy_scores[i] =
+          victim_ptype.compressed_idx() * history_max + m_capthist.read(m_pos, mv) / 8;
       }
 
       m_phase = phase::emit_noisy;
@@ -175,6 +185,7 @@ private:
   search_stack*   m_ss;
 
   piece_to_history& m_piece_to;
+  capture_history&  m_capthist;
 
   phase m_phase = phase::generate_moves;
 
