@@ -184,7 +184,31 @@ auto searcher<Ctrls>::search(node_type       expected,
     return entry->sc;
   }
 
-  const score static_eval = evaluate(pos);
+  const score static_eval = [&] {
+    if (pos.checkers()) {
+      return score::none();
+    }
+
+    return evaluate(pos);
+  }();
+
+  ss->static_eval = static_eval;
+
+  const bool improving = [&] {
+    if (pos.checkers()) {
+      return false;
+    }
+
+    if (ply >= 2 && ss[-2].static_eval != score::none()) {
+      return static_eval > ss[-2].static_eval;
+    }
+
+    if (ply >= 4 && ss[-4].static_eval != score::none()) {
+      return static_eval > ss[-4].static_eval;
+    }
+
+    return false;
+  }();
 
   // Internal iterative reductions
   if (expected != node_type::all() && depth >= 8 && (!entry || !entry->mv.has_value())) {
@@ -194,7 +218,7 @@ auto searcher<Ctrls>::search(node_type       expected,
   // whole-node pruning is not valid in pv nodes or when in check.
   if (expected != node_type::pv() && !pos.checkers()) {
     // Reverse futility pruning.
-    if (static_eval - 128 * depth >= beta && depth <= 6) {
+    if (static_eval >= beta + 128 * depth - 96 * improving && depth <= 6) {
       return static_eval;
     }
 

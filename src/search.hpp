@@ -51,6 +51,8 @@ struct search_data {
 
 struct search_stack {
   piece_to_history* conthist_subtable = nullptr;
+
+  score static_eval = score::none();
 };
 
 class searcher_base {
