@@ -237,7 +237,9 @@ auto searcher<Ctrls>::search(node_type       expected,
     const i32 history = [&] {
       i32 out = 0;
 
-      if (!mv.is_noisy()) {
+      if (mv.is_noisy()) {
+        out += m_sd.capthist.read(pos, mv);
+      } else {
         out += m_sd.piece_to.read(pos, mv);
 
         for (const i32 conthist_ply : conthist_plies) {
@@ -264,7 +266,13 @@ auto searcher<Ctrls>::search(node_type       expected,
         continue;
       }
 
-      if (move_idx > 1 && depth <= 4 && history <= -2048 * depth * depth) {
+      // Noisy history pruning
+      if (mv.is_noisy() && depth <= 4 && history <= -2560 * depth * depth) {
+        continue;
+      }
+
+      // Quiet history pruning
+      if (!mv.is_noisy() && depth <= 4 && history <= -2048 * depth * depth) {
         continue;
       }
     }
