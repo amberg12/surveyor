@@ -223,7 +223,7 @@ auto searcher<Ctrls>::search(node_type       expected,
 
   const move tt_move = entry.has_value() ? entry->mv : move::null();
 
-  move_picker mp{pos, tt_move, m_sd.piece_to, ss};
+  move_picker mp{pos, tt_move, m_sd.piece_to, m_sd.capthist, ss};
 
   score     best_score       = score::none();
   move      best_move        = move::null();
@@ -231,6 +231,7 @@ auto searcher<Ctrls>::search(node_type       expected,
   usize     move_idx         = 0;
 
   move_list fail_low_quiets{};
+  move_list fail_low_noisies{};
 
   for (move mv = mp.next_move(); mv.has_value(); mv = mp.next_move()) {
     const i32 history = [&] {
@@ -327,7 +328,9 @@ auto searcher<Ctrls>::search(node_type       expected,
     if (search_score >= beta) {
       actual_node_type = node_type::cut();
 
-      if (!mv.is_noisy()) {
+      if (mv.is_noisy()) {
+        m_sd.capthist.write(pos, mv, bonus(depth));
+      } else {
         m_sd.piece_to.write(pos, mv, bonus(depth));
 
         for (i32 conthist_ply : conthist_plies) {
@@ -347,11 +350,17 @@ auto searcher<Ctrls>::search(node_type       expected,
         }
       }
 
+      for (const move fail_low : fail_low_noisies) {
+        m_sd.capthist.write(pos, fail_low, malus(depth));
+      }
+
       break;
     }
 
     if (mv != best_move) {
-      if (!mv.is_noisy()) {
+      if (mv.is_noisy()) {
+        fail_low_noisies.emplace_back(mv);
+      } else {
         fail_low_quiets.emplace_back(mv);
       }
     }
@@ -394,7 +403,7 @@ auto searcher<Ctrls>::quiesce(node_type       expected,
 
   const move tt_move = entry.has_value() ? entry->mv : move::null();
 
-  move_picker mp{pos, tt_move, m_sd.piece_to, ss};
+  move_picker mp{pos, tt_move, m_sd.piece_to, m_sd.capthist, ss};
 
   if (pos.checkers() == 0) {
     mp.skip_quiet();

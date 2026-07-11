@@ -46,6 +46,7 @@ class search_manager;
 struct search_data {
   piece_to_history     piece_to;
   continuation_history conthist;
+  capture_history      capthist;
 };
 
 struct search_stack {
