@@ -278,7 +278,7 @@ auto searcher<Ctrls>::search(node_type       expected,
 
     if (!best_score.is_losing() && !is_root && !pos.checkers()) {
       // Late move pruning
-      if (!mv.is_noisy() && move_idx > 5 + depth * depth) {
+      if (!mv.is_noisy() && move_idx > (5 + depth * depth) / (2 - improving)) {
         mp.skip_quiet();
         continue;
       }
