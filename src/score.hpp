@@ -1,5 +1,5 @@
 /*
-  Surveyor - A UCI chess engine.
+Surveyor - A UCI chess engine.
   Copyright (C) 2026 Amber Goulding
 
   This program is free software: you can redistribute it and/or modify
@@ -19,120 +19,45 @@
 #pragma once
 #include "util/integer.hpp"
 
-#include <compare>
-#include <format>
-
 namespace surveyor {
 
-class score {
-private:
-  static constexpr i32 max_mate_ply = 512;
+using score = i16;
 
-public:
-  // Constructor
-  constexpr score() {
-    *this = none();
-  }
+namespace scoring {
+constexpr i16 max_mate_ply = 512;
 
-  /* implicit */ constexpr score(std::integral auto value)
-      : m_value(static_cast<i16>(value)) {
-  }
+constexpr score none = -32000;
+constexpr score inf  = 31000;
 
-  [[nodiscard]] static constexpr auto none() -> score {
-    return -32'000;
-  }
+constexpr score min = -30900;
+constexpr score max = 30900;
 
-  [[nodiscard]] static constexpr auto inf() -> score {
-    return 31'000;
-  }
+constexpr score min_normal_score = min + max_mate_ply + 1;
+constexpr score max_normal_score = max - max_mate_ply - 1;
 
-  [[nodiscard]] static constexpr auto min_score() -> score {
-    return -30'900;
-  }
-
-  [[nodiscard]] static constexpr auto max_score() -> score {
-    return 30'900;
-  }
-
-  [[nodiscard]] static constexpr auto min_normal_score() -> score {
-    return min_score().m_value + max_mate_ply + 1;
-  }
-
-  [[nodiscard]] static constexpr auto max_normal_score() -> score {
-    return max_score().m_value - max_mate_ply - 1;
-  }
-
-  [[nodiscard]] static constexpr auto mated_in(i32 ply) -> score {
-    return min_score().m_value + ply;
-  }
-
-  // Methods
-  [[nodiscard]] constexpr auto is_winning() const -> bool {
-    return m_value > max_normal_score().m_value;
-  }
-
-  [[nodiscard]] constexpr auto is_losing() const -> bool {
-    return m_value < min_normal_score().m_value;
-  }
-
-  [[nodiscard]] constexpr auto is_mate() const -> bool {
-    return is_winning() || is_losing();
-  }
-
-  [[nodiscard]] constexpr auto plies_to_mate() const -> i32 {
-    if (m_value < 0) {
-      return m_value - min_score().m_value;
-    } else {
-      return max_score().m_value + m_value;
-    }
+constexpr auto mated_in(i32 ply) -> score {
+  return static_cast<score>(min + ply);
 }
 
-  // Overloads
-  friend constexpr auto operator-(const score& s) -> score {
-    return -s.m_value;
+constexpr auto is_winning(score sc) -> bool {
+  return sc > max_normal_score;
+}
+
+constexpr auto is_losing(score sc) -> bool {
+  return sc < min_normal_score;
+}
+
+constexpr auto is_mate(score sc) -> bool {
+  return is_winning(sc) || is_losing(sc);
+}
+
+constexpr auto plies_to_mate(score sc) -> i32 {
+  if (!is_mate(sc)) {
+    return 0;
   }
 
-  friend constexpr auto operator+(const score& lhs, const score& rhs) -> score {
-    return lhs.m_value + rhs.m_value;
-  }
-
-  friend constexpr auto operator+=(score& lhs, const score& rhs) -> score& {
-    lhs = lhs + rhs;
-    return lhs;
-  }
-
-  friend constexpr auto operator-(const score& lhs, const score& rhs) -> score {
-    return lhs.m_value - rhs.m_value;
-  }
-
-  friend constexpr auto operator-=(score& lhs, const score& rhs) -> score& {
-    lhs = lhs - rhs;
-    return lhs;
-  }
-
-  friend constexpr auto operator*(score lhs, std::integral auto rhs) {
-    return lhs.m_value * rhs;
-  }
-
-  friend constexpr auto operator<=>(const score& lhs, const score& rhs)
-    -> std::strong_ordering = default;
-
-private:
-  friend constexpr auto abs(score) -> score;
-  friend struct std::formatter<score>;
-
-  i16 m_value = 0;
-};
-
-constexpr auto abs(score sc) -> score {
-  return sc.m_value > 0 ? sc : -sc;
+  return is_winning(sc) ? max - sc : min - sc;
+}
 }
 
 }  // namespace surveyor
-
-template<>
-struct std::formatter<surveyor::score> : std::formatter<std::string> {
-  auto format(const surveyor::score& s, std::format_context& ctx) const {
-    return std::formatter<std::string>::format(std::format("{}", s.m_value), ctx);
-  }
-};

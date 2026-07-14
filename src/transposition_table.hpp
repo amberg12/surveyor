@@ -34,7 +34,7 @@ constexpr u8 max_age = 0b00011111;
 
 struct entry {
   z_key key{};
-  score sc    = score::none();
+  score sc    = scoring::none;
   move  mv    = move::null();
   u8    info  = 0;
   u8    depth = 0;
