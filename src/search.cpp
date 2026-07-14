@@ -314,6 +314,8 @@ auto searcher<Ctrls>::search(node_type       expected,
     if (depth >= 3 && move_idx > 3) {
       i32 r = 2048 + log2(depth) * log2(move_idx) * 256;
 
+      r -= mv.is_noisy() ? 0 : 64 * history / 1024;
+
       const i32 lmr_depth = std::clamp(new_depth - r / 1024, 0, new_depth);
 
       search_score =
