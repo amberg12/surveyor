@@ -40,7 +40,7 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
   m_repetition_table       = repetitions;
 
   line  last_pv;
-  score last_score = score::none();
+  score last_score = scoring::none;
   i32   last_depth{};
   i32   last_seldepth{};
   nodes last_nodes{};
@@ -52,12 +52,12 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
     const std::string depth_string    = std::format("depth {}", last_depth);
     const std::string seldepth_string = std::format("seldepth {}", last_seldepth);
     const std::string score_string    = [&] {
-      if (last_score.is_winning()) {
-        return std::format("score mate {}", last_score.plies_to_mate() / 2 + 1);
+      if (scoring::is_winning(last_score)) {
+        return std::format("score mate {}", scoring::plies_to_mate(last_score) / 2 + 1);
       }
 
-      if (last_score.is_losing()) {
-        return std::format("score mate -{}", last_score.plies_to_mate() / 2 + 1);
+      if (scoring::is_losing(last_score)) {
+        return std::format("score mate {}", scoring::plies_to_mate(last_score) / 2 - 1);
       }
 
       return std::format("score cp {}", last_score);
@@ -88,8 +88,8 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
     line pv;
 
     score s;
-    score alpha = -score::inf();
-    score beta  = score::inf();
+    score alpha = -scoring::inf;
+    score beta  = scoring::inf;
     score delta = 100;
 
     if (m_depth >= 5) {
@@ -101,9 +101,9 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
       s = search(node_type::pv(), root, pv, alpha, beta, ss.data() + 10, m_depth, 0);
 
       if (s <= alpha) {
-        alpha = -score::inf();
+        alpha = -scoring::inf;
       } else if (s >= beta) {
-        beta = score::inf();
+        beta = scoring::inf;
       } else {
         break;
       }
@@ -186,7 +186,7 @@ auto searcher<Ctrls>::search(node_type       expected,
 
   const score static_eval = [&] {
     if (pos.checkers()) {
-      return score::none();
+      return scoring::none;
     }
 
     return evaluate(pos);
@@ -199,11 +199,11 @@ auto searcher<Ctrls>::search(node_type       expected,
       return false;
     }
 
-    if (ply >= 2 && ss[-2].static_eval != score::none()) {
+    if (ply >= 2 && ss[-2].static_eval != scoring::none) {
       return static_eval > ss[-2].static_eval;
     }
 
-    if (ply >= 4 && ss[-4].static_eval != score::none()) {
+    if (ply >= 4 && ss[-4].static_eval != scoring::none) {
       return static_eval > ss[-4].static_eval;
     }
 
@@ -240,7 +240,7 @@ auto searcher<Ctrls>::search(node_type       expected,
 
       if (null_score >= beta) {
         // We want to do fail soft, but we also cannot trust mate scores from nmp.
-        return null_score.is_mate() ? beta : null_score;
+        return scoring::is_mate(null_score) ? beta : null_score;
       }
     }
   }
@@ -249,7 +249,7 @@ auto searcher<Ctrls>::search(node_type       expected,
 
   move_picker mp{pos, tt_move, m_sd.piece_to, m_sd.capthist, ss};
 
-  score     best_score       = score::none();
+  score     best_score       = scoring::none;
   move      best_move        = move::null();
   node_type actual_node_type = node_type::all();
   usize     move_idx         = 0;
@@ -276,7 +276,7 @@ auto searcher<Ctrls>::search(node_type       expected,
       return out;
     }();
 
-    if (!best_score.is_losing() && !is_root && !pos.checkers()) {
+    if (!scoring::is_losing(best_score) && !is_root && !pos.checkers()) {
       // Late move pruning
       if (!mv.is_noisy() && move_idx > (5 + depth * depth) / (2 - improving)) {
         mp.skip_quiet();
@@ -400,8 +400,8 @@ auto searcher<Ctrls>::search(node_type       expected,
     }
   }
 
-  if (best_score == score::none()) {
-    best_score = pos.checkers() ? score::mated_in(ply) : 0;
+  if (best_score == scoring::none) {
+    best_score = pos.checkers() ? scoring::mated_in(ply) : 0;
   }
 
   m_shared->tt().write(pos, ply, best_move, best_score, depth, actual_node_type);
@@ -428,7 +428,7 @@ auto searcher<Ctrls>::quiesce(node_type       expected,
 
   const std::optional<tt::entry> entry = m_shared->tt().probe(pos, ply);
 
-  score best_score = pos.checkers() >= 1 ? score::mated_in(ply) : evaluate(pos);
+  score best_score = pos.checkers() >= 1 ? scoring::mated_in(ply) : evaluate(pos);
   alpha            = std::max(best_score, alpha);
 
   if (best_score >= beta) {

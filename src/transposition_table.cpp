@@ -35,12 +35,12 @@ auto transposition_table::write(
     .key = pos.key(),
     .sc =
       [&] {
-        if (sc.is_winning()) {
-          return sc + ply;
+        if (scoring::is_winning(sc)) {
+          return static_cast<score>(sc + ply);
         }
 
-        if (sc.is_losing()) {
-          return sc - ply;
+        if (scoring::is_losing(sc)) {
+          return static_cast<score>(sc - ply);
         }
 
         return sc;
@@ -56,11 +56,11 @@ auto transposition_table::write(
 auto transposition_table::probe(const position& pos, i32 ply) const -> std::optional<entry> {
   entry e = m_clusters[idx(pos.key(), m_cluster_count)];
 
-  if (e.sc.is_winning()) {
+  if (scoring::is_winning(e.sc)) {
     e.sc -= ply;
   }
 
-  if (e.sc.is_losing()) {
+  if (scoring::is_losing(e.sc)) {
     e.sc += ply;
   }
 
