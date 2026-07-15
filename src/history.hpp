@@ -60,25 +60,46 @@ public:
 private:
   auto entry(const position& pos, move m) -> i16& {
     const auto [stm, ptype] = pos.piece_at(m.src());
-    return m_piece_to_history[pos.stm().idx()][ptype.compressed_idx()][m.dst().idx];
+    return m_piece_to_history[pos.stm().idx()][ptype.compressed_idx()][m.dst().idx][pos.is_attacked(
+      ~pos.stm(), m.src())][pos.is_attacked(~pos.stm(), m.dst())];
   }
 
-  multi_array_t<i16, 2, 6, 64> m_piece_to_history{};
+  multi_array_t<i16, 2, 6, 64, 2, 2> m_piece_to_history{};
 };
 
 class continuation_history {
 public:
-  auto read(const position& pos, move m) -> piece_to_history* {
+  class subtable {
+  public:
+    auto read(const position& pos, move m) -> i16 {
+      return entry(pos, m);
+    }
+
+    auto write(const position& pos, move m, i32 score) -> void {
+      i16& e = entry(pos, m);
+      history_detail::gravity(e, score);
+    }
+
+  private:
+    auto entry(const position& pos, move m) -> i16& {
+      const auto [stm, ptype] = pos.piece_at(m.src());
+      return m_piece_to_history[pos.stm().idx()][ptype.compressed_idx()][m.dst().idx];
+    }
+
+    multi_array_t<i16, 2, 6, 64> m_piece_to_history{};
+  };
+
+  auto read(const position& pos, move m) -> subtable* {
     return entry(pos, m);
   }
 
 private:
-  auto entry(const position& pos, move m) -> piece_to_history* {
+  auto entry(const position& pos, move m) -> subtable* {
     const auto [stm, ptype] = pos.piece_at(m.src());
     return &m_conthist_tables[pos.stm().idx()][ptype.compressed_idx()][m.dst().idx];
   }
 
-  multi_array_t<piece_to_history, 2, 6, 64> m_conthist_tables;
+  multi_array_t<subtable, 2, 6, 64> m_conthist_tables;
 };
 
 class capture_history {
