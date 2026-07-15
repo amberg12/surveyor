@@ -227,7 +227,7 @@ auto searcher<Ctrls>::search(node_type       expected,
       const position null_child = make_null_move(pos, ply);
       ss->conthist_subtable     = nullptr;
 
-      const i32 r = 3 + depth / 4;
+      const i32 r = 3 + depth / 4 + std::min((static_eval - beta) / 250, 3);
 
       const score null_score =
         -search(node_type::all(), null_child, pv, -beta, -beta + 1, ss + 1, depth - r, ply + 1);
