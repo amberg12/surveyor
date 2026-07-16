@@ -21,6 +21,7 @@
 
 namespace surveyor {
 
+// The SEE function takes heavily from yukari.
 inline auto see(const position& pos, move mv) -> i32 {
   constexpr i32 big_see = 100'000;
 
@@ -52,6 +53,9 @@ inline auto see(const position& pos, move mv) -> i32 {
     return big_see;
   }
 
+  bitboard blockers = pos.bb();
+  blockers.del(mv.src());
+
   color stm = pos.stm();
 
   color_array<piece_mask> attackers{pos.attackers_to(color::white(), mv.dst()),
@@ -59,8 +63,37 @@ inline auto see(const position& pos, move mv) -> i32 {
 
   attackers[stm].del(pos.id_at(mv.src()));
 
-  const auto handle_xray = [&]() {
+  const auto handle_xray = [&](square mover) {
+    const square origin = mv.dst();
+    blockers.del(mover);
 
+    const geometry::direction dir = geometry::get_direction(origin, mover);
+
+    if (dir == 0) {
+      return;
+    }
+
+    geometry::x88 scanner = geometry::to_x88(origin);
+
+    while (!blockers.has_value(geometry::from_x88(scanner))) {
+      scanner += dir;
+
+      if (scanner & 0x88) {
+        return;
+      }
+    }
+
+    const square x_ray = geometry::from_x88(scanner);
+
+    const auto [x_ray_id, x_ray_stm, x_ray_ptype] = pos.place_at(x_ray);
+
+    if (x_ray.diag_to(origin) && x_ray_ptype.diag()) {
+      attackers[x_ray_stm].set(x_ray_id);
+    }
+
+    if (x_ray.orth_to(origin) && x_ray_ptype.orth()) {
+      attackers[x_ray_stm].set(x_ray_id);
+    }
   };
 
   std::optional attacker = pos.ptype_at(mv.src());
@@ -76,6 +109,9 @@ inline auto see(const position& pos, move mv) -> i32 {
     if (const auto mask = pm & pos.ptype_mask(col, piece_type::pawn()); mask.has_value()) {
       const piece_id attacker_id = mask.lsb();
       pm.del(attacker_id);
+
+      handle_xray(pos.sq_of(col, attacker_id));
+
       return piece_type::pawn();
     }
 
@@ -88,18 +124,27 @@ inline auto see(const position& pos, move mv) -> i32 {
     if (const auto mask = pm & pos.ptype_mask(col, piece_type::bishop()); mask.has_value()) {
       const piece_id attacker_id = mask.lsb();
       pm.del(attacker_id);
+
+      handle_xray(pos.sq_of(col, attacker_id));
+
       return piece_type::bishop();
     }
 
     if (const auto mask = pm & pos.ptype_mask(col, piece_type::rook()); mask.has_value()) {
       const piece_id attacker_id = mask.lsb();
       pm.del(attacker_id);
+
+      handle_xray(pos.sq_of(col, attacker_id));
+
       return piece_type::rook();
     }
 
     if (const auto mask = pm & pos.ptype_mask(col, piece_type::queen()); mask.has_value()) {
       const piece_id attacker_id = mask.lsb();
       pm.del(attacker_id);
+
+      handle_xray(pos.sq_of(col, attacker_id));
+
       return piece_type::queen();
     }
 
@@ -109,32 +154,32 @@ inline auto see(const position& pos, move mv) -> i32 {
   while (true) {
     victim   = attacker;
     attacker = next_attacker(~stm);
-
-    sc -= score_ptype(*victim);
-
-    if (!attacker.has_value()) {
+    if (!attacker) {
       sc = beta;
       break;
     }
 
     sc -= score_ptype(*victim);
-
     if (sc >= beta) {
       sc = beta;
       break;
     }
-
-    alpha = std::max(sc, alpha);
+    alpha = std::max(alpha, sc);
 
     victim   = attacker;
     attacker = next_attacker(stm);
-
-    if (!attacker.has_value()) {
+    if (!attacker) {
       sc = alpha;
       break;
     }
 
-    beta = std::min(sc, beta);
+    sc += score_ptype(*victim);
+    if (sc <= alpha) {
+      sc = alpha;
+      break;
+    }
+
+    beta = std::min(beta, sc);
   }
 
   return sc;
