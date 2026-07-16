@@ -56,6 +56,45 @@ constexpr auto from_x88(x88 sq_num) -> square {
   return square{static_cast<u8>((sq_num + (sq_num & 7)) >> 1)};
 }
 
+constexpr auto get_direction(square src, square dst) -> direction {
+  const int dx = signum(dst.file() - src.file());
+  const int dy = signum(dst.rank() - src.rank());
+
+  if (dx == 0 && dy == 1) {
+    return n_orth;
+  }
+
+  if (dx == 1 && dy == 1) {
+    return ne_diag;
+  }
+
+  if (dx == 1 && dy == 0) {
+    return e_orth;
+  }
+
+  if (dx == 1 && dy == -1) {
+    return se_diag;
+  }
+
+  if (dx == 0 && dy == -1) {
+    return s_orth;
+  }
+
+  if (dx == -1 && dy == -1) {
+    return sw_diag;
+  }
+
+  if (dx == -1 && dy == 0) {
+    return w_orth;
+  }
+
+  if (dx == -1 && dy == 1) {
+    return nw_diag;
+  }
+
+  return 0;
+}
+
 constexpr auto shift(square src, direction dir) -> std::optional<square> {
   const x88 dst = to_x88(src) + dir;
 
