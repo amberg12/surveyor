@@ -23,7 +23,7 @@
 #include "util/multi_array.hpp"
 
 namespace surveyor {
-constexpr std::array conthist_plies = {1, 2};
+constexpr std::array conthist_plies = {1, 2, 4};
 constexpr i16        history_max    = 16384;
 
 namespace history_detail {
