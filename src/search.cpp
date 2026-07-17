@@ -444,16 +444,24 @@ auto searcher<Ctrls>::quiesce(node_type       expected,
   }
 
   move best_move = move::null();
+  i32  move_idx  = 0;
 
   for (move mv = mp.next_move(); mv.has_value(); mv = mp.next_move()) {
     line child_pv;
 
     if (!pos.checkers()) {
+      // LMR
+      if (move_idx >= 3) {
+        break;
+      }
+
+      // See pruning
       if (see(pos, mv) < -10) {
         continue;
       }
     }
 
+    ++move_idx;
     const position child = make_move(pos, mv, ply, ss);
 
     const score search_score = -quiesce(expected, child, child_pv, -beta, -alpha, ss + 1, ply + 1);
