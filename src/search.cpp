@@ -449,12 +449,12 @@ auto searcher<Ctrls>::quiesce(node_type       expected,
   for (move mv = mp.next_move(); mv.has_value(); mv = mp.next_move()) {
     line child_pv;
 
-    if (!pos.checkers()) {
-      // LMR
-      if (move_idx >= 3) {
-        break;
-      }
+    // Late move pruning
+    if (move_idx >= 3) {
+      break;
+    }
 
+    if (!pos.checkers()) {
       // See pruning
       if (see(pos, mv) < -10) {
         continue;
