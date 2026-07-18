@@ -145,7 +145,8 @@ auto searcher<Ctrls>::search(node_type       expected,
                              search_stack*   ss,
                              i32             depth,
                              i32             ply) -> score {
-  const bool is_root = ply == 0;
+  const bool is_root  = ply == 0;
+  const bool singular = ss->excluded.has_value();
 
   m_nodes += 1;
   if (m_shared->stopped() || m_ctrls.hard_stop(m_shared->stats())) {
@@ -164,9 +165,10 @@ auto searcher<Ctrls>::search(node_type       expected,
     return quiesce(expected, pos, pv, alpha, beta, ss, ply);
   }
 
-  std::optional<tt::entry> entry = m_shared->tt().probe(pos, ply);
+  std::optional<tt::entry> entry = singular ? std::nullopt : m_shared->tt().probe(pos, ply);
 
-  if (expected != node_type::pv() && entry.has_value() && entry->depth >= depth && [&] {
+  if (!singular && expected != node_type::pv() && entry.has_value() && entry->depth >= depth &&
+      [&] {
         if (entry->node() == node_type::pv()) {
           return true;
         }
@@ -211,12 +213,13 @@ auto searcher<Ctrls>::search(node_type       expected,
   }();
 
   // Internal iterative reductions
-  if (expected != node_type::all() && depth >= 8 && (!entry || !entry->mv.has_value())) {
+  if (!singular && expected != node_type::all() && depth >= 8
+      && (!entry || !entry->mv.has_value())) {
     --depth;
   }
 
-  // whole-node pruning is not valid in pv nodes or when in check.
-  if (expected != node_type::pv() && !pos.checkers()) {
+  // whole-node pruning is not valid in pv nodes, singular searches or when in check.
+  if (!singular && expected != node_type::pv() && !pos.checkers()) {
     // Reverse futility pruning.
     if (static_eval >= beta + 128 * depth - 96 * improving && depth <= 6) {
       return static_eval;
@@ -258,6 +261,10 @@ auto searcher<Ctrls>::search(node_type       expected,
   move_list fail_low_noisies{};
 
   for (move mv = mp.next_move(); mv.has_value(); mv = mp.next_move()) {
+    if (mv == ss->excluded) {
+      continue;
+    }
+
     const i32 history = [&] {
       i32 out = 0;
 
@@ -301,6 +308,27 @@ auto searcher<Ctrls>::search(node_type       expected,
       }
     }
 
+    i32 extensions = 0;
+
+    if (!is_root && depth >= 9 && entry.has_value() && entry->node() != node_type::all()
+        && entry->depth >= depth - 3 && mv == entry->mv) {
+      line singular_pv;
+
+      const score singular_beta = std::max(scoring::min, static_cast<score>(entry->sc - 2 * depth));
+      const i32   singular_depth = (depth - 1) / 2;
+
+      ss->excluded = mv;
+
+      const score singular_score = search(expected.narrow(), pos, singular_pv, singular_beta - 1,
+                                          singular_beta, ss, singular_depth, ply);
+
+      ss->excluded = move::null();
+
+      if (singular_score < singular_beta) {
+        extensions = 1;
+      }
+    }
+
     line child_pv;
 
     ++move_idx;
@@ -308,7 +336,7 @@ auto searcher<Ctrls>::search(node_type       expected,
 
     score search_score;
 
-    const i32 new_depth = depth - 1;
+    const i32 new_depth = depth + extensions - 1;
 
     // Late move reductions
     if (depth >= 3 && move_idx > 3) {
@@ -401,17 +429,19 @@ auto searcher<Ctrls>::search(node_type       expected,
   }
 
   if (best_score == scoring::none) {
-    best_score = pos.checkers() ? scoring::mated_in(ply) : 0;
+    best_score = singular ? alpha : pos.checkers() ? scoring::mated_in(ply) : 0;
   }
 
-  if (!pos.checkers() && !best_move.is_noisy()
-      && !(actual_node_type == node_type::all() && best_score >= static_eval)
-      && !(actual_node_type == node_type::cut() && best_score <= static_eval)
-      && !scoring::is_mate(best_score)) {
-    m_sd.corrhist.update(pos, depth, static_eval, best_score);
-  }
+  if (!singular) {
+    if (!pos.checkers() && !best_move.is_noisy()
+       && !(actual_node_type == node_type::all() && best_score >= static_eval)
+       && !(actual_node_type == node_type::cut() && best_score <= static_eval)
+       && !scoring::is_mate(best_score)) {
+      m_sd.corrhist.update(pos, depth, static_eval, best_score);
+       }
 
-  m_shared->tt().write(pos, ply, best_move, best_score, depth, actual_node_type);
+    m_shared->tt().write(pos, ply, best_move, best_score, depth, actual_node_type);
+  }
 
   return best_score;
 }

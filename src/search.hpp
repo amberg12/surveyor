@@ -54,6 +54,7 @@ struct search_stack {
   continuation_history::subtable* conthist_subtable = nullptr;
 
   score static_eval = scoring::none;
+  move  excluded = move::null();
 };
 
 class searcher_base {
