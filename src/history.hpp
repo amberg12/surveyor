@@ -145,7 +145,7 @@ public:
   [[nodiscard]] auto read(const position& pos) -> score {
     i32 out = 0;
 
-    out += 128 * m_pawn[pos.stm()][pos.pawn_key() % corrhist_size];
+    out += 256 * m_pawn[pos.stm()][pos.pawn_key() % corrhist_size];
 
     return out / 2048;
   }
