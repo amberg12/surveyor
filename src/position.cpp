@@ -167,18 +167,35 @@ auto position::parse(std::string_view sv) -> position {
 }
 
 auto position::lazy_generate_key() -> void {
-  m_key = 0;
+  m_key      = 0;
+  m_pawn_key = 0;
 
   for (const piece_id id : m_piece_list[color::white()].mask) {
-    const usize ptype_idx = ptype_of(color::white(), id).compressed_idx();
-    const usize sq_idx = sq_of(color::white(), id).idx;
-    m_key ^= zobrist::pieces[0][ptype_idx][sq_idx];
+    const piece_type ptype     = ptype_of(color::white(), id);
+    const usize      ptype_idx = ptype.compressed_idx();
+    const usize      sq_idx    = sq_of(color::white(), id).idx;
+
+    const auto z = zobrist::pieces[0][ptype_idx][sq_idx];
+
+    if (ptype == piece_type::pawn() || ptype == piece_type::king()) {
+      m_pawn_key ^= z;
+    }
+
+    m_key ^= z;
   }
 
   for (const piece_id id : m_piece_list[color::black()].mask) {
-    const usize ptype_idx = ptype_of(color::black(), id).compressed_idx();
-    const usize sq_idx = sq_of(color::black(), id).idx;
-    m_key ^= zobrist::pieces[1][ptype_idx][sq_idx];
+    const piece_type ptype     = ptype_of(color::black(), id);
+    const usize      ptype_idx = ptype.compressed_idx();
+    const usize      sq_idx    = sq_of(color::black(), id).idx;
+
+    const auto z = zobrist::pieces[1][ptype_idx][sq_idx];
+
+    if (ptype == piece_type::pawn() || ptype == piece_type::king()) {
+      m_pawn_key ^= z;
+    }
+
+    m_key ^= z;
   }
 
   if (m_ep.has_value()) {
@@ -238,7 +255,7 @@ auto position::lazy_generate_pinner() const -> void {
     m_pinned.set(pinned);
 
     const piece_id pinned_id = id_at(pinned);
-    const bitboard ray_incl = bitboard::ray_inclusive(king_sq, to);
+    const bitboard ray_incl  = bitboard::ray_inclusive(king_sq, to);
 
     m_pin_aware_attack_table.remove_attacker(pinned_id, ~ray_incl);
   };
