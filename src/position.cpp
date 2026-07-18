@@ -167,8 +167,10 @@ auto position::parse(std::string_view sv) -> position {
 }
 
 auto position::lazy_generate_key() -> void {
-  m_key      = 0;
-  m_pawn_key = 0;
+  m_key                = 0;
+  m_pawn_key           = 0;
+  m_white_non_pawn_key = 0;
+  m_black_non_pawn_key = 0;
 
   for (const piece_id id : m_piece_list[color::white()].mask) {
     const piece_type ptype     = ptype_of(color::white(), id);
@@ -179,6 +181,10 @@ auto position::lazy_generate_key() -> void {
 
     if (ptype == piece_type::pawn() || ptype == piece_type::king()) {
       m_pawn_key ^= z;
+    }
+
+    if (ptype != piece_type::pawn()) {
+      m_white_non_pawn_key ^= z;
     }
 
     m_key ^= z;
@@ -193,6 +199,10 @@ auto position::lazy_generate_key() -> void {
 
     if (ptype == piece_type::pawn() || ptype == piece_type::king()) {
       m_pawn_key ^= z;
+    }
+
+    if (ptype != piece_type::pawn()) {
+      m_black_non_pawn_key ^= z;
     }
 
     m_key ^= z;
