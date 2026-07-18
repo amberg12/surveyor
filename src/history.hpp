@@ -140,12 +140,16 @@ public:
     };
 
     update_entry(m_pawn[pos.stm()][pos.pawn_key() % corrhist_size]);
+    update_entry(m_white_non_pawn[pos.stm()][pos.white_non_pawn_key() % corrhist_size]);
+    update_entry(m_black_non_pawn[pos.stm()][pos.black_non_pawn_key() % corrhist_size]);
   }
 
   [[nodiscard]] auto read(const position& pos) -> score {
     i32 out = 0;
 
     out += 256 * m_pawn[pos.stm()][pos.pawn_key() % corrhist_size];
+    out += 256 * m_white_non_pawn[pos.stm()][pos.white_non_pawn_key() % corrhist_size];
+    out += 256 * m_black_non_pawn[pos.stm()][pos.black_non_pawn_key() % corrhist_size];
 
     return out / 2048;
   }
@@ -155,6 +159,8 @@ private:
   static constexpr i32   corrhist_max  = 1024;
 
   color_array<std::array<i16, corrhist_size>> m_pawn{};
+  color_array<std::array<i16, corrhist_size>> m_white_non_pawn{};
+  color_array<std::array<i16, corrhist_size>> m_black_non_pawn{};
 };
 
 }  // namespace surveyor

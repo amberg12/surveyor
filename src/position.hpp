@@ -158,6 +158,14 @@ public:
     return m_pawn_key;
   }
 
+  [[nodiscard]] constexpr auto white_non_pawn_key() const -> z_key {
+    return m_white_non_pawn_key;
+  }
+
+  [[nodiscard]] constexpr auto black_non_pawn_key() const -> z_key {
+    return m_black_non_pawn_key;
+  }
+
   [[nodiscard]] constexpr auto checkers() const -> usize {
     const piece_mask king_attackers = attackers_to(~m_stm, king_square(m_stm));
     return king_attackers.popcount();
@@ -465,8 +473,10 @@ private:
   mutable bitboard   m_pinned;
   mutable bool       m_pin_cache_updated = false;
 
-  z_key m_key      = 0;
-  z_key m_pawn_key = 0;
+  z_key m_key                = 0;
+  z_key m_pawn_key           = 0;
+  z_key m_white_non_pawn_key = 0;
+  z_key m_black_non_pawn_key = 0;
 
   color                  m_stm = color::white();
   square                 m_ep  = square::invalid();

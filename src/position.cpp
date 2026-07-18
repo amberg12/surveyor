@@ -181,6 +181,10 @@ auto position::lazy_generate_key() -> void {
       m_pawn_key ^= z;
     }
 
+    if (ptype != piece_type::pawn()) {
+      m_white_non_pawn_key ^= z;
+    }
+
     m_key ^= z;
   }
 
@@ -193,6 +197,10 @@ auto position::lazy_generate_key() -> void {
 
     if (ptype == piece_type::pawn() || ptype == piece_type::king()) {
       m_pawn_key ^= z;
+    }
+
+    if (ptype != piece_type::pawn()) {
+      m_black_non_pawn_key ^= z;
     }
 
     m_key ^= z;
