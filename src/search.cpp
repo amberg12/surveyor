@@ -184,12 +184,12 @@ auto searcher<Ctrls>::search(node_type       expected,
     return entry->sc;
   }
 
-  const score static_eval = [&] {
+  const score static_eval = [&] -> score {
     if (pos.checkers()) {
       return scoring::none;
     }
 
-    return evaluate(pos);
+    return evaluate(pos) + m_sd.corrhist.read(pos);
   }();
 
   ss->static_eval = static_eval;
@@ -404,6 +404,13 @@ auto searcher<Ctrls>::search(node_type       expected,
     best_score = pos.checkers() ? scoring::mated_in(ply) : 0;
   }
 
+  if (!pos.checkers() && !best_move.is_noisy()
+      && !(actual_node_type == node_type::all() && best_score >= static_eval)
+      && !(actual_node_type == node_type::cut() && best_score <= static_eval)
+      && !scoring::is_mate(best_score)) {
+    m_sd.corrhist.update(pos, depth, static_eval, best_score);
+  }
+
   m_shared->tt().write(pos, ply, best_move, best_score, depth, actual_node_type);
 
   return best_score;
@@ -428,8 +435,9 @@ auto searcher<Ctrls>::quiesce(node_type       expected,
 
   const std::optional<tt::entry> entry = m_shared->tt().probe(pos, ply);
 
-  score best_score = pos.checkers() >= 1 ? scoring::mated_in(ply) : evaluate(pos);
-  alpha            = std::max(best_score, alpha);
+  score best_score =
+    pos.checkers() >= 1 ? scoring::mated_in(ply) : evaluate(pos) + m_sd.corrhist.read(pos);
+  alpha = std::max(best_score, alpha);
 
   if (best_score >= beta) {
     return best_score;

@@ -129,4 +129,32 @@ private:
   multi_array_t<i16, 2, 6, 64, 6> m_capture_history{};
 };
 
+class correction_history {
+public:
+  auto update(const position& pos, i32 depth, score static_eval, score search_score) -> void {
+    const i32 bonus = (search_score - static_eval) * depth / 8;
+
+    const auto update_entry = [&](i16& entry) {
+      i32 update = std::clamp(bonus, -corrhist_max / 4, corrhist_max / 4);
+      entry += update - entry * std::abs(update) / corrhist_max;
+    };
+
+    update_entry(m_pawn[pos.stm()][pos.pawn_key() % corrhist_size]);
+  }
+
+  [[nodiscard]] auto read(const position& pos) -> score {
+    i32 out = 0;
+
+    out += 256 * m_pawn[pos.stm()][pos.pawn_key() % corrhist_size];
+
+    return out / 2048;
+  }
+
+private:
+  static constexpr usize corrhist_size = 16384;
+  static constexpr i32   corrhist_max  = 1024;
+
+  color_array<std::array<i16, corrhist_size>> m_pawn{};
+};
+
 }  // namespace surveyor
