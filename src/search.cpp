@@ -310,6 +310,7 @@ auto searcher<Ctrls>::search(node_type       expected,
 
     i32 extensions = 0;
 
+    // Singular extensions
     if (!is_root && depth >= 9 && entry.has_value() && entry->node() != node_type::all()
         && entry->depth >= depth - 3 && mv == entry->mv) {
       line singular_pv;
@@ -323,6 +324,11 @@ auto searcher<Ctrls>::search(node_type       expected,
                                           singular_beta, ss, singular_depth, ply);
 
       ss->excluded = move::null();
+
+      // Multicut
+      if (singular_score >= singular_beta && singular_beta >= beta) {
+        return singular_beta;
+      }
 
       if (singular_score < singular_beta) {
         extensions = 1;
