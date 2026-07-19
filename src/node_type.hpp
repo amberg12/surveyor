@@ -59,6 +59,10 @@ public:
     return none();
   }
 
+  [[nodiscard]] constexpr auto narrow() const -> node_type {
+    return *this == pv() ? cut() : *this;
+  }
+
   // Overloads
   friend constexpr auto operator==(const node_type& lhs, const node_type& rhs) -> bool = default;
 
