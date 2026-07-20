@@ -330,8 +330,11 @@ auto searcher<Ctrls>::search(node_type       expected,
         return singular_beta;
       }
 
+      // Extend based on how singular the move is.
       if (singular_score < singular_beta) {
         extensions = 1;
+
+        extensions += singular_score < singular_beta - 20;
       }
     }
 
