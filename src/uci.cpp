@@ -183,6 +183,8 @@ auto uci::execute_position(std::istringstream& arguments)
     m_repetitions.push(m_pos);
   }
 
+  m_repetitions.set_uci_moves();
+
   return std::nullopt;
 }
 

@@ -31,16 +31,31 @@ public:
     m_keys.pop_back();
   }
 
+  auto set_uci_moves() -> void {
+    m_uci_moves = m_keys.size();
+  }
+
   [[nodiscard]] auto is_repetition(const position& pos) const -> bool {
-    for (i32 i = 0; i < m_keys.size() - 1; ++i) {
-      if (pos.key() == m_keys[i]) {
+    i32 times_position_found = 0;
+
+    for (i32 i = static_cast<i32>(m_keys.size()) - 3; i >= 0; i -= 2) {
+      times_position_found += m_keys[i] == pos.key();
+
+      if (times_position_found == 1 && i >= m_uci_moves) {
+        return true;
+      }
+
+      if (times_position_found == 2) {
         return true;
       }
     }
 
     return false;
   }
+
 private:
+  usize m_uci_moves = 0;
+
   std::vector<z_key> m_keys;
 };
 
