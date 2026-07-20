@@ -32,6 +32,10 @@ auto move::parse(std::string_view sv, const position& pos) -> move {
     return make(src, dst, en_passant);
   }
 
+  if (ptype == piece_type::pawn() && std::abs(src.rank() - dst.rank()) == 2) {
+    return make(src, dst, double_push);
+  }
+
   if (ptype == piece_type::king() && std::abs(src.file() - dst.file()) >= 2) {
     if (src.file() < dst.file()) {
       return make(src, dst, castle_hside);
