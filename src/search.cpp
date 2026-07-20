@@ -334,7 +334,7 @@ auto searcher<Ctrls>::search(node_type       expected,
       if (singular_score < singular_beta) {
         extensions = 1;
 
-        extensions += singular_score < singular_beta - 20;
+        extensions += expected != node_type::pv() && singular_score < singular_beta - 20;
       }
     }
 
