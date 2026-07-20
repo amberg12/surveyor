@@ -38,7 +38,7 @@ public:
   [[nodiscard]] auto is_repetition(const position& pos) const -> bool {
     i32 times_position_found = 0;
 
-    for (i32 i = m_keys.size() - 3; i >= 0; i -= 2) {
+    for (i32 i = static_cast<i32>(m_keys.size()) - 3; i >= 0; i -= 2) {
       times_position_found += m_keys[i] == pos.key();
 
       if (times_position_found == 1 && i >= m_uci_moves) {
