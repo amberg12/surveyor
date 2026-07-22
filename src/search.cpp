@@ -476,6 +476,11 @@ auto searcher<Ctrls>::quiesce(node_type       expected,
     return 0;
   }
 
+  if (const auto sc = pos.move_rule(ply)) {
+    // We do not trust any mate scores from qsearch, so we always return 0.
+    return 0;
+  }
+
   const std::optional<tt::entry> entry = m_shared->tt().probe(pos, ply);
 
   score best_score =
