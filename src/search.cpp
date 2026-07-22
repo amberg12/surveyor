@@ -148,21 +148,21 @@ auto searcher<Ctrls>::search(node_type       expected,
   const bool is_root  = ply == 0;
   const bool singular = ss->excluded.has_value();
 
-  m_nodes += 1;
   if (m_shared->stopped() || m_ctrls.hard_stop(m_shared->stats())) {
     m_shared->stop();
     return 0;
   }
 
+  if (depth <= 0) {
+    return quiesce(expected, pos, pv, alpha, beta, ss, ply);
+  }
+
+  m_nodes += 1;
+
   if (!is_root) {
     if (m_repetition_table.is_repetition(pos)) {
       return 0;
     }
-  }
-
-
-  if (depth <= 0) {
-    return quiesce(expected, pos, pv, alpha, beta, ss, ply);
   }
 
   std::optional<tt::entry> entry = singular ? std::nullopt : m_shared->tt().probe(pos, ply);
