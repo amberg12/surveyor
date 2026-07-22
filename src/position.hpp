@@ -278,6 +278,12 @@ private:
   auto do_move(move mv) -> void {
     const auto [stm, ptype] = piece_at(mv.src());
 
+    ++m_move_rule;
+
+    if (mv.is_capture() || ptype == piece_type::pawn()) {
+      m_move_rule = 0;
+    }
+
     const auto fix_castling = [&](square sq) {
       if (m_rook_info[color::white()].a_side == sq) {
         m_rook_info[color::white()].a_side = std::nullopt;
