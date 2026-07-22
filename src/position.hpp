@@ -21,6 +21,7 @@
 #include "geometry.hpp"
 #include "move.hpp"
 #include "piece.hpp"
+#include "score.hpp"
 #include "square.hpp"
 #include "zobrist.hpp"
 
@@ -149,6 +150,8 @@ public:
   [[nodiscard]] constexpr auto h_side(color stm) const -> std::optional<square> {
     return m_rook_info[stm].h_side;
   }
+
+  [[nodiscard]] auto move_rule(i32 ply) const -> std::optional<score>;
 
   [[nodiscard]] constexpr auto key() const -> z_key {
     return m_key;
