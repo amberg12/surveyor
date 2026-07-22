@@ -48,21 +48,26 @@ public:
 
   auto soft_stop(const search_stats& ss) const -> bool {
     using namespace std::chrono_literals;
-    const time::milliseconds safe_time  = std::max(m_time - 50ms, 0ms);
-    const time::milliseconds soft_limit = safe_time / 20 + m_inc / 2;
+    const time::milliseconds soft_limit = m_time / 20 + m_inc / 2;
 
-    return ss.current_time > m_start + soft_limit;
+    const time::milliseconds safe_soft_limit = std::min(soft_limit, hard_limit());
+
+    return ss.current_time > m_start + safe_soft_limit;
   }
 
   auto hard_stop(const search_stats& ss) const -> bool {
-    using namespace std::chrono_literals;
-    const time::milliseconds safe_time  = std::max(m_time - 50ms, 0ms);
-    const time::milliseconds hard_limit = safe_time / 3 + m_inc;
-
-    return ss.current_time > m_start + hard_limit;
+    return ss.current_time > m_start + hard_limit();
   }
 
 private:
+  [[nodiscard]] constexpr auto hard_limit() const -> time::milliseconds {
+    using namespace std::chrono_literals;
+
+    const time::milliseconds hard_limit = m_time / 3 + m_inc;
+
+    return std::max(hard_limit - 50ms, 0ms);
+  }
+
   time::time_point   m_start;
   time::milliseconds m_time;
   time::milliseconds m_inc;
