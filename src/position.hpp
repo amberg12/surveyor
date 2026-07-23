@@ -21,6 +21,7 @@
 #include "geometry.hpp"
 #include "move.hpp"
 #include "piece.hpp"
+#include "score.hpp"
 #include "square.hpp"
 #include "zobrist.hpp"
 
@@ -150,6 +151,8 @@ public:
     return m_rook_info[stm].h_side;
   }
 
+  [[nodiscard]] auto move_rule(i32 ply) const -> std::optional<score>;
+
   [[nodiscard]] constexpr auto key() const -> z_key {
     return m_key;
   }
@@ -274,6 +277,12 @@ private:
 
   auto do_move(move mv) -> void {
     const auto [stm, ptype] = piece_at(mv.src());
+
+    ++m_move_rule;
+
+    if (mv.is_capture() || ptype == piece_type::pawn()) {
+      m_move_rule = 0;
+    }
 
     const auto fix_castling = [&](square sq) {
       if (m_rook_info[color::white()].a_side == sq) {

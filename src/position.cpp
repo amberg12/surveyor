@@ -18,6 +18,7 @@
 
 #include "position.hpp"
 
+#include "move_generation.hpp"
 #include "util/parse.hpp"
 
 #include <sstream>
@@ -164,6 +165,18 @@ auto position::parse(std::string_view sv) -> position {
   out.lazy_generate_key();
 
   return out;
+}
+
+auto position::move_rule(i32 ply) const -> std::optional<score> {
+  if (m_move_rule < 100) {
+    return std::nullopt;
+  }
+
+  if (checkers() != 0 && generate_moves(*this).empty()) [[unlikely]] {
+    return scoring::mated_in(ply);
+  }
+
+  return 0;
 }
 
 auto position::lazy_generate_key() -> void {

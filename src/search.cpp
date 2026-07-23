@@ -160,6 +160,10 @@ auto searcher<Ctrls>::search(node_type       expected,
   m_nodes += 1;
 
   if (!is_root) {
+    if (const auto sc = pos.move_rule(ply)) {
+      return *sc;
+    }
+
     if (m_repetition_table.is_repetition(pos)) {
       return 0;
     }
@@ -469,6 +473,11 @@ auto searcher<Ctrls>::quiesce(node_type       expected,
   }
 
   if (m_repetition_table.is_repetition(pos)) {
+    return 0;
+  }
+
+  if (const auto sc = pos.move_rule(ply)) {
+    // We do not trust any mate scores from qsearch, so we always return 0.
     return 0;
   }
 
