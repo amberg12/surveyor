@@ -310,6 +310,11 @@ auto searcher<Ctrls>::search(node_type       expected,
       if (!mv.is_noisy() && depth <= 4 && history <= -2048 * depth * depth) {
         continue;
       }
+
+      // See pruning
+      if (depth <= 6 && see(pos, mv) <= (mv.is_noisy() ? -128 * depth : -96 * depth)) {
+        continue;
+      }
     }
 
     i32 extensions = 0;
