@@ -40,7 +40,8 @@ public:
   }
 
   auto next_move() -> move {
-    const auto next_move = [&](move_list& ml, std::array<i32, 256>& scores, usize& idx) -> move {
+    const auto inc_sort_move = [&](move_list& ml, std::array<i32, 256>& scores,
+                                   usize& idx) -> move {
       usize best_idx   = idx;
       i32   best_score = scores[idx];
 
@@ -59,18 +60,25 @@ public:
 
     switch (m_phase) {
     case phase::generate_moves: {
-      const move_list all_moves = generate_moves(m_pos);
+      const move_list legal_moves = generate_moves(m_pos);
 
-      for (const move mv : all_moves) {
+      bool tt_move_found = false;
+
+      for (const move mv : legal_moves) {
+        if (mv == m_tt_move) {
+          tt_move_found = true;
+          continue;
+        }
+
         if (mv.is_noisy()) {
           m_noisy_moves.emplace_back(mv);
         } else {
           m_quiet_moves.emplace_back(mv);
         }
+      }
 
-        if (mv == m_tt_move) {
-          m_tt_move_valid = true;
-        }
+      if (!tt_move_found) {
+        m_tt_move = move::null();
       }
 
       m_phase = phase::emit_tt;
@@ -79,90 +87,81 @@ public:
     case phase::emit_tt: {
       m_phase = phase::score_noisy;
 
-      if (m_tt_move_valid) {
+      if (m_tt_move.has_value()) {
         return m_tt_move;
       }
 
-      m_tt_move = move::null();
       [[fallthrough]];
     }
     case phase::score_noisy: {
-      for (usize i = 0; i < m_noisy_moves.size(); ++i) {
+      for (i32 i = 0; i < m_noisy_moves.size(); ++i) {
         const move mv = m_noisy_moves[i];
 
-        if (!mv.is_capture()) {
-          continue;
-        }
+        const i32 move_score = [&] {
+          if (!mv.is_capture()) {
+            return 0;
+          }
 
-        const auto [victim_stm, victim_ptype] = mv.is_en_passant()
-          ? std::tuple{~m_pos.stm(), piece_type::pawn()}
-          : m_pos.piece_at(mv.dst());
+          const piece_type victim =
+            mv.is_en_passant() ? piece_type::pawn() : m_pos.ptype_at(mv.dst());
 
-        const auto [attacker_stm, attacker_ptype] = m_pos.piece_at(mv.src());
+          return static_cast<i32>(history_max + history_max * victim.idx()
+                                  + m_capthist.read(m_pos, mv) / 8);
+        }();
 
-        m_noisy_scores[i] =
-          victim_ptype.compressed_idx() * history_max + m_capthist.read(m_pos, mv) / 8;
+        m_noisy_scores[i] = move_score;
       }
 
       m_phase = phase::emit_noisy;
       [[fallthrough]];
     }
     case phase::emit_noisy: {
-      if (m_noisy_idx < m_noisy_moves.size()) {
-        move nm = move::null();
-
-        do {
-          nm = next_move(m_noisy_moves, m_noisy_scores, m_noisy_idx);
-        } while (nm == m_tt_move && m_noisy_idx < m_noisy_moves.size());
-
-        if (nm.has_value()) {
-          return nm;
-        }
+      while (m_noisy_idx < m_noisy_moves.size()) {
+        return inc_sort_move(m_noisy_moves, m_noisy_scores, m_noisy_idx);
       }
 
-      if (m_skip_quiet) {
-        m_phase = phase::exit;
-        goto exit;
-      } else {
-        m_phase = phase::score_quiet;
-      }
+      m_phase = phase::score_quiet;
       [[fallthrough]];
     }
     case phase::score_quiet: {
-      for (usize i = 0; i < m_quiet_moves.size(); ++i) {
-        m_quiet_scores[i] = m_piece_to.read(m_pos, m_quiet_moves[i]);
+      if (!m_skip_quiet) {
+        for (i32 i = 0; i < m_quiet_moves.size(); ++i) {
+          const move mv = m_quiet_moves[i];
 
-        for (i32 ply : conthist_plies) {
-          if (m_ss[-ply].conthist_subtable != nullptr) {
-            m_quiet_scores[i] += m_ss[-ply].conthist_subtable->read(m_pos, m_quiet_moves[i]);
-          }
+          const i32 move_score = [&] {
+            i32 out = m_piece_to.read(m_pos, mv);
+
+            for (const i32 ply : conthist_plies) {
+              continuation_history::subtable* subtable = m_ss[-ply].conthist_subtable;
+
+              if (subtable) {
+                out += subtable->read(m_pos, mv);
+              }
+            }
+
+            return out;
+          }();
+
+          m_quiet_scores[i] = move_score;
         }
-      }
 
-      m_phase = phase::emit_quiet;
-      [[fallthrough]];
+        m_phase = phase::emit_quiet;
+        [[fallthrough]];
+      }
     }
     case phase::emit_quiet: {
-      if (m_quiet_idx < m_quiet_moves.size()) {
-        move nm = move::null();
-
-        do {
-          nm = next_move(m_quiet_moves, m_quiet_scores, m_quiet_idx);
-        } while (nm == m_tt_move && m_quiet_idx < m_quiet_moves.size());
-
-        if (nm.has_value()) {
-          return nm;
+      if (!m_skip_quiet) {
+        while (m_quiet_idx < m_quiet_moves.size()) {
+          return inc_sort_move(m_quiet_moves, m_quiet_scores, m_quiet_idx);
         }
       }
 
       m_phase = phase::exit;
       [[fallthrough]];
     }
-    case phase::exit: {
-exit:
-    } break;
+    case phase::exit:
+      break;
     }
-
     return move::null();
   }
 
@@ -180,8 +179,7 @@ private:
   bool m_skip_quiet = false;
 
   const position& m_pos;
-  move            m_tt_move       = move::null();
-  bool            m_tt_move_valid = false;
+  move            m_tt_move = move::null();
   search_stack*   m_ss;
 
   piece_to_history& m_piece_to;
