@@ -96,6 +96,8 @@ inline auto see(const position& pos, move mv) -> i32 {
     }
   };
 
+  handle_xray(mv.src());
+
   std::optional attacker = pos.ptype_at(mv.src());
   std::optional victim   = pos.ptype_at(mv.dst());
 
