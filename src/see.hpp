@@ -73,7 +73,7 @@ inline auto see(const position& pos, move mv) -> i32 {
       return;
     }
 
-    geometry::x88 scanner = geometry::to_x88(origin);
+    geometry::x88 scanner = geometry::to_x88(origin) + dir;
 
     while (!blockers.has_value(geometry::from_x88(scanner))) {
       scanner += dir;
@@ -148,6 +148,17 @@ inline auto see(const position& pos, move mv) -> i32 {
       return piece_type::queen();
     }
 
+    if (const auto mask = pm & pos.ptype_mask(col, piece_type::king()); mask.has_value()) {
+      const piece_id king_id = mask.lsb();
+      pm.del(king_id);
+
+      // Disallow kings moving into attacks.
+      if (attackers[~col].has_value()) {
+        return std::nullopt;
+      }
+
+      return piece_type::king();
+    }
     return std::nullopt;
   };
 
