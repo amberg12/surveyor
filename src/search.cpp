@@ -254,7 +254,7 @@ auto searcher<Ctrls>::search(node_type       expected,
 
   const move tt_move = entry.has_value() ? entry->mv : move::null();
 
-  move_picker mp{pos, tt_move, m_sd.piece_to, m_sd.capthist, ss};
+  move_picker mp{pos, tt_move, m_sd.piece_to, m_sd.capthist, ss, -250};
 
   score     best_score       = scoring::none;
   move      best_move        = move::null();
