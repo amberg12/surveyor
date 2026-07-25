@@ -18,21 +18,24 @@
 
 #pragma once
 #include "move_generation.hpp"
+#include "see.hpp"
 
 namespace surveyor {
 
 class move_picker {
 public:
-  move_picker(const position&   pos,
-              move              tt_move,
-              piece_to_history& piece_to,
-              capture_history&  capthist,
-              search_stack*     ss)
+  move_picker(const position&    pos,
+              move               tt_move,
+              piece_to_history&  piece_to,
+              capture_history&   capthist,
+              search_stack*      ss,
+              std::optional<i32> bad_noisy_threshold = std::nullopt)
       : m_pos(pos)
       , m_tt_move(tt_move)
       , m_piece_to(piece_to)
       , m_capthist(capthist)
-      , m_ss(ss) {
+      , m_ss(ss)
+      , m_bad_noisy_threshold(bad_noisy_threshold) {
   }
 
   auto skip_quiet() -> void {
@@ -117,7 +120,14 @@ public:
     }
     case phase::emit_noisy: {
       while (m_noisy_idx < m_noisy_moves.size()) {
-        return inc_sort_move(m_noisy_moves, m_noisy_scores, m_noisy_idx);
+        const move mv = inc_sort_move(m_noisy_moves, m_noisy_scores, m_noisy_idx);
+
+        if (m_bad_noisy_threshold && see(m_pos, mv) < *m_bad_noisy_threshold) {
+          m_bad_noisy_moves.emplace_back(mv);
+          continue;
+        }
+
+        return mv;
       }
 
       m_phase = phase::score_quiet;
@@ -156,8 +166,13 @@ public:
         }
       }
 
-      m_phase = phase::exit;
+      m_phase = phase::emit_bad_noisy;
       [[fallthrough]];
+    }
+    case phase::emit_bad_noisy: {
+      while (m_bad_noisy_idx < m_bad_noisy_moves.size()) {
+        return m_bad_noisy_moves[m_bad_noisy_idx++];
+      }
     }
     case phase::exit:
       break;
@@ -173,6 +188,7 @@ private:
     emit_noisy,
     score_quiet,
     emit_quiet,
+    emit_bad_noisy,
     exit,
   };
 
@@ -194,6 +210,10 @@ private:
   move_list            m_quiet_moves;
   std::array<i32, 256> m_quiet_scores{};
   usize                m_quiet_idx = 0;
+
+  std::optional<i32> m_bad_noisy_threshold = std::nullopt;
+  move_list          m_bad_noisy_moves;
+  usize              m_bad_noisy_idx = 0;
 };
 
 }  // namespace surveyor
