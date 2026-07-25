@@ -452,11 +452,11 @@ auto searcher<Ctrls>::search(node_type       expected,
 
   if (!singular) {
     if (!pos.checkers() && !best_move.is_noisy()
-       && !(actual_node_type == node_type::all() && best_score >= static_eval)
-       && !(actual_node_type == node_type::cut() && best_score <= static_eval)
-       && !scoring::is_mate(best_score)) {
+        && !(actual_node_type == node_type::all() && best_score >= static_eval)
+        && !(actual_node_type == node_type::cut() && best_score <= static_eval)
+        && !scoring::is_mate(best_score)) {
       m_sd.corrhist.update(pos, depth, static_eval, best_score);
-       }
+    }
 
     m_shared->tt().write(pos, ply, best_move, best_score, depth, actual_node_type);
   }
@@ -487,6 +487,25 @@ auto searcher<Ctrls>::quiesce(node_type       expected,
   }
 
   const std::optional<tt::entry> entry = m_shared->tt().probe(pos, ply);
+
+  // TT Cutoffs
+  if (expected != node_type::pv() && entry.has_value() && [&] {
+        if (entry->node() == node_type::pv()) {
+          return true;
+        }
+
+        if (entry->node() == node_type::all()) {
+          return entry->sc <= alpha;
+        }
+
+        if (entry->node() == node_type::cut()) {
+          return entry->sc >= beta;
+        }
+
+        return false;
+      }()) {
+    return entry->sc;
+  }
 
   score best_score =
     pos.checkers() >= 1 ? scoring::mated_in(ply) : evaluate(pos) + m_sd.corrhist.read(pos);
