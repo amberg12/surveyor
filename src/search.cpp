@@ -90,7 +90,7 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
     score s;
     score alpha = -scoring::inf;
     score beta  = scoring::inf;
-    score delta = 100;
+    score delta = 25;
 
     if (m_depth >= 5) {
       alpha = last_score - delta;
@@ -101,9 +101,9 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
       s = search(node_type::pv(), root, pv, alpha, beta, ss.data() + 10, m_depth, 0);
 
       if (s <= alpha) {
-        alpha = -scoring::inf;
+        alpha = std::max(-scoring::inf, alpha - delta);
       } else if (s >= beta) {
-        beta = scoring::inf;
+        beta = std::min(static_cast<i32>(scoring::inf), beta + delta);
       } else {
         break;
       }
@@ -111,6 +111,8 @@ auto searcher<Ctrls>::iterative_deepening() -> void {
       if (m_shared->stopped()) {
         break;
       }
+
+      delta += delta;
     }
 
     if (m_shared->stopped()) {
