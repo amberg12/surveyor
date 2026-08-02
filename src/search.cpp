@@ -347,6 +347,10 @@ auto searcher<Ctrls>::search(node_type       expected,
 
         extensions += expected != node_type::pv() && singular_score < singular_beta - 20;
       }
+      // Negative extensions
+      else if (entry->sc >= beta) {
+        extensions = -3;
+      }
     }
 
     line child_pv;
