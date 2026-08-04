@@ -469,6 +469,7 @@ auto searcher<Ctrls>::search(node_type       expected,
 
   return best_score;
 }
+
 template<search_controls Ctrls>
 auto searcher<Ctrls>::quiesce(node_type       expected,
                               const position& pos,
@@ -535,15 +536,17 @@ auto searcher<Ctrls>::quiesce(node_type       expected,
   for (move mv = mp.next_move(); mv.has_value(); mv = mp.next_move()) {
     line child_pv;
 
-    // Late move pruning
-    if (move_idx >= 3) {
-      break;
-    }
+    if (!scoring::is_losing(best_score)) {
+      // Late move pruning
+      if (move_idx >= 3) {
+        break;
+      }
 
-    if (!pos.checkers()) {
-      // See pruning
-      if (see(pos, mv) < -10) {
-        continue;
+      if (!pos.checkers()) {
+        // See pruning
+        if (see(pos, mv) < -10) {
+          continue;
+        }
       }
     }
 
