@@ -514,6 +514,8 @@ auto searcher<Ctrls>::quiesce(node_type       expected,
     return entry->sc;
   }
 
+  const score static_eval = pos.checkers() ? scoring::none : evaluate(pos);
+
   score best_score =
     pos.checkers() >= 1 ? scoring::mated_in(ply) : evaluate(pos) + m_sd.corrhist.read(pos);
   alpha = std::max(best_score, alpha);
@@ -542,11 +544,19 @@ auto searcher<Ctrls>::quiesce(node_type       expected,
         break;
       }
 
+      const i32 see_score = see(pos, mv);
+
       if (!pos.checkers()) {
         // See pruning
-        if (see(pos, mv) < -10) {
+        if (see_score < -10) {
           continue;
         }
+      }
+
+      if (const score futility = static_eval + 128;
+          !scoring::is_mate(alpha) && futility < alpha && see_score <= 0) {
+        best_score = std::max(best_score, futility);
+        continue;
       }
     }
 
