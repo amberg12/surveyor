@@ -104,6 +104,7 @@ public:
 
   auto write(const position& pos, i32 ply, move mv, score sc, i32 depth, node_type nt) -> void;
   [[nodiscard]] auto probe(const position& pos, i32 ply) const -> std::optional<entry>;
+  auto prefetch(const position& pos) const -> void;
 
   [[nodiscard]] auto hashfull() const -> usize {
     usize out = 0;
