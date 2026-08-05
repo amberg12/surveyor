@@ -126,8 +126,14 @@ public:
   [[nodiscard]] auto make_null_move() const -> position {
     position out = *this;
     out.m_stm    = ~m_stm;
+
+    out.m_key ^= zobrist::stm;
+    if (out.m_ep.has_value()) {
+      out.m_key ^= zobrist::en_passant[out.m_ep.file()];
+    }
+
     out.m_ep     = square::invalid();
-    out.lazy_generate_key();
+
     out.m_pin_cache_updated = false;
     return out;
   }
@@ -276,6 +282,32 @@ private:
   auto do_move(move mv) -> void {
     const auto [stm, ptype] = piece_at(mv.src());
 
+    const auto castling_idx = [&] {
+      usize out = 0;
+
+      if (m_rook_info[color::white()].a_side.has_value()) {
+        out |= 0b0001;
+      }
+
+      if (m_rook_info[color::white()].h_side.has_value()) {
+        out |= 0b0010;
+      }
+
+      if (m_rook_info[color::black()].a_side.has_value()) {
+        out |= 0b0100;
+      }
+
+      if (m_rook_info[color::black()].h_side.has_value()) {
+        out |= 0b1000;
+      }
+
+      return out;
+    };
+
+    if (m_ep.has_value()) {
+      m_key ^= zobrist::en_passant[m_ep.file()];
+    }
+
     ++m_move_rule;
 
     if (mv.is_capture() || ptype == piece_type::pawn()) {
@@ -283,6 +315,8 @@ private:
     }
 
     const auto fix_castling = [&](square sq) {
+      m_key ^= zobrist::castling[castling_idx()];
+
       if (m_rook_info[color::white()].a_side == sq) {
         m_rook_info[color::white()].a_side = std::nullopt;
       }
@@ -298,6 +332,8 @@ private:
       if (m_rook_info[color::black()].h_side == sq) {
         m_rook_info[color::black()].h_side = std::nullopt;
       }
+
+      m_key ^= zobrist::castling[castling_idx()];
     };
 
     const auto normal = [&] {
@@ -305,7 +341,9 @@ private:
       m_ep = square::invalid();
 
       if (ptype == piece_type::king()) {
+        m_key ^= zobrist::castling[castling_idx()];
         m_rook_info[stm].clear();
+        m_key ^= zobrist::castling[castling_idx()];
       } else {
         fix_castling(mv.src());
       }
@@ -314,6 +352,7 @@ private:
     const auto double_push = [&] {
       move_piece(mv.src(), mv.dst());
       m_ep = *geometry::shift(mv.src(), geometry::pawn_direction(m_stm));
+      m_key ^= zobrist::en_passant[m_ep.file()];
     };
 
     const auto castle_aside = [&] {
@@ -323,7 +362,9 @@ private:
       move_piece(*m_rook_info[m_stm].a_side, rook_dst);
       move_piece(king_square(m_stm), king_dst);
 
-      m_rook_info[m_stm].clear();
+      m_key ^= zobrist::castling[castling_idx()];
+      m_rook_info[stm].clear();
+      m_key ^= zobrist::castling[castling_idx()];
       m_ep = square::invalid();
     };
 
@@ -334,7 +375,9 @@ private:
       move_piece(*m_rook_info[m_stm].h_side, rook_dst);
       move_piece(king_square(m_stm), king_dst);
 
-      m_rook_info[m_stm].clear();
+      m_key ^= zobrist::castling[castling_idx()];
+      m_rook_info[stm].clear();
+      m_key ^= zobrist::castling[castling_idx()];
       m_ep = square::invalid();
     };
 
@@ -344,7 +387,9 @@ private:
       m_ep = square::invalid();
 
       if (ptype == piece_type::king()) {
+        m_key ^= zobrist::castling[castling_idx()];
         m_rook_info[stm].clear();
+        m_key ^= zobrist::castling[castling_idx()];
       } else {
         fix_castling(mv.src());
       }
@@ -421,11 +466,14 @@ private:
 
     m_stm = ~m_stm;
 
-    lazy_generate_key();
+    m_key ^= zobrist::stm;
   }
 
   auto move_piece(square src, square dst) -> void {
     const auto [id, c, ptype] = m_mail_box[src].unpack();
+
+    update_piece_zobrist(c, ptype, src);
+    update_piece_zobrist(c, ptype, dst);
 
     m_mail_box[dst] = m_mail_box[src];
     m_mail_box[src] = {};
@@ -448,6 +496,9 @@ private:
 
   auto destroy_piece(square at) -> void {
     const auto [id, c, ptype] = m_mail_box[at].unpack();
+
+    update_piece_zobrist(c, ptype, at);
+
     m_mail_box[at]            = place{};
     m_piece_list[c].mask.del(id);
 
@@ -460,6 +511,10 @@ private:
 
   auto mutate_piece(square at, piece_type to) -> void {
     const auto [id, c, ptype]        = place_at(at);
+
+    update_piece_zobrist(c, to, at);
+    update_piece_zobrist(c, ptype, at);
+
     m_mail_box[at]                   = place{id, c, to};
     m_piece_list[c].ptypes[id.idx()] = to;
 
@@ -489,6 +544,8 @@ private:
   auto generate_sliders_to(square to) -> void;
 
   auto update_slider(color stm, piece_id id, square to) -> void;
+
+  auto update_piece_zobrist(color stm, piece_type ptype, square sq) -> void;
 
   mail_box                m_mail_box;
   color_array<attack_box> m_attack_box;

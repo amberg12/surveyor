@@ -438,4 +438,22 @@ auto position::update_slider(color stm, piece_id id, square to) -> void {
   }
 }
 
+auto position::update_piece_zobrist(color stm, piece_type ptype, square sq) -> void {
+  const z_key z = zobrist::pieces[stm.idx()][ptype.compressed_idx()][sq.idx];
+
+  m_key ^= z;
+
+  if (ptype == piece_type::pawn() || ptype == piece_type::king()) {
+    m_pawn_key ^= z;
+  }
+
+  if (ptype != piece_type::pawn() && stm == color::white()) {
+    m_white_non_pawn_key ^= z;
+  }
+
+  if (ptype != piece_type::pawn() && stm == color::black()) {
+    m_black_non_pawn_key ^= z;
+  }
+}
+
 }  // namespace surveyor
