@@ -34,10 +34,11 @@ constexpr u8 max_age = 0b00011111;
 
 struct entry {
   z_key key{};
-  score sc    = scoring::none;
-  move  mv    = move::null();
-  u8    info  = 0;
-  u8    depth = 0;
+  score sc       = scoring::none;
+  score raw_eval = scoring::none;
+  move  mv       = move::null();
+  u8    info     = 0;
+  u8    depth    = 0;
 
   [[nodiscard]] constexpr auto node() const -> node_type {
     switch (info & 0b11000000) {
@@ -102,9 +103,11 @@ public:
     }
   }
 
-  auto write(const position& pos, i32 ply, move mv, score sc, i32 depth, node_type nt) -> void;
+  auto
+  write(const position& pos, i32 ply, move mv, score sc, score raw_eval, i32 depth, node_type nt)
+    -> void;
   [[nodiscard]] auto probe(const position& pos, i32 ply) const -> std::optional<entry>;
-  auto prefetch(const position& pos) const -> void;
+  auto               prefetch(const position& pos) const -> void;
 
   [[nodiscard]] auto hashfull() const -> usize {
     usize out = 0;

@@ -192,15 +192,28 @@ auto searcher<Ctrls>::search(node_type       expected,
     return entry->sc;
   }
 
+  const score raw_eval = [&] -> score {
+    if (pos.checkers()) {
+      return scoring::none;
+    }
+
+    if (entry.has_value() && entry->raw_eval != scoring::none) {
+      return entry->raw_eval;
+    }
+
+    return evaluate(pos);
+  }();
+
   const score static_eval = [&] -> score {
     if (pos.checkers()) {
       return scoring::none;
     }
 
-    return evaluate(pos) + m_sd.corrhist.read(pos);
+    return raw_eval + m_sd.corrhist.read(pos);
   }();
 
   ss->static_eval = static_eval;
+  ss->raw_eval    = raw_eval;
 
   const bool improving = [&] {
     if (pos.checkers()) {
@@ -465,7 +478,7 @@ auto searcher<Ctrls>::search(node_type       expected,
       m_sd.corrhist.update(pos, depth, static_eval, best_score);
     }
 
-    m_shared->tt().write(pos, ply, best_move, best_score, depth, actual_node_type);
+    m_shared->tt().write(pos, ply, best_move, best_score, raw_eval, depth, actual_node_type);
   }
 
   return best_score;
@@ -515,10 +528,34 @@ auto searcher<Ctrls>::quiesce(node_type       expected,
     return entry->sc;
   }
 
-  const score static_eval = pos.checkers() ? scoring::none : evaluate(pos);
+  const score raw_eval = [&] {
+    if (pos.checkers()) {
+      return scoring::none;
+    }
 
-  score best_score =
-    pos.checkers() >= 1 ? scoring::mated_in(ply) : evaluate(pos) + m_sd.corrhist.read(pos);
+    if (entry.has_value() && entry->raw_eval != scoring::none) {
+      return entry->raw_eval;
+    }
+
+    return evaluate(pos);
+  }();
+
+  const score static_eval = [&] {
+    if (pos.checkers()) {
+      return scoring::none;
+    }
+
+    return raw_eval;
+  }();
+
+  score best_score = [&] -> score {
+    if (pos.checkers()) {
+      return scoring::mated_in(ply);
+    }
+
+    return static_eval + m_sd.corrhist.read(pos);
+  }();
+
   alpha = std::max(best_score, alpha);
 
   if (best_score >= beta) {
@@ -600,6 +637,7 @@ template<search_controls Ctrls>
 auto searcher<Ctrls>::make_move(const position& pos, move mv, i32 ply, search_stack* ss)
   -> position {
   ss->conthist_subtable = m_sd.conthist.read(pos, mv);
+  ss[1].raw_eval = scoring::none;
 
   m_seldepth           = std::max(m_seldepth, ply + 1);
   const position child = pos.make_move(mv);

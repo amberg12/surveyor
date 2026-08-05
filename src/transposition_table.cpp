@@ -28,7 +28,8 @@ constexpr auto idx(u64 key, u64 cluster_count) -> u64 {
 }  // namespace
 
 auto transposition_table::write(
-  const position& pos, i32 ply, move mv, score sc, i32 depth, node_type nt) -> void {
+  const position& pos, i32 ply, move mv, score sc, score raw_eval, i32 depth, node_type nt)
+  -> void {
   entry& cluster = m_clusters[idx(pos.key(), m_cluster_count)];
 
   const entry new_entry = {
@@ -45,9 +46,10 @@ auto transposition_table::write(
 
         return sc;
       }(),
-    .mv    = mv,
-    .info  = entry::construct_info(nt, m_age),
-    .depth = static_cast<u8>(depth),
+    .raw_eval = raw_eval,
+    .mv       = mv,
+    .info     = entry::construct_info(nt, m_age),
+    .depth    = static_cast<u8>(depth),
   };
 
   cluster = new_entry;
