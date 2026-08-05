@@ -119,7 +119,6 @@ public:
   [[nodiscard]] auto make_move(move mv) const -> position {
     position out = *this;
     out.do_move(mv);
-    out.lazy_generate_attacks();
     out.m_pin_cache_updated = false;
     return out;
   }
@@ -128,7 +127,6 @@ public:
     position out = *this;
     out.m_stm    = ~m_stm;
     out.m_ep     = square::invalid();
-    out.lazy_generate_attacks();
     out.lazy_generate_key();
     out.m_pin_cache_updated = false;
     return out;
@@ -439,6 +437,13 @@ private:
 
     m_piece_bb[ptype].del(src);
     m_piece_bb[ptype].set(dst);
+
+    remove_attacker(c, id);
+
+    generate_sliders_to(src);
+    generate_sliders_to(dst);
+
+    generate_attacks(dst);
   }
 
   auto destroy_piece(square at) -> void {
@@ -448,6 +453,9 @@ private:
 
     m_color_bb[c].del(at);
     m_piece_bb[ptype].del(at);
+
+    remove_attacker(c, id);
+    generate_sliders_to(at);
   }
 
   auto mutate_piece(square at, piece_type to) -> void {
@@ -457,6 +465,13 @@ private:
 
     m_piece_bb[ptype].del(at);
     m_piece_bb[to].set(at);
+
+    remove_attacker(c, id);
+    generate_attacks(at);
+  }
+
+  auto remove_attacker(color stm, piece_id id) -> void {
+    m_attack_box[stm].remove_attacker(id, bitboard::full());
   }
 
   auto lazy_generate_key() -> void;
@@ -470,6 +485,10 @@ private:
   auto generate_sliders(color col, piece_id id, square src, geometry::direction dir) -> void;
 
   auto generate_leapers(color col, piece_id id, square src, geometry::direction dir) -> void;
+
+  auto generate_sliders_to(square to) -> void;
+
+  auto update_slider(color stm, piece_id id, square to) -> void;
 
   mail_box                m_mail_box;
   color_array<attack_box> m_attack_box;
