@@ -357,6 +357,7 @@ auto searcher<Ctrls>::search(node_type       expected,
 
     ++move_idx;
     const position child = make_move(pos, mv, ply, ss);
+    m_shared->tt().prefetch(child);
 
     score search_score;
 
@@ -562,6 +563,7 @@ auto searcher<Ctrls>::quiesce(node_type       expected,
 
     ++move_idx;
     const position child = make_move(pos, mv, ply, ss);
+    m_shared->tt().prefetch(child);
 
     const score search_score = -quiesce(expected, child, child_pv, -beta, -alpha, ss + 1, ply + 1);
 
@@ -609,6 +611,8 @@ template<search_controls Ctrls>
 auto searcher<Ctrls>::make_null_move(const position& pos, i32 ply) -> position {
   m_seldepth           = std::max(m_seldepth, ply + 1);
   const position child = pos.make_null_move();
+  m_shared->tt().prefetch(child);
+
   m_repetition_table.push(child);
   return child;
 }

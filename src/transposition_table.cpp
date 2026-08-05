@@ -71,4 +71,8 @@ auto transposition_table::probe(const position& pos, i32 ply) const -> std::opti
   return std::nullopt;
 }
 
+auto transposition_table::prefetch(const position& pos) const -> void {
+  __builtin_prefetch(&m_clusters[idx(pos.key(), m_cluster_count)]);
+}
+
 }  // namespace surveyor::tt
