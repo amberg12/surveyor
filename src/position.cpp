@@ -389,4 +389,53 @@ auto position::generate_leapers(color col, piece_id id, square src, geometry::di
   }
 }
 
+auto position::generate_sliders_to(square to) -> void {
+  for (const piece_id id : attackers_to(color::white(), to)) {
+    update_slider(color::white(), id, to);
+  }
+
+  for (const piece_id id : attackers_to(color::black(), to)) {
+    update_slider(color::black(), id, to);
+  }
+}
+
+auto position::update_slider(color stm, piece_id id, square to) -> void {
+  const square src = sq_of(stm, id);
+  const piece_type ptype = ptype_of(stm, id);
+
+  if (!ptype.slider()) {
+    return;
+  }
+
+  const geometry::direction direction = geometry::get_direction(src, to);
+
+  geometry::x88 coordinate = geometry::to_x88(src);
+
+  attack_box& ab = m_attack_box[stm];
+
+  bool encountered_piece = false;
+
+  while (true) {
+    coordinate += direction;
+
+    if (coordinate & 0x88) {
+      break;
+    }
+
+    const square real_coordinate = geometry::from_x88(coordinate);
+
+    if (!encountered_piece) {
+      ab[real_coordinate].set(id);
+    } else {
+      if (!ab[real_coordinate].is_set(id)) {
+        return;
+      }
+
+      ab[real_coordinate].del(id);
+    }
+
+    encountered_piece = encountered_piece || has_value(real_coordinate);
+  }
+}
+
 }  // namespace surveyor
