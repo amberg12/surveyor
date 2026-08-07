@@ -149,6 +149,7 @@ auto searcher<Ctrls>::search(node_type       expected,
                              i32             ply) -> score {
   const bool is_root  = ply == 0;
   const bool singular = ss->excluded.has_value();
+  ss[1].clear_killers();
 
   if (m_shared->stopped() || m_ctrls.hard_stop(m_shared->stats())) {
     m_shared->stop();
@@ -431,6 +432,8 @@ auto searcher<Ctrls>::search(node_type       expected,
       if (mv.is_noisy()) {
         m_sd.capthist.write(pos, mv, bonus(depth));
       } else {
+        ss->add_killer(mv);
+
         m_sd.piece_to.write(pos, mv, bonus(depth));
 
         for (i32 conthist_ply : conthist_plies) {
