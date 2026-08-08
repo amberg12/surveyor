@@ -17,6 +17,10 @@
  */
 
 #pragma once
+#ifdef __AVX2__
+  #include <immintrin.h>
+#endif
+
 #include "bitboard.hpp"
 #include "geometry.hpp"
 #include "move.hpp"
@@ -87,6 +91,22 @@ struct piece_list {
 
   template<piece_type_list... Pt>
   [[nodiscard]] constexpr auto ptype_mask(Pt... pts) const -> piece_mask {
+#ifdef __AVX2__
+    const __m128i values = _mm_loadu_si128(
+        reinterpret_cast<const __m128i*>(ptypes.data())
+    );
+
+    const __m128i matches = (
+        _mm_cmpeq_epi8(
+            values,
+            _mm_set1_epi8(std::bit_cast<u8>(pts))
+        ) | ...
+    );
+
+    return std::bit_cast<piece_mask>(
+        static_cast<uint16_t>(_mm_movemask_epi8(matches))
+    ) & mask;
+#else
     piece_mask out{};
     for (const piece_id id : mask) {
       if (((ptype_of(id) == pts) || ...)) {
@@ -95,6 +115,7 @@ struct piece_list {
     }
 
     return out;
+#endif
   }
 };
 
@@ -132,7 +153,7 @@ public:
       out.m_key ^= zobrist::en_passant[out.m_ep.file()];
     }
 
-    out.m_ep     = square::invalid();
+    out.m_ep = square::invalid();
 
     out.m_pin_cache_updated = false;
     return out;
@@ -499,7 +520,7 @@ private:
 
     update_piece_zobrist(c, ptype, at);
 
-    m_mail_box[at]            = place{};
+    m_mail_box[at] = place{};
     m_piece_list[c].mask.del(id);
 
     m_color_bb[c].del(at);
@@ -510,7 +531,7 @@ private:
   }
 
   auto mutate_piece(square at, piece_type to) -> void {
-    const auto [id, c, ptype]        = place_at(at);
+    const auto [id, c, ptype] = place_at(at);
 
     update_piece_zobrist(c, to, at);
     update_piece_zobrist(c, ptype, at);
