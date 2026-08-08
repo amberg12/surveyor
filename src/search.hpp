@@ -56,6 +56,21 @@ struct search_stack {
   score static_eval = scoring::none;
   score raw_eval    = scoring::none;
   move  excluded = move::null();
+
+  move killer_1 = move::null();
+  move killer_2 = move::null();
+
+  auto clear_killers() -> void {
+    killer_1 = move::null();
+    killer_2 = move::null();
+  }
+
+  auto add_killer(move mv) -> void {
+    if (killer_1 != mv) {
+      killer_2 = killer_1;
+      killer_1 = mv;
+    }
+  }
 };
 
 class searcher_base {

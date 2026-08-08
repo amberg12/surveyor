@@ -139,6 +139,14 @@ public:
           const move mv = m_quiet_moves[i];
 
           const i32 move_score = [&] {
+            if (mv == m_ss->killer_1) {
+              return history_max * 12;
+            }
+
+            if (mv == m_ss->killer_2) {
+              return history_max * 10;
+            }
+
             i32 out = m_piece_to.read(m_pos, mv);
 
             for (const i32 ply : conthist_plies) {
