@@ -45,3 +45,8 @@ add_executable(surveyor src/main.cpp
 
 add_executable(surveyor_tuner src/evaluation_tuner/evaluation_tuner_main.cpp
         ${SRCS})
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(surveyor PRIVATE -mavx2 -mbmi2)
+    target_compile_options(surveyor_tuner PRIVATE -mavx2 -mbmi2)
+endif()
