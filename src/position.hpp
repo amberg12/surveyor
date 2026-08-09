@@ -253,6 +253,10 @@ public:
     return m_piece_list[c].ptype_mask(ptypes...);
   }
 
+  constexpr auto mask(color c) const -> piece_mask {
+    return m_piece_list[c].mask;
+  }
+
   template<piece_type_list... Pts>
   [[nodiscard]] constexpr auto ptype_bb(Pts... ptypes) const -> bitboard {
     return (m_piece_bb[ptypes] | ...);
