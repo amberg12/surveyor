@@ -62,6 +62,19 @@ struct attack_box {
   }
 
   constexpr auto remove_attacker(piece_id atk, bitboard mask) -> void {
+#ifdef __AVX2__
+    if (mask == bitboard::full()) {
+      const __m256i clear = _mm256_set1_epi16(static_cast<i16>(~(u16{1} << atk.idx())));
+
+      for (usize i = 0; i < 4; ++i) {
+        auto* p = reinterpret_cast<__m256i*>(word_board.data()) + i;
+        _mm256_storeu_si256(p, _mm256_and_si256(_mm256_loadu_si256(p), clear));
+      }
+
+      return;
+    }
+#endif
+
     for (const square sq : mask) {
       (*this)[sq].del(atk);
     }
@@ -92,20 +105,11 @@ struct piece_list {
   template<piece_type_list... Pt>
   [[nodiscard]] constexpr auto ptype_mask(Pt... pts) const -> piece_mask {
 #ifdef __AVX2__
-    const __m128i values = _mm_loadu_si128(
-        reinterpret_cast<const __m128i*>(ptypes.data())
-    );
+    const __m128i values = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ptypes.data()));
 
-    const __m128i matches = (
-        _mm_cmpeq_epi8(
-            values,
-            _mm_set1_epi8(std::bit_cast<u8>(pts))
-        ) | ...
-    );
+    const __m128i matches = (_mm_cmpeq_epi8(values, _mm_set1_epi8(std::bit_cast<u8>(pts))) | ...);
 
-    return std::bit_cast<piece_mask>(
-        static_cast<uint16_t>(_mm_movemask_epi8(matches))
-    ) & mask;
+    return std::bit_cast<piece_mask>(static_cast<uint16_t>(_mm_movemask_epi8(matches))) & mask;
 #else
     piece_mask out{};
     for (const piece_id id : mask) {

@@ -88,6 +88,8 @@ struct bitboard {
     return lhs;
   }
 
+  friend constexpr auto operator==(const bitboard& lhs, const bitboard& rhs) -> bool = default;
+
   // Iterator
   [[nodiscard]] constexpr auto begin() const -> iterator {
     return iterator{raw};
