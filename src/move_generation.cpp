@@ -121,20 +121,17 @@ auto generate_pawn_moves_to(const position& pos, bitboard allowed, move_list& ml
   }
 }
 
-auto write(const position&  pos,
-           move_list&       ml,
-           bitboard         dsts,
-           piece_mask       subset,
-           enum move::flags flag) -> void {
+template<enum move::flags... flags>
+auto write(const position& pos, move_list& ml, bitboard dsts, piece_mask subset) -> void {
   const attack_box& atk = pos.pin_at();
-  const color stm = pos.stm();
+  const color       stm = pos.stm();
 
   for (const square dst : dsts) {
     const piece_mask attackers = atk[dst] & subset;
 
     for (const piece_id id : attackers) {
       const square src = pos.sq_of(stm, id);
-      ml.emplace_back(move::make(src, dst, flag));
+      (ml.emplace_back(move::make(src, dst, flags)), ...);
     }
   }
 }
@@ -151,15 +148,12 @@ auto generate_moves_to(const position& pos, bitboard allowed, move_list& ml) -> 
 
   const bitboard promo_zone = bitboard::promo_zome(stm);
 
-  write(pos, ml, enemy & promo_zone, pawn_mask, move::cap_promo_q);
-  write(pos, ml, enemy & promo_zone, pawn_mask, move::cap_promo_n);
-  write(pos, ml, enemy & promo_zone, pawn_mask, move::cap_promo_r);
-  write(pos, ml, enemy & promo_zone, pawn_mask, move::cap_promo_b);
+  write<move::cap_promo_q, move::cap_promo_n, move::cap_promo_r, move::cap_promo_b>(
+    pos, ml, enemy & promo_zone, pawn_mask);
+  write<move::cap_normal>(pos, ml, enemy & ~promo_zone, pawn_mask);
 
-  write(pos, ml, enemy & ~promo_zone, pawn_mask, move::cap_normal);
-
-  write(pos, ml, enemy, non_pawn_mask, move::cap_normal);
-  write(pos, ml, empty, non_pawn_mask, move::normal);
+  write<move::cap_normal>(pos, ml, enemy, non_pawn_mask);
+  write<move::normal>(pos, ml, empty, non_pawn_mask);
 }
 
 auto generate_en_passant_move(const position& pos, bitboard allowed, move_list& ml) -> void {
