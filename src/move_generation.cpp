@@ -79,43 +79,45 @@ auto generate_king_moves(const position& pos, move_list& ml) -> void {
 }
 
 auto generate_pawn_moves_to(const position& pos, bitboard allowed, move_list& ml) -> void {
-  const color               stm     = pos.stm();
-  const piece_mask          pawns   = pos.ptype_mask(stm, piece_type::pawn());
-  const geometry::direction pd      = geometry::pawn_direction(stm);
-  const square              king_sq = pos.king_square(stm);
+  const color  stm     = pos.stm();
+  const square king_sq = pos.king_square(stm);
 
-  for (const piece_id pawn_id : pawns) {
-    const square src = pos.sq_of(pos.stm(), pawn_id);
+  const bitboard pinned       = pos.pin_board() & ~bitboard::file_bb(king_sq.file());
+  const bitboard moving_pawns = pos.bb(stm, piece_type::pawn()) & ~pinned;
 
-    if (pos.pinned(src) && src.file() != king_sq.file()) {
-      continue;
-    }
+  const bitboard allowed_dsts = allowed & ~pos.bb();
 
-    if (auto dst = geometry::shift(src, pd); dst.has_value()) {
-      if (pos.has_value(*dst)) {
-        continue;
-      }
+  const geometry::direction dir = geometry::pawn_direction(stm);
 
-      if (allowed.has_value(*dst)) {
-        if (dst->relative_rank(stm) != 7) {
-          ml.emplace_back(move::make(src, *dst));
-        } else {
-          ml.emplace_back(move::make(src, *dst, move::promo_q));
-          ml.emplace_back(move::make(src, *dst, move::promo_b));
-          ml.emplace_back(move::make(src, *dst, move::promo_n));
-          ml.emplace_back(move::make(src, *dst, move::promo_r));
-        }
-      }
+  const bitboard single_move_dsts        = moving_pawns.shift(dir) & allowed_dsts;
+  const bitboard pseudo_single_move_dsts = moving_pawns.shift(dir) & ~pos.bb();
 
-      if (dst->relative_rank(stm) == 2) {
-        const square dst2 = *geometry::shift(*dst, pd);
-        if (pos.has_value(dst2) || !allowed.has_value(dst2)) {
-          continue;
-        }
+  const bitboard normal_single_move_dsts = single_move_dsts & ~bitboard::promo_zome(stm);
+  for (const square dst : single_move_dsts) {
+    const square src = geometry::from_x88(geometry::to_x88(dst) + geometry::pawn_direction(~stm));
 
-        ml.emplace_back(move::make(src, dst2, move::double_push));
-      }
-    }
+    ml.emplace_back(move::make(src, dst, move::normal));
+  }
+
+  const bitboard single_move_promo_dsts = single_move_dsts & bitboard::promo_zome(stm);
+  for (const square dst : single_move_promo_dsts) {
+    const square src = geometry::from_x88(geometry::to_x88(dst) + geometry::pawn_direction(~stm));
+
+    ml.emplace_back(move::make(src, dst, move::promo_q));
+    ml.emplace_back(move::make(src, dst, move::promo_n));
+    ml.emplace_back(move::make(src, dst, move::promo_r));
+    ml.emplace_back(move::make(src, dst, move::promo_b));
+  }
+
+  const bitboard double_push_mask =
+    bitboard{stm == color::white() ? 16711680ull : 280375465082880ull};
+  const bitboard double_move_dsts =
+    (pseudo_single_move_dsts & double_push_mask).shift(dir) & allowed_dsts;
+  for (const square dst : double_move_dsts) {
+    const square src =
+      geometry::from_x88(geometry::to_x88(dst) + 2 * geometry::pawn_direction(~stm));
+
+    ml.emplace_back(move::make(src, dst, move::double_push));
   }
 }
 
