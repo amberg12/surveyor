@@ -121,54 +121,45 @@ auto generate_pawn_moves_to(const position& pos, bitboard allowed, move_list& ml
   }
 }
 
-auto generate_moves_to(const position& pos, bitboard allowed, move_list& ml) -> void {
-  const color       stm = pos.stm();
-  const attack_box& at  = pos.pin_at();
+auto write(const position&  pos,
+           move_list&       ml,
+           bitboard         dsts,
+           piece_mask       subset,
+           enum move::flags flag) -> void {
+  const attack_box& atk = pos.pin_at();
+  const color stm = pos.stm();
 
-  for (const square dst : allowed) {
-    const piece_mask attackers = at[dst];
+  for (const square dst : dsts) {
+    const piece_mask attackers = atk[dst] & subset;
 
     for (const piece_id id : attackers) {
-      if (id == piece_id::king()) {
-        continue;
-      }
-
-      if (pos.has_value(dst)) {
-        const auto [dst_stm, dst_ptype] = pos.piece_at(dst);
-
-        if (stm == dst_stm) {
-          continue;
-        }
-      }
-
-      // We already check to see if the dst is friendly so no need to do so here.
-      const bool capture = pos.has_value(dst);
-
-      const auto src                  = pos.sq_of(stm, id);
-      const auto [src_stm, src_ptype] = pos.piece_at(src);
-
-      if (src_ptype == piece_type::pawn() && !capture) {
-        continue;
-      }
-
-      if (src_ptype == piece_type::king() && pos.attackers_to(~stm, dst).has_value()) {
-        continue;
-      }
-
-      if (capture) {
-        if (src_ptype == piece_type::pawn() && dst.relative_rank(stm) == 7) {
-          ml.emplace_back(move::make(src, dst, move::cap_promo_q));
-          ml.emplace_back(move::make(src, dst, move::cap_promo_b));
-          ml.emplace_back(move::make(src, dst, move::cap_promo_n));
-          ml.emplace_back(move::make(src, dst, move::cap_promo_r));
-        } else {
-          ml.emplace_back(move::make(src, dst, move::cap_normal));
-        }
-      } else {
-        ml.emplace_back(move::make(src, dst));
-      }
+      const square src = pos.sq_of(stm, id);
+      ml.emplace_back(move::make(src, dst, flag));
     }
   }
+}
+
+auto generate_moves_to(const position& pos, bitboard allowed, move_list& ml) -> void {
+  const color stm = pos.stm();
+
+  const bitboard empty = ~pos.bb() & allowed;
+  const bitboard enemy = pos.color_bb(~stm) & allowed;
+
+  const piece_mask mask          = pos.mask(stm) & ~piece_mask{piece_id::king()};
+  const piece_mask pawn_mask     = pos.ptype_mask(stm, piece_type::pawn());
+  const piece_mask non_pawn_mask = mask & ~pawn_mask;
+
+  const bitboard promo_zone = bitboard::promo_zome(stm);
+
+  write(pos, ml, enemy & promo_zone, pawn_mask, move::cap_promo_q);
+  write(pos, ml, enemy & promo_zone, pawn_mask, move::cap_promo_n);
+  write(pos, ml, enemy & promo_zone, pawn_mask, move::cap_promo_r);
+  write(pos, ml, enemy & promo_zone, pawn_mask, move::cap_promo_b);
+
+  write(pos, ml, enemy & ~promo_zone, pawn_mask, move::cap_normal);
+
+  write(pos, ml, enemy, non_pawn_mask, move::cap_normal);
+  write(pos, ml, empty, non_pawn_mask, move::normal);
 }
 
 auto generate_en_passant_move(const position& pos, bitboard allowed, move_list& ml) -> void {
