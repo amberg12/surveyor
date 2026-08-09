@@ -17,8 +17,11 @@
  */
 
 #pragma once
+#include "geometry.hpp"
 #include "square.hpp"
 #include "util/integer.hpp"
+
+#include <utility>
 
 namespace surveyor {
 
@@ -38,6 +41,14 @@ struct bitboard {
 
   static constexpr auto empty() -> bitboard {
     return {0};
+  }
+
+  static constexpr auto file_bb(i32 file) -> bitboard {
+    return {72340172838076673ull << file};
+  }
+
+  static constexpr auto promo_zome(color stm) -> bitboard {
+    return {stm == color::white() ? 18374686479671623680ull : 255ull};
   }
 
   // Methods
@@ -63,6 +74,18 @@ struct bitboard {
 
   [[nodiscard]] constexpr auto lsb() const -> square {
     return square{std::countr_zero(surveyor::lsb(raw))};
+  }
+
+  [[nodiscard]] constexpr auto shift(geometry::direction dir) const -> bitboard {
+    if (dir == geometry::n_orth) {
+      return bitboard{(raw & 72057594037927935ull) << 8};
+    }
+
+    if (dir == geometry::s_orth) {
+      return bitboard{(raw & 18446744073709551360ull) >> 8};
+    }
+
+    std::unreachable();
   }
 
   // Overloads

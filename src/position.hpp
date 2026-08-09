@@ -268,7 +268,7 @@ public:
 
   template<piece_type_list... Pts>
   [[nodiscard]] constexpr auto bb(color c, Pts... ptypes) const -> bitboard {
-    return color_bb(c) | ptype_bb(ptypes...);
+    return color_bb(c) & ptype_bb(ptypes...);
   }
 
   template<piece_type_list... Pts>
@@ -299,6 +299,14 @@ public:
     }
 
     return m_pinned.has_value(sq);
+  }
+
+  [[nodiscard]] constexpr auto pin_board() const -> bitboard {
+    if (!m_pin_cache_updated) {
+      lazy_generate_pinner();
+    }
+
+    return m_pinned;
   }
 
 private:
