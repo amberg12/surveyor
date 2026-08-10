@@ -137,10 +137,13 @@ auto write(const position& pos, move_list& ml, bitboard dsts, piece_mask subset)
 }
 
 auto generate_moves_to(const position& pos, bitboard allowed, move_list& ml) -> void {
+  const attack_box& at     = pos.pin_at();
+  const bitboard    filter = at.bb();
+
   const color stm = pos.stm();
 
-  const bitboard empty = ~pos.bb() & allowed;
-  const bitboard enemy = pos.color_bb(~stm) & allowed;
+  const bitboard empty = ~pos.bb() & allowed & filter;
+  const bitboard enemy = pos.color_bb(~stm) & allowed & filter;
 
   const piece_mask mask          = pos.mask(stm) & ~piece_mask{piece_id::king()};
   const piece_mask pawn_mask     = pos.ptype_mask(stm, piece_type::pawn());

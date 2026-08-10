@@ -51,7 +51,7 @@ struct mail_box {
 };
 
 struct attack_box {
-  std::array<piece_mask, square::count> word_board{};
+  alignas(32) std::array<piece_mask, square::count> word_board{};
 
   constexpr auto operator[](square sq) const -> const piece_mask& {
     return word_board[sq.idx];
@@ -59,6 +59,37 @@ struct attack_box {
 
   constexpr auto operator[](square sq) -> piece_mask& {
     return word_board[sq.idx];
+  }
+
+  [[nodiscard]] constexpr auto bb() const -> bitboard {
+#ifdef __AVX2__
+    u64 out = 0;
+
+    for (i32 i = 0; i < 4; ++i) {
+      const auto* p = reinterpret_cast<const __m256i*>(word_board.data());
+
+      const __m256i is_zero = _mm256_cmpeq_epi16(p[i], _mm256_setzero_si256());
+
+      const u16 zero_mask = static_cast<u16>(_mm_movemask_epi8(
+        _mm_packs_epi16(_mm256_castsi256_si128(is_zero), _mm256_extracti128_si256(is_zero, 1))));
+
+      const u16 mask = static_cast<u16>(~zero_mask);
+
+      out |= static_cast<u64>(mask) << 16 * i;
+    }
+
+    return bitboard{out};
+#else
+    u64 out = 0;
+
+    for (usize i = 0; i < square::count; ++i) {
+      if (word_board[i].popcount() != 0) {
+        out |= u64{1} << i;
+      }
+    }
+
+    return bitboard{out};
+#endif
   }
 
   constexpr auto remove_attacker(piece_id atk, bitboard mask) -> void {
