@@ -543,12 +543,12 @@ auto searcher<Ctrls>::quiesce(node_type       expected,
     return evaluate(pos);
   }();
 
-  const score static_eval = [&] {
+  const score static_eval = [&] -> score {
     if (pos.checkers()) {
       return scoring::none;
     }
 
-    return raw_eval;
+    return raw_eval + m_sd.corrhist.read(pos);
   }();
 
   score best_score = [&] -> score {
@@ -556,7 +556,7 @@ auto searcher<Ctrls>::quiesce(node_type       expected,
       return scoring::mated_in(ply);
     }
 
-    return static_eval + m_sd.corrhist.read(pos);
+    return static_eval;
   }();
 
   alpha = std::max(best_score, alpha);
