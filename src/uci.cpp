@@ -32,16 +32,11 @@ namespace surveyor {
 namespace {
 template<bool is_root = true>
 constexpr auto perft(const position& pos, i32 depth) -> u64 {
-  static piece_to_history              piece_to = {};
-  static std::array<search_stack, 200> ss;
-  static capture_history               capthist = {};
-
   if (depth <= 0) {
     return 1;
   }
 
   const move_list ml = generate_moves(pos);
-  move_picker     mp{pos, ml[0], piece_to, capthist, ss.data() + 10};
 
   u64 nodes = 0;
 
@@ -54,10 +49,6 @@ constexpr auto perft(const position& pos, i32 depth) -> u64 {
     }
 
     nodes += child_nodes;
-  }
-
-  if constexpr (is_root) {
-    std::println("nodes: {}", nodes);
   }
 
   return nodes;
@@ -150,7 +141,11 @@ auto uci::execute_perft(std::istringstream& arguments)
   const auto depth = parse_number<i32>(tok);
 
   if (depth.has_value()) {
-    perft<true>(m_pos, *depth);
+    const time::time_point start_time = time::clock::now();
+    const u64 nodes = perft<true>(m_pos, *depth);
+
+    std::println("nps: {}", time::nps(nodes, time::clock::now() - start_time));
+    std::println("nodes: {}", nodes);
   }
 
   return std::nullopt;
