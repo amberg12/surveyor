@@ -93,7 +93,7 @@ auto generate_pawn_moves_to(const position& pos, bitboard allowed, move_list& ml
   const bitboard pseudo_single_move_dsts = moving_pawns.shift(dir) & ~pos.bb();
 
   const bitboard normal_single_move_dsts = single_move_dsts & ~bitboard::promo_zome(stm);
-  for (const square dst : single_move_dsts) {
+  for (const square dst : normal_single_move_dsts) {
     const square src = geometry::from_x88(geometry::to_x88(dst) + geometry::pawn_direction(~stm));
 
     ml.emplace_back(move::make(src, dst, move::normal));
