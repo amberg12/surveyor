@@ -16,7 +16,15 @@
 
 #include "interface.h"
 
+#include "uci_output.h"
+
 namespace surveyor {
+
+interface::interface() {
+  std::unique_ptr<engine_output> output = std::make_unique<uci_output>();
+  m_engine.set_output(std::move(output));
+}
+
 auto interface::parse_command(std::string_view command) -> void {
   uci_parse_command(command);
 }
@@ -28,9 +36,11 @@ auto interface::uci_parse_command(std::string_view command) -> void {
 
   if (cmd == "uci") {
     uci_uci(toks);
+  } else if (cmd == "go") {
+    uci_go(toks);
   } else if (cmd == "perft") {
     uci_perft(toks);
-  }else if (cmd == "position") {
+  } else if (cmd == "position") {
     uci_position(toks);
   } else {
     if (cmd.has_value()) {
@@ -142,5 +152,50 @@ auto interface::uci_uci(tokenizer& toks) -> void {
   std::println("id name surveyor");
   std::println("id author Amber Goulding");
   std::println("uciok");
+}
+
+auto interface::uci_go(tokenizer& toks) -> void {
+  search_limits sl;
+
+#define SURVEYOR_ADD_MS(name, type)                                            \
+  const auto t = toks.next();                                                  \
+                                                                               \
+  if (!t.has_value()) {                                                        \
+    uci_print_error("go", "missing time for " #name);                          \
+    return;                                                                    \
+  }                                                                            \
+                                                                               \
+  const auto value = parse_number<u64>(*t);                                    \
+                                                                               \
+  if (!value.has_value()) {                                                    \
+    uci_print_bad_token("go", *t);                                             \
+    return;                                                                    \
+  }                                                                            \
+                                                                               \
+  if (std::holds_alternative<std::monostate>(sl)) {                            \
+    sl.emplace<type>();                                                        \
+  } else if (!std::holds_alternative<type>(sl)) {                              \
+    uci_print_error("go", "{} is incompatible with the other commands", *tok); \
+    return;                                                                    \
+  }                                                                            \
+                                                                               \
+  std::get<type>(sl).name = time::milliseconds(*value);
+
+  for (auto tok = toks.next(); tok.has_value(); tok = toks.next()) {
+    if (tok == "wtime") {
+      SURVEYOR_ADD_MS(wtime, search_limit_types::clock)
+    } else if (tok == "btime") {
+      SURVEYOR_ADD_MS(btime, search_limit_types::clock)
+    } else if (tok == "winc") {
+      SURVEYOR_ADD_MS(winc, search_limit_types::clock)
+    } else if (tok == "binc") {
+      SURVEYOR_ADD_MS(binc, search_limit_types::clock)
+    } else {
+      uci_print_bad_token("go", *tok);
+      return;
+    }
+  }
+
+  m_engine.go(m_game, sl);
 }
 }  // namespace surveyor

@@ -14,15 +14,41 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef SURVEYOR_UCI_OUTPUT_H
+#define SURVEYOR_UCI_OUTPUT_H
+#include <surveyor/include.h>
 
-#ifndef SURVEYOR_INCLUDE_H
-#define SURVEYOR_INCLUDE_H
+namespace surveyor {
 
-#include "../../util/parse.h"
-#include "../../util/tokenizer.h"
-#include "../engine.h"
-#include "../engine_output.h"
-#include "../game.h"
-#include "../perft.h"
+namespace uci_output_detail {
 
-#endif  // SURVEYOR_INCLUDE_H
+auto uci_stringify_pv(const line& l) -> std::string {
+  std::string out;
+
+  for (usize i = 0; i < l.size(); ++i) {
+    out += std::format("{}", l[i]);
+
+    if (i < l.size() - 1) {
+      out += " ";
+    }
+  }
+
+  return out;
+}
+
+}  // namespace uci_output_detail
+
+class uci_output : public engine_output {
+  auto info(info_line info) -> void override {
+    using namespace uci_output_detail;
+
+    std::println("info pv {}", uci_stringify_pv(info.pv));
+  }
+
+  auto best_move(move mv) -> void override {
+    std::println("bestmove {}", mv);
+  }
+};
+}  // namespace surveyor
+
+#endif  // SURVEYOR_UCI_OUTPUT_H

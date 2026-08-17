@@ -16,6 +16,7 @@
 
 #ifndef SURVEYOR_INTERFACE
 #define SURVEYOR_INTERFACE
+
 #include <print>
 #include <string_view>
 #include <surveyor/include.h>
@@ -23,6 +24,7 @@
 namespace surveyor {
 class interface {
 public:
+  interface();
   auto parse_command(std::string_view command) -> void;
 
 private:
@@ -43,7 +45,8 @@ private:
     uci_print_error(cmd, "unknown token: {}", tok);
   }
 
-  game m_game{position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")};
+  game   m_game{position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")};
+  engine m_engine;
 };
 }  // namespace surveyor
 

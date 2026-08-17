@@ -14,15 +14,24 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "engine.h"
 
-#ifndef SURVEYOR_INCLUDE_H
-#define SURVEYOR_INCLUDE_H
+#include "move_generation.h"
 
-#include "../../util/parse.h"
-#include "../../util/tokenizer.h"
-#include "../engine.h"
-#include "../engine_output.h"
-#include "../game.h"
-#include "../perft.h"
+namespace surveyor {
 
-#endif  // SURVEYOR_INCLUDE_H
+auto engine::go(game g, search_limits limits) -> void {
+  move_list moves = generate_moves(g.root());
+
+  line pv;
+  pv.emplace_back(moves[0]);
+
+  m_output->info({.pv = pv});
+  m_output->best_move(pv[0]);
+}
+
+auto engine::set_output(std::unique_ptr<engine_output> output) -> void {
+  m_output = std::move(output);
+}
+
+}  // namespace surveyor

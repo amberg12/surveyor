@@ -20,14 +20,29 @@
 
 namespace surveyor {
 
-struct info_line { };
+struct info_line {
+  line pv;
+};
 
 class engine_output {
 public:
-  ~engine_output() = default;
+  virtual ~engine_output() = default;
 
-  virtual auto info() -> void             = 0;
-  virtual auto best_move(move mv) -> void = 0;
+  virtual auto info(info_line info) -> void = 0;
+  virtual auto best_move(move mv) -> void   = 0;
 };
+
+class null_output : public engine_output {
+public:
+  auto info(info_line info) -> void override {
+    (void)info;
+  }
+
+  auto best_move(move mv) -> void override {
+    (void)mv;
+  }
+};
+
 }  // namespace surveyor
+
 #endif  // SURVEYOR_ENGINE_OUTPUT_H

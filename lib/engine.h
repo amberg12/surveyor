@@ -14,15 +14,23 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef SURVEYOR_ENGINE_H
+#define SURVEYOR_ENGINE_H
+#include "engine_output.h"
+#include "game.h"
+#include "search_limits.h"
 
-#ifndef SURVEYOR_INCLUDE_H
-#define SURVEYOR_INCLUDE_H
+#include <memory>
 
-#include "../../util/parse.h"
-#include "../../util/tokenizer.h"
-#include "../engine.h"
-#include "../engine_output.h"
-#include "../game.h"
-#include "../perft.h"
+namespace surveyor {
+class engine {
+public:
+  auto go(game g, search_limits limits) -> void;
+  auto set_output(std::unique_ptr<engine_output> output) -> void;
 
-#endif  // SURVEYOR_INCLUDE_H
+private:
+  std::unique_ptr<engine_output> m_output = std::make_unique<null_output>();
+};
+}
+
+#endif  // SURVEYOR_ENGINE_H

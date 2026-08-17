@@ -14,15 +14,26 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef SURVEYOR_SEARCH_LIMITS_H
+#define SURVEYOR_SEARCH_LIMITS_H
+#include "util/integer.h"
 
-#ifndef SURVEYOR_INCLUDE_H
-#define SURVEYOR_INCLUDE_H
+#include <variant>
 
-#include "../../util/parse.h"
-#include "../../util/tokenizer.h"
-#include "../engine.h"
-#include "../engine_output.h"
-#include "../game.h"
-#include "../perft.h"
+namespace surveyor {
 
-#endif  // SURVEYOR_INCLUDE_H
+namespace search_limit_types {
+
+struct clock {
+  time::milliseconds wtime;
+  time::milliseconds btime;
+  time::milliseconds winc;
+  time::milliseconds binc;
+};
+
+}  // namespace search_limit_types
+
+using search_limits = std::variant<std::monostate, search_limit_types::clock>;
+}  // namespace surveyor
+
+#endif  // SURVEYOR_SEARCH_LIMITS_H

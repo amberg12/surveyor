@@ -15,6 +15,8 @@ add_library(libsurveyor
         lib/util/tokenizer.cpp
         lib/util/tokenizer.h
         lib/bitboard.h
+        lib/engine.cpp
+        lib/engine.h
         lib/engine_output.h
         lib/game.cpp
         lib/game.h
@@ -29,6 +31,7 @@ add_library(libsurveyor
         lib/position.cpp
         lib/position.h
         lib/score.h
+        lib/search_limits.h
         lib/square.h
         lib/zobrist.h
 )
@@ -39,9 +42,10 @@ target_include_directories(libsurveyor
 )
 
 add_executable(surveyor
-        surveyor/main.cpp
         surveyor/interface.cpp
         surveyor/interface.h
+        surveyor/main.cpp
+        surveyor/uci_output.h
 )
 
 target_link_libraries(surveyor
