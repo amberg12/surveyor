@@ -125,6 +125,8 @@ auto interface::uci_position(tokenizer& toks) -> void {
     SURVEYOR_ADD_FEN_PART(move_rule);
     SURVEYOR_ADD_FEN_PART(ply);
 
+#undef SURVEYOR_ADD_FEN_PART
+
     m_game = game{position::parse(fen)};
   } else {
     uci_print_bad_token("position", *pos_type);
@@ -195,6 +197,8 @@ auto interface::uci_go(tokenizer& toks) -> void {
       return;
     }
   }
+
+#undef SURVEYOR_ADD_MS
 
   m_engine.go(m_game, sl);
 }
