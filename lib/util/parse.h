@@ -14,29 +14,23 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef SURVEYOR_INTERFACE
-#define SURVEYOR_INTERFACE
-#include <print>
+#ifndef SURVEYOR_PARSE_H
+#define SURVEYOR_PARSE_H
+#include <charconv>
+#include <optional>
 #include <string_view>
-#include <surveyor/include.h>
 
 namespace surveyor {
-class interface {
-public:
-  auto parse_command(std::string_view command) -> void;
 
-private:
-  auto uci_parse_command(std::string_view command) -> void;
-  auto uci_uci(tokenizer& toks) -> void;
-  auto uci_go(tokenizer& toks) -> void;
+template<std::integral T>
+auto parse_number(std::string_view sv) -> std::optional<T> {
 
-  template<typename... Args>
-  auto uci_print_error(std::string_view cmd, std::format_string<Args...> fmt, Args&&... args)
-    -> void {
-    std::println("info string {}: {}", cmd, std::format(fmt, args...));
+  if (T value{}; std::from_chars(sv.data(), sv.data() + sv.size(), value).ec == std::errc{}) {
+    return value;
   }
-};
+
+  return std::nullopt;
+}
+
 }  // namespace surveyor
-
-
-#endif  // SURVEYOR_INTERFACE
+#endif  // SURVEYOR_PARSE_H

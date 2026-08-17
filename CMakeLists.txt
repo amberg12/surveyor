@@ -4,9 +4,29 @@ project(surveyor)
 set(CMAKE_CXX_STANDARD 23)
 
 add_library(libsurveyor
-        lib/util/tokenizer.h
-        lib/util/tokenizer.cpp
+        lib/util/bit.h
+        lib/util/bit_iterator.h
+        lib/util/cast_iterator.h
+        lib/util/constant.h
         lib/util/integer.h
+        lib/util/multi_array.h
+        lib/util/parse.h
+        lib/util/static_vector.h
+        lib/util/tokenizer.cpp
+        lib/util/tokenizer.h
+        lib/bitboard.h
+        lib/engine_output.h
+        lib/geometry.h
+        lib/move.cpp
+        lib/move.h
+        lib/move_generation.cpp
+        lib/move_generation.h
+        lib/piece.h
+        lib/position.cpp
+        lib/position.h
+        lib/score.h
+        lib/square.h
+        lib/zobrist.h
 )
 
 target_include_directories(libsurveyor

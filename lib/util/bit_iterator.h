@@ -14,29 +14,41 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef SURVEYOR_INTERFACE
-#define SURVEYOR_INTERFACE
-#include <print>
-#include <string_view>
-#include <surveyor/include.h>
+#ifndef SURVEYOR_BIT_ITERATOR_H
+#define SURVEYOR_BIT_ITERATOR_H
+
+#include "bit.h"
+#include "integer.h"
+
+#include <bit>
+#include <concepts>
 
 namespace surveyor {
-class interface {
-public:
-  auto parse_command(std::string_view command) -> void;
+
+template<std::integral T>
+struct bit_iterator {
+  using value_type = T;
+
+  explicit constexpr bit_iterator(T value)
+      : m_value(value) {
+  }
+
+  constexpr auto operator++() -> bit_iterator& {
+    m_value = clear_lsb(m_value);
+
+    return *this;
+  }
+
+  constexpr auto operator*() const {
+    return std::countr_zero(to_unsigned(lsb(m_value)));
+  }
+
+  friend constexpr auto operator==(const bit_iterator&, const bit_iterator&) -> bool = default;
 
 private:
-  auto uci_parse_command(std::string_view command) -> void;
-  auto uci_uci(tokenizer& toks) -> void;
-  auto uci_go(tokenizer& toks) -> void;
-
-  template<typename... Args>
-  auto uci_print_error(std::string_view cmd, std::format_string<Args...> fmt, Args&&... args)
-    -> void {
-    std::println("info string {}: {}", cmd, std::format(fmt, args...));
-  }
+  T m_value;
 };
+
 }  // namespace surveyor
 
-
-#endif  // SURVEYOR_INTERFACE
+#endif  // SURVEYOR_BIT_ITERATOR_H

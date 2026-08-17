@@ -14,29 +14,42 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef SURVEYOR_INTERFACE
-#define SURVEYOR_INTERFACE
-#include <print>
-#include <string_view>
-#include <surveyor/include.h>
+#ifndef SURVEYOR_CAST_ITERATOR_H
+#define SURVEYOR_CAST_ITERATOR_H
+#include <concepts>
 
 namespace surveyor {
-class interface {
-public:
-  auto parse_command(std::string_view command) -> void;
+template<typename It, typename To>
+  requires requires(It iter) {
+    { ++iter } -> std::same_as<It&>;
+    { *iter };
+    requires std::constructible_from<To, decltype(*iter)>;
+  }
 
-private:
-  auto uci_parse_command(std::string_view command) -> void;
-  auto uci_uci(tokenizer& toks) -> void;
-  auto uci_go(tokenizer& toks) -> void;
+struct cast_iterator {
+  using value_type = To;
 
   template<typename... Args>
-  auto uci_print_error(std::string_view cmd, std::format_string<Args...> fmt, Args&&... args)
-    -> void {
-    std::println("info string {}: {}", cmd, std::format(fmt, args...));
+  explicit constexpr cast_iterator(Args... args)
+      : m_it(args...) {
   }
+
+  constexpr auto operator++() -> cast_iterator& {
+    ++m_it;
+
+    return *this;
+  }
+
+  constexpr auto operator*() const {
+    return static_cast<To>(*m_it);
+  }
+
+  friend constexpr auto operator==(const cast_iterator&, const cast_iterator&) -> bool = default;
+
+private:
+  It m_it;
 };
+
 }  // namespace surveyor
 
-
-#endif  // SURVEYOR_INTERFACE
+#endif  // SURVEYOR_CAST_ITERATOR_H

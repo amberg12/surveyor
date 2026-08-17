@@ -14,29 +14,18 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef SURVEYOR_INTERFACE
-#define SURVEYOR_INTERFACE
-#include <print>
-#include <string_view>
-#include <surveyor/include.h>
-
+#ifndef SURVEYOR_CONSTANT_H
+#define SURVEYOR_CONSTANT_H
 namespace surveyor {
-class interface {
-public:
-  auto parse_command(std::string_view command) -> void;
 
-private:
-  auto uci_parse_command(std::string_view command) -> void;
-  auto uci_uci(tokenizer& toks) -> void;
-  auto uci_go(tokenizer& toks) -> void;
-
-  template<typename... Args>
-  auto uci_print_error(std::string_view cmd, std::format_string<Args...> fmt, Args&&... args)
-    -> void {
-    std::println("info string {}: {}", cmd, std::format(fmt, args...));
-  }
+template<typename T>
+concept constant = requires {
+  typename T::value_type;
+  T::value;
 };
+
+template<constant C>
+constexpr auto constant_v = C::value;
+
 }  // namespace surveyor
-
-
-#endif  // SURVEYOR_INTERFACE
+#endif  // SURVEYOR_CONSTANT_H

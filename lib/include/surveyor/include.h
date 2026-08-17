@@ -19,5 +19,6 @@
 #define SURVEYOR_INCLUDE_H
 
 #include "../../util/tokenizer.h"
+#include "../../util/parse.h"
 
 #endif  // SURVEYOR_INCLUDE_H

@@ -14,29 +14,19 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef SURVEYOR_INTERFACE
-#define SURVEYOR_INTERFACE
-#include <print>
-#include <string_view>
-#include <surveyor/include.h>
+#ifndef SURVEYOR_MOVE_GENERATION_H
+#define SURVEYOR_MOVE_GENERATION_H
+
+#include "move.h"
+#include "position.h"
+#include "util/static_vector.h"
 
 namespace surveyor {
-class interface {
-public:
-  auto parse_command(std::string_view command) -> void;
 
-private:
-  auto uci_parse_command(std::string_view command) -> void;
-  auto uci_uci(tokenizer& toks) -> void;
-  auto uci_go(tokenizer& toks) -> void;
+using move_list = static_vector<move, 256>;
 
-  template<typename... Args>
-  auto uci_print_error(std::string_view cmd, std::format_string<Args...> fmt, Args&&... args)
-    -> void {
-    std::println("info string {}: {}", cmd, std::format(fmt, args...));
-  }
-};
+auto generate_moves(const position& pos) -> move_list;
+
 }  // namespace surveyor
 
-
-#endif  // SURVEYOR_INTERFACE
+#endif  // SURVEYOR_MOVE_GENERATION_H

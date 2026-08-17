@@ -1,5 +1,5 @@
 /*
-* Surveyor - A UCI Chess Engine
+ * Surveyor - A UCI Chess Engine
  * Copyright (C) 2026 Amber Goulding
  *
  * This program is free software: you can redistribute it and/or modify it under the terms of the

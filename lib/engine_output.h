@@ -14,29 +14,20 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef SURVEYOR_INTERFACE
-#define SURVEYOR_INTERFACE
-#include <print>
-#include <string_view>
-#include <surveyor/include.h>
+#ifndef SURVEYOR_ENGINE_OUTPUT_H
+#define SURVEYOR_ENGINE_OUTPUT_H
+#include "move.h"
 
 namespace surveyor {
-class interface {
+
+struct info_line { };
+
+class engine_output {
 public:
-  auto parse_command(std::string_view command) -> void;
+  ~engine_output() = default;
 
-private:
-  auto uci_parse_command(std::string_view command) -> void;
-  auto uci_uci(tokenizer& toks) -> void;
-  auto uci_go(tokenizer& toks) -> void;
-
-  template<typename... Args>
-  auto uci_print_error(std::string_view cmd, std::format_string<Args...> fmt, Args&&... args)
-    -> void {
-    std::println("info string {}: {}", cmd, std::format(fmt, args...));
-  }
+  virtual auto info() -> void             = 0;
+  virtual auto best_move(move mv) -> void = 0;
 };
 }  // namespace surveyor
-
-
-#endif  // SURVEYOR_INTERFACE
+#endif  // SURVEYOR_ENGINE_OUTPUT_H

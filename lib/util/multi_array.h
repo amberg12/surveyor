@@ -14,29 +14,25 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef SURVEYOR_INTERFACE
-#define SURVEYOR_INTERFACE
-#include <print>
-#include <string_view>
-#include <surveyor/include.h>
+#ifndef SURVEYOR_MULTI_ARRAY_H
+#define SURVEYOR_MULTI_ARRAY_H
+#include "integer.h"
 
 namespace surveyor {
-class interface {
-public:
-  auto parse_command(std::string_view command) -> void;
 
-private:
-  auto uci_parse_command(std::string_view command) -> void;
-  auto uci_uci(tokenizer& toks) -> void;
-  auto uci_go(tokenizer& toks) -> void;
-
-  template<typename... Args>
-  auto uci_print_error(std::string_view cmd, std::format_string<Args...> fmt, Args&&... args)
-    -> void {
-    std::println("info string {}: {}", cmd, std::format(fmt, args...));
-  }
+template<typename T, usize size, usize... sizes>
+struct multi_array {
+  using type = std::array<typename multi_array<T, sizes...>::type, size>;
 };
+
+template<typename T, usize size>
+struct multi_array<T, size> {
+  using type = std::array<T, size>;
+};
+
+template<typename T, usize... sizes>
+using multi_array_t = multi_array<T, sizes...>::type;
+
 }  // namespace surveyor
 
-
-#endif  // SURVEYOR_INTERFACE
+#endif  // SURVEYOR_MULTI_ARRAY_H

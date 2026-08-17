@@ -14,29 +14,20 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef SURVEYOR_INTERFACE
-#define SURVEYOR_INTERFACE
-#include <print>
-#include <string_view>
-#include <surveyor/include.h>
+#ifndef SURVEYOR_BIT_H
+#define SURVEYOR_BIT_H
+#include <concepts>
 
 namespace surveyor {
-class interface {
-public:
-  auto parse_command(std::string_view command) -> void;
 
-private:
-  auto uci_parse_command(std::string_view command) -> void;
-  auto uci_uci(tokenizer& toks) -> void;
-  auto uci_go(tokenizer& toks) -> void;
+constexpr auto clear_lsb(std::unsigned_integral auto v) {
+  return v & v - 1;
+}
 
-  template<typename... Args>
-  auto uci_print_error(std::string_view cmd, std::format_string<Args...> fmt, Args&&... args)
-    -> void {
-    std::println("info string {}: {}", cmd, std::format(fmt, args...));
-  }
-};
+constexpr auto lsb(std::unsigned_integral auto v) {
+  return v & -v;
+}
+
 }  // namespace surveyor
 
-
-#endif  // SURVEYOR_INTERFACE
+#endif  // SURVEYOR_BIT_H
