@@ -28,10 +28,113 @@ auto interface::uci_parse_command(std::string_view command) -> void {
 
   if (cmd == "uci") {
     uci_uci(toks);
+  } else if (cmd == "perft") {
+    uci_perft(toks);
+  }else if (cmd == "position") {
+    uci_position(toks);
   } else {
     if (cmd.has_value()) {
       uci_print_error(*cmd, "unknown command");
     }
+  }
+}
+
+auto interface::uci_perft(tokenizer& toks) -> void {
+  const std::optional<std::string> perft_depth_tok = toks.next();
+
+  if (!perft_depth_tok.has_value()) {
+    uci_print_error("perft", "missing depth");
+    return;
+  }
+
+  const std::optional<u64> perft_depth = parse_number<u64>(*perft_depth_tok);
+
+  if (!perft_depth.has_value()) {
+    uci_print_error("perft", "bad number: {}", *perft_depth_tok);
+    return;
+  }
+
+  if (*perft_depth <= 0) {
+    uci_print_error("perft", "bad number: {}", *perft_depth_tok);
+    return;
+  }
+
+  const std::optional<std::string> perft_type = toks.next();
+
+  const auto start = time::clock::now();
+
+  const auto total_perft_nodes = [&] -> std::optional<u64> {
+    if (!perft_type.has_value() || perft_type == "standard") {
+      return perft::standard(m_game.root(), *perft_depth);
+    }
+
+    return std::nullopt;
+  }();
+
+  if (!total_perft_nodes.has_value()) {
+    uci_print_error("perft", "invalid perft type");
+    return;
+  }
+
+  const auto duration = time::clock::now() - start;
+
+  std::println("total nodes: {}", *total_perft_nodes);
+  std::println("nps: {}", time::nps(*total_perft_nodes, duration));
+  std::println("duration: {}", time::cast<time::milliseconds>(duration));
+}
+
+auto interface::uci_position(tokenizer& toks) -> void {
+  const std::optional<std::string> pos_type = toks.next();
+
+  if (!pos_type.has_value()) {
+    uci_print_error("position", "no position provided");
+  }
+
+  if (pos_type == "startpos") {
+    m_game = game{position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")};
+  } else if (pos_type == "fen") {
+    const std::optional<std::string> board      = toks.next();
+    const std::optional<std::string> color      = toks.next();
+    const std::optional<std::string> castle     = toks.next();
+    const std::optional<std::string> en_passant = toks.next();
+    const std::optional<std::string> move_rule  = toks.next();
+    const std::optional<std::string> ply        = toks.next();
+
+    std::string fen;
+
+#define SURVEYOR_ADD_FEN_PART(part)                       \
+  if (part.has_value())                                   \
+    fen += *part;                                         \
+  else                                                    \
+    return uci_print_error("position", "missing " #part);
+
+    SURVEYOR_ADD_FEN_PART(board);
+    SURVEYOR_ADD_FEN_PART(color);
+    SURVEYOR_ADD_FEN_PART(castle);
+    SURVEYOR_ADD_FEN_PART(en_passant);
+    SURVEYOR_ADD_FEN_PART(move_rule);
+    SURVEYOR_ADD_FEN_PART(ply);
+
+    m_game = game{position::parse(fen)};
+  } else {
+    uci_print_bad_token("position", *pos_type);
+  }
+
+  const std::optional<std::string> move_marker = toks.next();
+
+  if (!move_marker.has_value()) {
+    return;
+  }
+
+  if (move_marker != "moves") {
+    uci_print_bad_token("position", *move_marker);
+    return;
+  }
+
+  for (auto mv_tok = toks.next(); mv_tok.has_value(); mv_tok = toks.next()) {
+    const auto mv = move::parse(*mv_tok, m_game.root());
+
+    m_game.add_move(mv);
   }
 }
 
@@ -40,4 +143,4 @@ auto interface::uci_uci(tokenizer& toks) -> void {
   std::println("id author Amber Goulding");
   std::println("uciok");
 }
-} // surveyor
+}  // namespace surveyor

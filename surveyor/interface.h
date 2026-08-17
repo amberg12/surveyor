@@ -27,6 +27,9 @@ public:
 
 private:
   auto uci_parse_command(std::string_view command) -> void;
+
+  auto uci_perft(tokenizer& toks) -> void;
+  auto uci_position(tokenizer& toks) -> void;
   auto uci_uci(tokenizer& toks) -> void;
   auto uci_go(tokenizer& toks) -> void;
 
@@ -35,6 +38,12 @@ private:
     -> void {
     std::println("info string {}: {}", cmd, std::format(fmt, args...));
   }
+
+  auto uci_print_bad_token(std::string_view cmd, std::string_view tok) -> void {
+    uci_print_error(cmd, "unknown token: {}", tok);
+  }
+
+  game m_game{position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")};
 };
 }  // namespace surveyor
 

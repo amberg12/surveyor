@@ -16,11 +16,15 @@ add_library(libsurveyor
         lib/util/tokenizer.h
         lib/bitboard.h
         lib/engine_output.h
+        lib/game.cpp
+        lib/game.h
         lib/geometry.h
         lib/move.cpp
         lib/move.h
         lib/move_generation.cpp
         lib/move_generation.h
+        lib/perft.cpp
+        lib/perft.h
         lib/piece.h
         lib/position.cpp
         lib/position.h

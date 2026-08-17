@@ -14,13 +14,36 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "perft.h"
 
-#ifndef SURVEYOR_INCLUDE_H
-#define SURVEYOR_INCLUDE_H
+#include "move_generation.h"
 
-#include "../../util/parse.h"
-#include "../../util/tokenizer.h"
-#include "../game.h"
-#include "../perft.h"
+#include <print>
 
-#endif  // SURVEYOR_INCLUDE_H
+namespace surveyor::perft {
+
+auto standard(const position& pos, i32 depth, bool print_info) -> u64 {
+  if (depth == 0) {
+    return 1;
+  }
+
+  const move_list legal_moves = generate_moves(pos);
+
+  u64 total_nodes = 0;
+
+  for (const auto mv : legal_moves) {
+    const position child = pos.make_move(mv);
+
+    const u64 leaf_nodes = standard(child, depth - 1, false);
+
+    if (print_info) {
+      std::println("{}: {}", mv, leaf_nodes);
+    }
+
+    total_nodes += leaf_nodes;
+  }
+
+  return total_nodes;
+}
+
+}  // namespace surveyor::perft

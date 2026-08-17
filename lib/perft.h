@@ -14,13 +14,15 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef SURVEYOR_PERFT_H
+#define SURVEYOR_PERFT_H
+#include "position.h"
 
-#ifndef SURVEYOR_INCLUDE_H
-#define SURVEYOR_INCLUDE_H
+namespace surveyor::perft {
 
-#include "../../util/parse.h"
-#include "../../util/tokenizer.h"
-#include "../game.h"
-#include "../perft.h"
+auto standard(const position& pos, i32 depth, bool print_info = true) -> u64;
 
-#endif  // SURVEYOR_INCLUDE_H
+}  // namespace surveyor::perft
+
+
+#endif  // SURVEYOR_PERFT_H

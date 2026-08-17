@@ -14,13 +14,20 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "game.h"
 
-#ifndef SURVEYOR_INCLUDE_H
-#define SURVEYOR_INCLUDE_H
+namespace surveyor {
 
-#include "../../util/parse.h"
-#include "../../util/tokenizer.h"
-#include "../game.h"
-#include "../perft.h"
+game::game(const position& root)
+    : m_root(root) {
+}
 
-#endif  // SURVEYOR_INCLUDE_H
+auto game::add_move(move mv) -> void {
+  m_root = m_root.make_move(mv);
+}
+
+auto game::root() const -> const position& {
+  return m_root;
+}
+
+}  // namespace surveyor
