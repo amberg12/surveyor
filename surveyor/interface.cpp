@@ -16,14 +16,28 @@
 
 #include "interface.h"
 
-#include <iostream>
+namespace surveyor {
+auto interface::parse_command(std::string_view command) -> void {
+  uci_parse_command(command);
+}
 
-auto main() -> int {
-  surveyor::interface interface{};
+auto interface::uci_parse_command(std::string_view command) -> void {
+  tokenizer toks{command};
 
-  std::string line;
+  const std::optional<std::string> cmd = toks.next();
 
-  while (std::getline(std::cin, line)) {
-    interface.parse_command(line);
+  if (cmd == "uci") {
+    uci_uci(toks);
+  } else {
+    if (cmd.has_value()) {
+      uci_print_error(*cmd, "unknown command");
+    }
   }
 }
+
+auto interface::uci_uci(tokenizer& toks) -> void {
+  std::println("id name surveyor");
+  std::println("id author Amber Goulding");
+  std::println("uciok");
+}
+} // surveyor

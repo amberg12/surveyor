@@ -14,16 +14,10 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "interface.h"
 
-#include <iostream>
+#ifndef SURVEYOR_INCLUDE_H
+#define SURVEYOR_INCLUDE_H
 
-auto main() -> int {
-  surveyor::interface interface{};
+#include "../../util/tokenizer.h"
 
-  std::string line;
-
-  while (std::getline(std::cin, line)) {
-    interface.parse_command(line);
-  }
-}
+#endif  // SURVEYOR_INCLUDE_H

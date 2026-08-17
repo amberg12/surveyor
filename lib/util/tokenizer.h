@@ -14,16 +14,23 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "interface.h"
+#ifndef SURVEYOR_TOKENIZER_H
+#define SURVEYOR_TOKENIZER_H
+#include "integer.h"
 
-#include <iostream>
+#include <string>
 
-auto main() -> int {
-  surveyor::interface interface{};
+namespace surveyor {
+class tokenizer {
+public:
+  explicit tokenizer(std::string_view str);
 
-  std::string line;
+  auto next() -> std::optional<std::string>;
 
-  while (std::getline(std::cin, line)) {
-    interface.parse_command(line);
-  }
-}
+private:
+  std::string m_str;
+  usize       m_ptr = 0;
+};
+}  // namespace surveyor
+
+#endif  // SURVEYOR_TOKENIZER_H
