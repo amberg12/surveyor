@@ -31,6 +31,8 @@ add_library(libsurveyor
         lib/position.cpp
         lib/position.h
         lib/score.h
+        lib/search.cpp
+        lib/search.h
         lib/search_limits.h
         lib/square.h
         lib/zobrist.h

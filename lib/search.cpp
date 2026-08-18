@@ -14,30 +14,36 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "engine.h"
+#include "search.h"
 
-#include "move_generation.h"
+#include <print>
+#include <thread>
 
 namespace surveyor {
 
-engine::engine() {
-  m_shared   = std::make_unique<search_shared>();
-  m_searcher = std::make_unique<search>(*m_shared);
-
-  m_searcher->launch();
+search::search(search_shared& shared)
+    : m_shared(shared) {
 }
 
-auto engine::go(game g, search_limits limits) -> void {
-  m_shared->message = engine_message::go;
-  m_shared->stopped = false;
+auto search::launch() -> void {
+  m_thread = std::jthread([this] {
+    this->thread_main();
+  });
 }
 
-auto engine::stop() -> void {
-  m_shared->halt();
-}
-
-auto engine::set_output(std::unique_ptr<engine_output> output) -> void {
-  m_output = std::move(output);
+auto search::thread_main() -> void {
+  while (true) {
+    switch (m_shared.message) {
+    case engine_message::go: {
+      std::println("I am being asked to go!");
+    } break;
+    case engine_message::idle: {
+    } break;
+    case engine_message::destroy: {
+      return;
+    }
+    }
+  }
 }
 
 }  // namespace surveyor

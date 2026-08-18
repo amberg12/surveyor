@@ -34,6 +34,7 @@ private:
   auto uci_position(tokenizer& toks) -> void;
   auto uci_uci(tokenizer& toks) -> void;
   auto uci_go(tokenizer& toks) -> void;
+  auto uci_stop(tokenizer& toks) -> void;
 
   template<typename... Args>
   auto uci_print_error(std::string_view cmd, std::format_string<Args...> fmt, Args&&... args)

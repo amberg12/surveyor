@@ -42,7 +42,10 @@ auto interface::uci_parse_command(std::string_view command) -> void {
     uci_perft(toks);
   } else if (cmd == "position") {
     uci_position(toks);
-  } else {
+  } else if (cmd == "stop") {
+    uci_stop(toks);
+  }
+    else {
     if (cmd.has_value()) {
       uci_print_error(*cmd, "unknown command");
     }
@@ -201,5 +204,9 @@ auto interface::uci_go(tokenizer& toks) -> void {
 #undef SURVEYOR_ADD_MS
 
   m_engine.go(m_game, sl);
+}
+
+auto interface::uci_stop(tokenizer& toks) -> void {
+  m_engine.stop();
 }
 }  // namespace surveyor

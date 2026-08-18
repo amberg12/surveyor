@@ -18,19 +18,28 @@
 #define SURVEYOR_ENGINE_H
 #include "engine_output.h"
 #include "game.h"
+#include "search.h"
 #include "search_limits.h"
 
 #include <memory>
 
 namespace surveyor {
+struct search_shared;
 class engine {
 public:
+  engine();
+
   auto go(game g, search_limits limits) -> void;
+  auto stop() -> void;
   auto set_output(std::unique_ptr<engine_output> output) -> void;
 
 private:
   std::unique_ptr<engine_output> m_output = std::make_unique<null_output>();
+
+  std::unique_ptr<search_shared> m_shared;
+  std::unique_ptr<search>        m_searcher;
 };
-}
+
+}  // namespace surveyor
 
 #endif  // SURVEYOR_ENGINE_H
