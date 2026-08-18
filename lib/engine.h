@@ -31,13 +31,13 @@ public:
 
   auto go(game g, search_limits limits) -> void;
   auto stop() -> void;
-  auto set_output(std::unique_ptr<engine_output> output) -> void;
+  auto set_output(std::shared_ptr<engine_output> output) -> void;
 
 private:
-  std::unique_ptr<engine_output> m_output = std::make_unique<null_output>();
+  std::shared_ptr<engine_output> m_output = std::make_unique<null_output>();
 
   std::unique_ptr<search_shared> m_shared;
-  std::unique_ptr<search>        m_searcher;
+  std::unique_ptr<worker>        m_searcher;
 };
 
 }  // namespace surveyor

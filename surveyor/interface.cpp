@@ -21,8 +21,8 @@
 namespace surveyor {
 
 interface::interface() {
-  std::unique_ptr<engine_output> output = std::make_unique<uci_output>();
-  m_engine.set_output(std::move(output));
+  std::shared_ptr<engine_output> output = std::make_unique<uci_output>();
+  m_engine.set_output(output);
 }
 
 auto interface::parse_command(std::string_view command) -> void {

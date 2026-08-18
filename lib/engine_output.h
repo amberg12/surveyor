@@ -21,6 +21,7 @@
 namespace surveyor {
 
 struct info_line {
+  i32  depth;
   line pv;
 };
 

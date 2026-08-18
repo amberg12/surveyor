@@ -16,6 +16,9 @@
 
 #ifndef SURVEYOR_SEARCH_H
 #define SURVEYOR_SEARCH_H
+#include "engine_output.h"
+#include "game.h"
+
 #include <atomic>
 #include <memory>
 #include <thread>
@@ -32,6 +35,10 @@ struct search_shared {
   std::atomic<engine_message> message = engine_message::idle;
   std::atomic_bool            stopped;
 
+  std::shared_ptr<engine_output> output;
+
+  game g{position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")};
+
   auto halt() -> void {
     message = engine_message::idle;
     stopped = true;
@@ -39,14 +46,19 @@ struct search_shared {
 };
 
 
-class search {
+class worker {
 public:
-  search(search_shared& shared);
+  worker(search_shared& shared);
 
   auto launch() -> void;
 
 private:
   auto thread_main() -> void;
+
+  auto begin_search() -> void;
+
+  auto iterative_deepening(const position& pos) -> void;
+  auto search(const position& pos, line& pv, i32 ply, i32 depth) -> score;
 
   search_shared& m_shared;
   std::jthread   m_thread;

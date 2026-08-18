@@ -42,7 +42,7 @@ class uci_output : public engine_output {
   auto info(info_line info) -> void override {
     using namespace uci_output_detail;
 
-    std::println("info pv {}", uci_stringify_pv(info.pv));
+    std::println("info depth {} pv {}", info.depth, uci_stringify_pv(info.pv));
   }
 
   auto best_move(move mv) -> void override {

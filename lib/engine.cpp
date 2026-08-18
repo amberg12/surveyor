@@ -22,12 +22,13 @@ namespace surveyor {
 
 engine::engine() {
   m_shared   = std::make_unique<search_shared>();
-  m_searcher = std::make_unique<search>(*m_shared);
+  m_searcher = std::make_unique<worker>(*m_shared);
 
   m_searcher->launch();
 }
 
 auto engine::go(game g, search_limits limits) -> void {
+  m_shared->g       = g;
   m_shared->message = engine_message::go;
   m_shared->stopped = false;
 }
@@ -36,8 +37,9 @@ auto engine::stop() -> void {
   m_shared->halt();
 }
 
-auto engine::set_output(std::unique_ptr<engine_output> output) -> void {
-  m_output = std::move(output);
+auto engine::set_output(std::shared_ptr<engine_output> output) -> void {
+  m_output         = output;
+  m_shared->output = output;
 }
 
 }  // namespace surveyor
