@@ -46,6 +46,8 @@ auto interface::uci_parse_command(std::string_view command) -> void {
     uci_stop(toks);
   } else if (cmd == "ucinewgame") {
     uci_ucinewgame(toks);
+  } else if (cmd == "isready") {
+    uci_isready(toks);
   }
     else {
     if (cmd.has_value()) {
@@ -264,6 +266,10 @@ auto interface::uci_stop(tokenizer& toks) -> void {
 
 auto interface::uci_ucinewgame(tokenizer& toks) -> void {
   m_engine.reset();
+}
+
+auto interface::uci_isready(tokenizer& toks) -> void {
+  std::println("readyok");
 }
 
 }  // namespace surveyor
