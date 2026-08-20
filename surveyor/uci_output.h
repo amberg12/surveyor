@@ -39,6 +39,7 @@ auto uci_stringify_pv(const line& l) -> std::string {
 }  // namespace uci_output_detail
 
 class uci_output : public engine_output {
+public:
   auto info(info_line info) -> void override {
     using namespace uci_output_detail;
 

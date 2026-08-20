@@ -37,6 +37,7 @@ private:
   auto uci_stop(tokenizer& toks) -> void;
   auto uci_ucinewgame(tokenizer& toks) -> void;
   auto uci_isready(tokenizer& toks) -> void;
+  auto uci_bench(tokenizer& toks) -> void;
 
   template<typename... Args>
   auto uci_print_error(std::string_view cmd, std::format_string<Args...> fmt, Args&&... args)

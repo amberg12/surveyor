@@ -53,6 +53,7 @@ target_include_directories(libsurveyor
 )
 
 add_executable(surveyor
+        surveyor/bench_output.h
         surveyor/interface.cpp
         surveyor/interface.h
         surveyor/main.cpp

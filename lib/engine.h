@@ -28,6 +28,7 @@ struct search_shared;
 class engine {
 public:
   engine();
+  ~engine();
 
   auto go(game g, ctrls::ctrls limits) -> void;
   auto stop() -> void;
@@ -35,6 +36,8 @@ public:
 
   auto reset() -> void;
   auto resize_hash(usize mb) -> void;
+
+  auto await() -> void;
 
 private:
   std::shared_ptr<engine_output> m_output = std::make_unique<null_output>();

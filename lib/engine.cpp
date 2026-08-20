@@ -27,6 +27,11 @@ engine::engine() {
   m_searcher->launch();
 }
 
+engine::~engine() {
+  m_shared->halt();
+  m_shared->message = engine_message::destroy;
+}
+
 auto engine::go(game g, ctrls::ctrls limits) -> void {
   m_shared->g     = g;
   m_shared->ctrls = limits;
@@ -47,6 +52,12 @@ auto engine::set_output(std::shared_ptr<engine_output> output) -> void {
 auto engine::reset() -> void {
   m_shared->tt.clear();
   m_searcher->reset();
+}
+
+auto engine::await() -> void {
+  while (m_shared->message == engine_message::go) {
+
+  }
 }
 
 }  // namespace surveyor
