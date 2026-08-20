@@ -80,6 +80,10 @@ auto worker::begin_search() -> void {
   if (std::holds_alternative<ctrls::fixed_time>(m_shared.ctrls)) {
     iterative_deepening<ctrls::fixed_time>(g.root());
   }
+
+  if (std::holds_alternative<ctrls::depth>(m_shared.ctrls)) {
+    iterative_deepening<ctrls::depth>(g.root());
+  }
 }
 
 auto worker::make_move(
@@ -164,7 +168,7 @@ auto worker::iterative_deepening(const position& pos) -> void {
     last_score = sc;
     last_pv    = pv;
 
-    if (ctrls.soft_limit(m_nodes)) {
+    if (ctrls.soft_limit(m_nodes, depth)) {
       break;
     }
 
@@ -190,7 +194,7 @@ auto worker::search(Ctrls&          ctrls,
   const bool singular = ss->excluded.has_value();
   ss[1].clear_killers();
 
-  if (m_shared.stopped || ctrls.hard_limit(m_nodes)) {
+  if (m_shared.stopped || ctrls.hard_limit(m_nodes, ply)) {
     m_shared.stopped = true;
     return 0;
   }
@@ -540,7 +544,7 @@ auto worker::quiesce(Ctrls&          ctrls,
                      search_stack*   ss) -> score {
   m_nodes += 1;
 
-  if (m_shared.stopped || ctrls.hard_limit(m_nodes)) {
+  if (m_shared.stopped || ctrls.hard_limit(m_nodes, ply)) {
     m_shared.stopped = true;
     return 0;
   }

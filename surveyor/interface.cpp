@@ -249,6 +249,36 @@ auto interface::uci_go(tokenizer& toks) -> void {
       continue;
     }
 
+    if (name == "depth") {
+      if (!is_ctrls_set) {
+        c.emplace<ctrls::depth>();
+        is_ctrls_set = true;
+      }
+
+      if (!std::holds_alternative<ctrls::depth>(c)) {
+        uci_print_error("go", "depth is incompatible with the other arguments");
+        return;
+      }
+
+      std::get<ctrls::depth>(c).soft_depth = parsed_number;
+      continue;
+    }
+
+    if (name == "harddepth") {
+      if (!is_ctrls_set) {
+        c.emplace<ctrls::depth>();
+        is_ctrls_set = true;
+      }
+
+      if (!std::holds_alternative<ctrls::depth>(c)) {
+        uci_print_error("go", "harddepth is incompatible with the other arguments");
+        return;
+      }
+
+      std::get<ctrls::depth>(c).hard_depth = parsed_number;
+      continue;
+    }
+
     uci_print_error("go", "{} is an unknown argument", *name);
     return;
   }

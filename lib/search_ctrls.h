@@ -31,11 +31,11 @@ struct search_control {
 };
 
 struct infinite : public search_control {
-  [[nodiscard]] constexpr auto soft_limit(u64 nodes) const -> bool {
+  [[nodiscard]] constexpr auto soft_limit(u64 nodes, i32 depth) const -> bool {
     return false;
   }
 
-  [[nodiscard]] constexpr auto hard_limit(u64 nodes) const -> bool {
+  [[nodiscard]] constexpr auto hard_limit(u64 nodes, i32 depth) const -> bool {
     return false;
   }
 };
@@ -44,11 +44,11 @@ struct nodes : public search_control {
   u64 soft_nodes = std::numeric_limits<u64>::max();
   u64 hard_nodes = std::numeric_limits<u64>::max();
 
-  [[nodiscard]] constexpr auto soft_limit(u64 nodes) const -> bool {
+  [[nodiscard]] constexpr auto soft_limit(u64 nodes, i32 depth) const -> bool {
     return nodes >= soft_nodes;
   }
 
-  [[nodiscard]] constexpr auto hard_limit(u64 nodes) const -> bool {
+  [[nodiscard]] constexpr auto hard_limit(u64 nodes, i32 depth) const -> bool {
     return nodes >= hard_nodes;
   }
 };
@@ -57,7 +57,7 @@ struct fixed_time : public search_control {
   std::optional<time::milliseconds> soft_time = std::nullopt;
   std::optional<time::milliseconds> hard_time = std::nullopt;
 
-  [[nodiscard]] constexpr auto soft_limit(u64 nodes) const -> bool {
+  [[nodiscard]] constexpr auto soft_limit(u64 nodes, i32 depth) const -> bool {
     using namespace std::chrono_literals;
 
     if (!soft_time.has_value()) {
@@ -67,7 +67,7 @@ struct fixed_time : public search_control {
     return elapsed() >= std::max(*soft_time - 50ms, 0ms);
   }
 
-  [[nodiscard]] constexpr auto hard_limit(u64 nodes) const -> bool {
+  [[nodiscard]] constexpr auto hard_limit(u64 nodes, i32 depth) const -> bool {
     using namespace std::chrono_literals;
 
     if (!hard_time.has_value()) {
@@ -78,7 +78,28 @@ struct fixed_time : public search_control {
   }
 };
 
-using ctrls = std::variant<infinite, nodes, fixed_time>;
+struct depth : public search_control {
+  std::optional<i32> soft_depth = std::nullopt;
+  std::optional<i32> hard_depth = std::nullopt;
+
+  [[nodiscard]] constexpr auto soft_limit(u64 nodes, i32 depth) const -> bool {
+    if (!soft_depth.has_value()) {
+      return false;
+    }
+
+    return depth >= *soft_depth;
+  }
+
+  [[nodiscard]] constexpr auto hard_limit(u64 nodes, i32 depth) const -> bool {
+    if (!hard_depth.has_value()) {
+      return false;
+    }
+
+    return depth >= *hard_depth;
+  }
+};
+
+using ctrls = std::variant<infinite, nodes, fixed_time, depth>;
 }  // namespace surveyor
 
 #endif  // SURVEYOR_SEARCH_LIMITS_H
