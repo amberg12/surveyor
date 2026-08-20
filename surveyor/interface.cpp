@@ -215,6 +215,36 @@ auto interface::uci_go(tokenizer& toks) -> void {
       continue;
     }
 
+    if (name == "movetime") {
+      if (!is_ctrls_set) {
+        c.emplace<ctrls::fixed_time>();
+        is_ctrls_set = true;
+      }
+
+      if (!std::holds_alternative<ctrls::fixed_time>(c)) {
+        uci_print_error("go", "movetime is incompatible with the other arguments");
+        return;
+      }
+
+      std::get<ctrls::fixed_time>(c).hard_time = time::milliseconds{parsed_number};
+      continue;
+    }
+
+    if (name == "softmovetime") {
+      if (!is_ctrls_set) {
+        c.emplace<ctrls::fixed_time>();
+        is_ctrls_set = true;
+      }
+
+      if (!std::holds_alternative<ctrls::fixed_time>(c)) {
+        uci_print_error("go", "softmovetime is incompatible with the other arguments");
+        return;
+      }
+
+      std::get<ctrls::fixed_time>(c).soft_time = time::milliseconds{parsed_number};
+      continue;
+    }
+
     uci_print_error("go", "{} is an unknown argument", *name);
     return;
   }

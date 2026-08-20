@@ -53,7 +53,32 @@ struct nodes : public search_control {
   }
 };
 
-using ctrls = std::variant<infinite, nodes>;
+struct fixed_time : public search_control {
+  std::optional<time::milliseconds> soft_time = std::nullopt;
+  std::optional<time::milliseconds> hard_time = std::nullopt;
+
+  [[nodiscard]] constexpr auto soft_limit(u64 nodes) const -> bool {
+    using namespace std::chrono_literals;
+
+    if (!soft_time.has_value()) {
+      return false;
+    }
+
+    return elapsed() >= std::max(*soft_time - 50ms, 0ms);
+  }
+
+  [[nodiscard]] constexpr auto hard_limit(u64 nodes) const -> bool {
+    using namespace std::chrono_literals;
+
+    if (!hard_time.has_value()) {
+      return false;
+    }
+
+    return elapsed() >= std::max(*hard_time - 50ms, 0ms);
+  }
+};
+
+using ctrls = std::variant<infinite, nodes, fixed_time>;
 }  // namespace surveyor
 
 #endif  // SURVEYOR_SEARCH_LIMITS_H

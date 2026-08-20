@@ -28,10 +28,11 @@ engine::engine() {
 }
 
 auto engine::go(game g, ctrls::ctrls limits) -> void {
-  m_shared->g       = g;
-  m_shared->message = engine_message::go;
-  m_shared->stopped = false;
+  m_shared->g     = g;
   m_shared->ctrls = limits;
+
+  m_shared->stopped = false;
+  m_shared->message = engine_message::go;
 }
 
 auto engine::stop() -> void {

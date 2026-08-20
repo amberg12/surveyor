@@ -64,6 +64,10 @@ auto worker::begin_search() -> void {
   if (std::holds_alternative<ctrls::nodes>(m_shared.ctrls)) {
     iterative_deepening<ctrls::nodes>(g.root());
   }
+
+  if (std::holds_alternative<ctrls::fixed_time>(m_shared.ctrls)) {
+    iterative_deepening<ctrls::fixed_time>(g.root());
+  }
 }
 
 template<typename Ctrls>
