@@ -14,25 +14,17 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "game.h"
+#ifndef SURVEYOR_MATH_H
+#define SURVEYOR_MATH_H
+#include "integer.h"
+
+#include <bit>
 
 namespace surveyor {
 
-game::game(const position& root)
-    : m_root(root) {
+auto log2(std::integral auto x) -> i32 {
+  return std::bit_width(to_unsigned(x)) - 1;
 }
 
-auto game::add_move(move mv) -> void {
-  m_repetition_table.push(m_root);
-  m_root = m_root.make_move(mv);
 }
-
-auto game::root() const -> const position& {
-  return m_root;
-}
-
-auto game::repetition_table() const -> surveyor::repetition_table {
-  return m_repetition_table;
-}
-
-}  // namespace surveyor
+#endif  // SURVEYOR_MATH_H

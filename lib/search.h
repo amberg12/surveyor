@@ -18,7 +18,11 @@
 #define SURVEYOR_SEARCH_H
 #include "engine_output.h"
 #include "game.h"
+#include "history.h"
+#include "node_type.h"
+#include "repetition_table.h"
 #include "search_ctrls.h"
+#include "transposition_table.h"
 
 #include <atomic>
 #include <memory>
@@ -40,6 +44,8 @@ struct search_shared {
 
   std::shared_ptr<engine_output> output;
 
+  tt::transposition_table tt{16};
+
   game g{position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")};
 
   auto halt() -> void {
@@ -48,6 +54,28 @@ struct search_shared {
   }
 };
 
+struct search_stack {
+  continuation_history::subtable* conthist_subtable = nullptr;
+
+  score static_eval = scoring::none;
+  score raw_eval    = scoring::none;
+  move  excluded    = move::null();
+
+  move killer_1 = move::null();
+  move killer_2 = move::null();
+
+  auto clear_killers() -> void {
+    killer_1 = move::null();
+    killer_2 = move::null();
+  }
+
+  auto add_killer(move mv) -> void {
+    if (killer_1 != mv) {
+      killer_2 = killer_1;
+      killer_1 = mv;
+    }
+  }
+};
 
 class worker {
 public:
@@ -62,14 +90,43 @@ private:
 
   auto begin_search() -> void;
 
-  template <typename Ctrls>
+  template<typename Ctrls>
   auto iterative_deepening(const position& pos) -> void;
 
-  template <typename Ctrls>
-  auto search(Ctrls& ctrls, const position& pos, line& pv, i32 ply, i32 depth) -> score;
+  template<typename Ctrls>
+  auto search(Ctrls&          ctrls,
+              node_type       expected,
+              const position& pos,
+              line&           pv,
+              score           alpha,
+              score           beta,
+              i32             ply,
+              i32             depth,
+              search_stack*   ss) -> score;
+
+  template<typename Ctrls>
+  auto quiesce(Ctrls&          ctrls,
+               node_type       expected,
+               const position& pos,
+               line&           pv,
+               score           alpha,
+               score           beta,
+               i32             ply,
+               search_stack*   ss) -> score;
+
+  auto make_move(const position& pos, const position& child, move mv, i32 ply, search_stack* ss) -> void;
+  auto make_null_move(const position& child, i32 ply, search_stack* ss) -> void;
+  auto unmake_move() -> void;
 
   search_shared& m_shared;
   std::jthread   m_thread;
+
+  repetition_table m_repetition_table;
+
+  correction_history   m_corrhist;
+  piece_to_history     m_piece_to;
+  capture_history      m_capthist;
+  continuation_history m_conthist;
 
   u64 m_nodes;
 };

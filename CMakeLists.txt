@@ -9,6 +9,7 @@ add_library(libsurveyor
         lib/util/cast_iterator.h
         lib/util/constant.h
         lib/util/integer.h
+        lib/util/math.h
         lib/util/multi_array.h
         lib/util/parse.h
         lib/util/static_vector.h
@@ -18,23 +19,31 @@ add_library(libsurveyor
         lib/engine.cpp
         lib/engine.h
         lib/engine_output.h
+        lib/evaluate.h
         lib/game.cpp
         lib/game.h
         lib/geometry.h
+        lib/history.h
         lib/move.cpp
         lib/move.h
         lib/move_generation.cpp
         lib/move_generation.h
+        lib/move_picker.h
+        lib/node_type.h
         lib/perft.cpp
         lib/perft.h
         lib/piece.h
         lib/position.cpp
         lib/position.h
+        lib/repetition_table.h
         lib/score.h
         lib/search.cpp
         lib/search.h
-        lib/search_limits.h
+        lib/search_ctrls.h
+        lib/see.h
         lib/square.h
+        lib/transposition_table.cpp
+        lib/transposition_table.h
         lib/zobrist.h
 )
 

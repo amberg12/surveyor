@@ -14,26 +14,49 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef SURVEYOR_GAME_H
-#define SURVEYOR_GAME_H
+#ifndef SURVEYOR_REPETITION_TABLE_H
+#define SURVEYOR_REPETITION_TABLE_H
 #include "position.h"
-#include "repetition_table.h"
 
 namespace surveyor {
 
-class game {
+class repetition_table {
 public:
-  explicit game(const position& root);
+  auto push(const position& pos) -> void {
+    m_keys.emplace_back(pos.key());
+  }
 
-  auto add_move(move mv) -> void;
-  auto root() const -> const position&;
-  auto repetition_table() const -> repetition_table;
+  auto pop() -> void {
+    m_keys.pop_back();
+  }
+
+  auto set_uci_moves() -> void {
+    m_uci_moves = m_keys.size();
+  }
+
+  [[nodiscard]] auto is_repetition(const position& pos) const -> bool {
+    i32 times_position_found = 0;
+
+    for (i32 i = static_cast<i32>(m_keys.size()) - 3; i >= 0; i -= 2) {
+      times_position_found += m_keys[i] == pos.key();
+
+      if (times_position_found == 1 && i >= m_uci_moves) {
+        return true;
+      }
+
+      if (times_position_found == 2) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 
 private:
-  position               m_root;
-  class repetition_table m_repetition_table;
+  usize m_uci_moves = 0;
+
+  std::vector<z_key> m_keys;
 };
 
 }  // namespace surveyor
-
-#endif  // SURVEYOR_GAME_H
+#endif  // SURVEYOR_REPETITION_TABLE_H
