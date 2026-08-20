@@ -19,7 +19,7 @@
 #include "engine_output.h"
 #include "game.h"
 #include "search.h"
-#include "search_limits.h"
+#include "search_ctrls.h"
 
 #include <memory>
 
@@ -29,7 +29,7 @@ class engine {
 public:
   engine();
 
-  auto go(game g, search_limits limits) -> void;
+  auto go(game g, ctrls::ctrls limits) -> void;
   auto stop() -> void;
   auto set_output(std::shared_ptr<engine_output> output) -> void;
 

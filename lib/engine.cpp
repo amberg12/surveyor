@@ -27,10 +27,11 @@ engine::engine() {
   m_searcher->launch();
 }
 
-auto engine::go(game g, search_limits limits) -> void {
+auto engine::go(game g, ctrls::ctrls limits) -> void {
   m_shared->g       = g;
   m_shared->message = engine_message::go;
   m_shared->stopped = false;
+  m_shared->ctrls = limits;
 }
 
 auto engine::stop() -> void {

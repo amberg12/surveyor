@@ -18,6 +18,7 @@
 #define SURVEYOR_SEARCH_H
 #include "engine_output.h"
 #include "game.h"
+#include "search_ctrls.h"
 
 #include <atomic>
 #include <memory>
@@ -32,6 +33,8 @@ enum class engine_message {
 };
 
 struct search_shared {
+  ctrls::ctrls ctrls;
+
   std::atomic<engine_message> message = engine_message::idle;
   std::atomic_bool            stopped;
 
@@ -57,8 +60,11 @@ private:
 
   auto begin_search() -> void;
 
+  template <typename Ctrls>
   auto iterative_deepening(const position& pos) -> void;
-  auto search(const position& pos, line& pv, i32 ply, i32 depth) -> score;
+
+  template <typename Ctrls>
+  auto search(Ctrls& ctrls, const position& pos, line& pv, i32 ply, i32 depth) -> score;
 
   search_shared& m_shared;
   std::jthread   m_thread;

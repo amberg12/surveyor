@@ -53,10 +53,15 @@ auto worker::thread_main() -> void {
 auto worker::begin_search() -> void {
   const game g = m_shared.g;
 
-  iterative_deepening(g.root());
+  if (std::holds_alternative<ctrls::infinite>(m_shared.ctrls)) {
+    iterative_deepening<ctrls::infinite>(g.root());
+  }
 }
 
+template <typename Ctrls>
 auto worker::iterative_deepening(const position& pos) -> void {
+  Ctrls ctrls = std::get<Ctrls>(m_shared.ctrls);
+
   line last_pv;
   i32  last_depth = -1;
 
@@ -70,7 +75,7 @@ auto worker::iterative_deepening(const position& pos) -> void {
   for (i32 depth = 1; depth < 255; ++depth) {
     line pv;
 
-    search(pos, pv, 0, depth);
+    search(ctrls, pos, pv, 0, depth);
 
     if (m_shared.stopped) {
       break;
@@ -88,7 +93,8 @@ auto worker::iterative_deepening(const position& pos) -> void {
   m_shared.output->best_move(last_pv[0]);
 }
 
-auto worker::search(const position& pos, line& pv, i32 ply, i32 depth) -> score {
+template <typename Ctrls>
+auto worker::search(Ctrls& ctrls, const position& pos, line& pv, i32 ply, i32 depth) -> score {
   if (m_shared.stopped) {
     return 0;
   }
@@ -105,7 +111,7 @@ auto worker::search(const position& pos, line& pv, i32 ply, i32 depth) -> score 
     line           child_pv;
     const position child = pos.make_move(mv);
 
-    const score search_score = -search(child, child_pv, ply + 1, depth - 1);
+    const score search_score = -search(ctrls, child, child_pv, ply + 1, depth - 1);
 
     if (search_score > best_score) {
       pv.clear();

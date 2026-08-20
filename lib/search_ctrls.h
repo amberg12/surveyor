@@ -20,20 +20,22 @@
 
 #include <variant>
 
-namespace surveyor {
+namespace surveyor::ctrls {
 
-namespace search_limit_types {
+struct infinite {
+  time::time_point start_time;
 
-struct clock {
-  time::milliseconds wtime;
-  time::milliseconds btime;
-  time::milliseconds winc;
-  time::milliseconds binc;
+  [[nodiscard]] constexpr auto soft_limit() const -> bool {
+    return false;
+  }
+
+  [[nodiscard]] constexpr auto hard_limit() const -> bool {
+    return false;
+  }
 };
 
-}  // namespace search_limit_types
+using ctrls = std::variant<infinite>;
 
-using search_limits = std::variant<std::monostate, search_limit_types::clock>;
 }  // namespace surveyor
 
 #endif  // SURVEYOR_SEARCH_LIMITS_H
