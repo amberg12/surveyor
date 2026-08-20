@@ -166,6 +166,11 @@ auto interface::uci_go(tokenizer& toks) -> void {
   bool is_ctrls_set = false;
 
   for (auto name = toks.next(); name.has_value(); name = toks.next()) {
+    if (name == "infinite") {
+      is_ctrls_set = true;
+      continue;
+    }
+
     const auto value = toks.next();
 
     if (!value.has_value()) {
@@ -192,6 +197,7 @@ auto interface::uci_go(tokenizer& toks) -> void {
       }
 
       std::get<ctrls::nodes>(c).hard_nodes = parsed_number;
+      continue;
     }
 
     if (name == "softnodes") {
@@ -206,7 +212,11 @@ auto interface::uci_go(tokenizer& toks) -> void {
       }
 
       std::get<ctrls::nodes>(c).soft_nodes = parsed_number;
+      continue;
     }
+
+    uci_print_error("go", "{} is an unknown argument", *name);
+    return;
   }
 
   std::visit([&](auto& x) {
