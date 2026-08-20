@@ -85,6 +85,8 @@ public:
 
   auto nodes() -> u64;
 
+  auto reset() -> void;
+
 private:
   auto thread_main() -> void;
 

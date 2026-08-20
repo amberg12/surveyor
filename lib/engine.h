@@ -33,6 +33,9 @@ public:
   auto stop() -> void;
   auto set_output(std::shared_ptr<engine_output> output) -> void;
 
+  auto reset() -> void;
+  auto resize_hash(usize mb) -> void;
+
 private:
   std::shared_ptr<engine_output> m_output = std::make_unique<null_output>();
 

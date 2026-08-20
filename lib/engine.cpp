@@ -44,4 +44,9 @@ auto engine::set_output(std::shared_ptr<engine_output> output) -> void {
   m_shared->output = output;
 }
 
+auto engine::reset() -> void {
+  m_shared->tt.clear();
+  m_searcher->reset();
+}
+
 }  // namespace surveyor

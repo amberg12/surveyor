@@ -41,6 +41,13 @@ auto worker::nodes() -> u64 {
   return m_nodes;
 }
 
+auto worker::reset() -> void {
+  m_corrhist = {};
+  m_capthist = {};
+  m_conthist = {};
+  m_piece_to = {};
+}
+
 auto worker::thread_main() -> void {
   while (true) {
     switch (m_shared.message) {
