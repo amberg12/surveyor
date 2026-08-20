@@ -33,6 +33,8 @@ engine::~engine() {
 }
 
 auto engine::go(game g, ctrls::ctrls limits) -> void {
+  m_shared->tt.age();
+
   m_shared->g     = g;
   m_shared->ctrls = limits;
 

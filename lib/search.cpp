@@ -653,7 +653,7 @@ auto worker::quiesce(Ctrls&          ctrls,
     const position child = pos.make_move(mv);
     make_move(pos, child, mv, ply, ss);
 
-    const score search_score = -quiesce(ctrls, expected, child, pv, alpha, beta, ply + 1, ss + 1);
+    const score search_score = -quiesce(ctrls, expected, child, pv, -beta, -alpha, ply + 1, ss + 1);
 
     unmake_move();
 
