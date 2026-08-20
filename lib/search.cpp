@@ -60,6 +60,10 @@ auto worker::begin_search() -> void {
   if (std::holds_alternative<ctrls::infinite>(m_shared.ctrls)) {
     iterative_deepening<ctrls::infinite>(g.root());
   }
+
+  if (std::holds_alternative<ctrls::nodes>(m_shared.ctrls)) {
+    iterative_deepening<ctrls::nodes>(g.root());
+  }
 }
 
 template<typename Ctrls>
@@ -93,6 +97,10 @@ auto worker::iterative_deepening(const position& pos) -> void {
     last_pv    = pv;
     last_score = sc;
 
+    if (ctrls.soft_limit(m_nodes)) {
+      break;
+    }
+
     print_info();
   }
 
@@ -104,7 +112,8 @@ auto worker::iterative_deepening(const position& pos) -> void {
 
 template<typename Ctrls>
 auto worker::search(Ctrls& ctrls, const position& pos, line& pv, i32 ply, i32 depth) -> score {
-  if (m_shared.stopped || ctrls.hard_limit()) {
+  if (m_shared.stopped || ctrls.hard_limit(m_nodes)) {
+    m_shared.stopped = true;
     return 0;
   }
 

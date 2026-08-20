@@ -163,6 +163,51 @@ auto interface::uci_go(tokenizer& toks) -> void {
   const time::time_point now = time::clock::now();
 
   ctrls::ctrls c;
+  bool is_ctrls_set = false;
+
+  for (auto name = toks.next(); name.has_value(); name = toks.next()) {
+    const auto value = toks.next();
+
+    if (!value.has_value()) {
+      uci_print_error("go", "{} is missing a value", *name);
+      return;
+    }
+
+    if (!parse_number<u64>(*value).has_value()) {
+      uci_print_error("go", "{} is an invalid argument to {}", *value, *name);
+      return;
+    }
+
+    const u64 parsed_number = *parse_number<u64>(*value);
+
+    if (name == "nodes") {
+      if (!is_ctrls_set) {
+        c.emplace<ctrls::nodes>();
+        is_ctrls_set = true;
+      }
+
+      if (!std::holds_alternative<ctrls::nodes>(c)) {
+        uci_print_error("go", "nodes is incompatible with the other arguments");
+        return;
+      }
+
+      std::get<ctrls::nodes>(c).hard_nodes = parsed_number;
+    }
+
+    if (name == "softnodes") {
+      if (!is_ctrls_set) {
+        c.emplace<ctrls::nodes>();
+        is_ctrls_set = true;
+      }
+
+      if (!std::holds_alternative<ctrls::nodes>(c)) {
+        uci_print_error("go", "softnodes is incompatible with the other arguments");
+        return;
+      }
+
+      std::get<ctrls::nodes>(c).soft_nodes = parsed_number;
+    }
+  }
 
   std::visit([&](auto& x) {
     x.start_time = now;

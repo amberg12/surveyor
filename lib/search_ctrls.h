@@ -31,16 +31,29 @@ struct search_control {
 };
 
 struct infinite : public search_control {
-  [[nodiscard]] constexpr auto soft_limit() const -> bool {
+  [[nodiscard]] constexpr auto soft_limit(u64 nodes) const -> bool {
     return false;
   }
 
-  [[nodiscard]] constexpr auto hard_limit() const -> bool {
+  [[nodiscard]] constexpr auto hard_limit(u64 nodes) const -> bool {
     return false;
   }
 };
 
-using ctrls = std::variant<infinite>;
+struct nodes : public search_control {
+  u64 soft_nodes = std::numeric_limits<u64>::max();
+  u64 hard_nodes = std::numeric_limits<u64>::max();
+
+  [[nodiscard]] constexpr auto soft_limit(u64 nodes) const -> bool {
+    return nodes >= soft_nodes;
+  }
+
+  [[nodiscard]] constexpr auto hard_limit(u64 nodes) const -> bool {
+    return nodes >= hard_nodes;
+  }
+};
+
+using ctrls = std::variant<infinite, nodes>;
 }  // namespace surveyor
 
 #endif  // SURVEYOR_SEARCH_LIMITS_H
