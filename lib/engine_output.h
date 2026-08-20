@@ -17,12 +17,16 @@
 #ifndef SURVEYOR_ENGINE_OUTPUT_H
 #define SURVEYOR_ENGINE_OUTPUT_H
 #include "move.h"
+#include "score.h"
 
 namespace surveyor {
 
 struct info_line {
-  i32  depth;
-  line pv;
+  i32            depth;
+  score          sc;
+  time::duration elapsed;
+  u64            nodes;
+  line           pv;
 };
 
 class engine_output {

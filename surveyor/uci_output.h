@@ -42,7 +42,9 @@ class uci_output : public engine_output {
   auto info(info_line info) -> void override {
     using namespace uci_output_detail;
 
-    std::println("info depth {} pv {}", info.depth, uci_stringify_pv(info.pv));
+    std::println("info depth {} score {} time {} nodes {} nps {} pv {}", info.depth,
+                 scoring::to_uci(info.sc), time::cast<time::milliseconds>(info.elapsed).count(),
+                 info.nodes, time::nps(info.nodes, info.elapsed), uci_stringify_pv(info.pv));
   }
 
   auto best_move(move mv) -> void override {

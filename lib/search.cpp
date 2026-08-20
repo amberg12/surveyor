@@ -20,7 +20,6 @@
 #include "move_generation.h"
 #include "position.h"
 
-#include <print>
 #include <thread>
 
 namespace surveyor {
@@ -33,6 +32,10 @@ auto worker::launch() -> void {
   m_thread = std::jthread([this] {
     this->thread_main();
   });
+}
+
+auto worker::nodes() -> u64 {
+  return m_nodes;
 }
 
 auto worker::thread_main() -> void {
@@ -52,37 +55,43 @@ auto worker::thread_main() -> void {
 
 auto worker::begin_search() -> void {
   const game g = m_shared.g;
+  m_nodes      = 0;
 
   if (std::holds_alternative<ctrls::infinite>(m_shared.ctrls)) {
     iterative_deepening<ctrls::infinite>(g.root());
   }
 }
 
-template <typename Ctrls>
+template<typename Ctrls>
 auto worker::iterative_deepening(const position& pos) -> void {
   Ctrls ctrls = std::get<Ctrls>(m_shared.ctrls);
 
-  line last_pv;
-  i32  last_depth = -1;
+  i32   last_depth = -1;
+  score last_score = scoring::none;
+  line  last_pv;
 
   auto print_info = [&] {
     m_shared.output->info({
-      .depth = last_depth,
-      .pv    = last_pv,
+      .depth   = last_depth,
+      .sc      = last_score,
+      .elapsed = ctrls.elapsed(),
+      .nodes   = m_nodes,
+      .pv      = last_pv,
     });
   };
 
   for (i32 depth = 1; depth < 255; ++depth) {
     line pv;
 
-    search(ctrls, pos, pv, 0, depth);
+    score sc = search(ctrls, pos, pv, 0, depth);
 
     if (m_shared.stopped) {
       break;
     }
 
-    last_pv = pv;
     last_depth = depth;
+    last_pv    = pv;
+    last_score = sc;
 
     print_info();
   }
@@ -93,11 +102,13 @@ auto worker::iterative_deepening(const position& pos) -> void {
   m_shared.output->best_move(last_pv[0]);
 }
 
-template <typename Ctrls>
+template<typename Ctrls>
 auto worker::search(Ctrls& ctrls, const position& pos, line& pv, i32 ply, i32 depth) -> score {
-  if (m_shared.stopped) {
+  if (m_shared.stopped || ctrls.hard_limit()) {
     return 0;
   }
+
+  m_nodes += 1;
 
   if (depth == 0) {
     return pos.key() % 1024;
@@ -114,6 +125,7 @@ auto worker::search(Ctrls& ctrls, const position& pos, line& pv, i32 ply, i32 de
     const score search_score = -search(ctrls, child, child_pv, ply + 1, depth - 1);
 
     if (search_score > best_score) {
+      best_score = search_score;
       pv.clear();
       pv.emplace_back(mv);
       for (const move pv_move : child_pv) {

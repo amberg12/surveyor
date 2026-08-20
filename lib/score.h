@@ -58,6 +58,18 @@ constexpr auto plies_to_mate(score sc) -> i32 {
   return is_winning(sc) ? max - sc : min - sc;
 }
 
+inline auto to_uci(score sc) -> std::string {
+  if (is_losing(sc)) {
+    return std::format("mate {}", -plies_to_mate(sc) / 2);
+  }
+
+  if (is_winning(sc)) {
+    return std::format("mate {}", (plies_to_mate(sc) + 1) / 2);
+  }
+
+  return std::format("cp {}", sc);
+}
+
 }  // namespace scoring
 
 }  // namespace surveyor

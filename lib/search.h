@@ -55,6 +55,8 @@ public:
 
   auto launch() -> void;
 
+  auto nodes() -> u64;
+
 private:
   auto thread_main() -> void;
 
@@ -68,6 +70,8 @@ private:
 
   search_shared& m_shared;
   std::jthread   m_thread;
+
+  u64 m_nodes;
 };
 
 }  // namespace surveyor

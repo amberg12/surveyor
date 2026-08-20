@@ -22,9 +22,15 @@
 
 namespace surveyor::ctrls {
 
-struct infinite {
+struct search_control {
   time::time_point start_time;
 
+  [[nodiscard]] auto elapsed() const -> time::duration {
+    return time::clock::now() - start_time;
+  }
+};
+
+struct infinite : public search_control {
   [[nodiscard]] constexpr auto soft_limit() const -> bool {
     return false;
   }
@@ -35,7 +41,6 @@ struct infinite {
 };
 
 using ctrls = std::variant<infinite>;
-
 }  // namespace surveyor
 
 #endif  // SURVEYOR_SEARCH_LIMITS_H

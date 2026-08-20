@@ -160,7 +160,13 @@ auto interface::uci_uci(tokenizer& toks) -> void {
 }
 
 auto interface::uci_go(tokenizer& toks) -> void {
+  const time::time_point now = time::clock::now();
+
   ctrls::ctrls c;
+
+  std::visit([&](auto& x) {
+    x.start_time = now;
+  }, c);
 
   m_engine.go(m_game, c);
 }
