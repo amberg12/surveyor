@@ -4,6 +4,25 @@
 
 UCI Chess Engine written in C++.
 
+### Building
+
+To build, simply use the makefile provided.
+
+```shell
+# native (both do the same)
+make
+make native
+
+# avx2-bmi2
+make avx2-bmi2
+
+# x86-64
+make x86-64
+```
+
+It is strongly recommended to use avx2-bmi2 at a minimum. Building as native will maximise
+the speed of the program on your machine, but will produce a less portable buid.
+
 ### Non standard UCI commands:
  - go softtime \<ms\>
  - go softnodes \<nodes\>
