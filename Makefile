@@ -19,7 +19,7 @@ native:
 	cp build/native/surveyor ./$(EXE)
 
 avx2-bmi2:
-	cmake -S . -B build/avx2-bmi \
+	cmake -S . -B build/avx2-bmi2 \
     		-DCMAKE_BUILD_TYPE=Release \
     		-DCMAKE_CXX_FLAGS="-mavx2 -mbmi2" \
     		$(TOOLCHAIN_FILE)
