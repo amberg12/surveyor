@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 4.2)
-project(surveyor)
+cmake_minimum_required(VERSION 3.31.6)
+project(uci)
 
 set(CMAKE_CXX_STANDARD 23)
 
@@ -53,18 +53,13 @@ target_include_directories(surveyorcore
 )
 
 add_executable(surveyor
-        surveyor/bench_output.h
-        surveyor/interface.cpp
-        surveyor/interface.h
-        surveyor/main.cpp
-        surveyor/uci_output.h
+        uci/bench_output.h
+        uci/interface.cpp
+        uci/interface.h
+        uci/main.cpp
+        uci/uci_output.h
 )
 
 target_link_libraries(surveyor
         PRIVATE surveyorcore
 )
-
-if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(surveyor PRIVATE -mavx2 -mbmi2)
-    target_compile_options(surveyorcore PRIVATE -mavx2 -mbmi2)
-endif ()
