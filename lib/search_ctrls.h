@@ -106,7 +106,7 @@ struct clock : public search_control {
   [[nodiscard]] constexpr auto soft_limit(u64 nodes, i32 depth) const -> bool {
     using namespace std::chrono_literals;
 
-    const time::milliseconds hard_limit = std::max(t / 3 + i - 50ms, 0ms);
+    const time::milliseconds hard_limit = std::max(t / 3 - 50ms, 0ms);
     const time::milliseconds soft_limit = std::min(t / 20 + i / 2, hard_limit);
 
     return elapsed() > soft_limit;
@@ -115,7 +115,7 @@ struct clock : public search_control {
   [[nodiscard]] constexpr auto hard_limit(u64 nodes, i32 depth) const -> bool {
     using namespace std::chrono_literals;
 
-    const time::milliseconds hard_limit = std::max(t / 3 + i - 50ms, 0ms);
+    const time::milliseconds hard_limit = std::max(t / 3 - 50ms, 0ms);
 
     return elapsed() > hard_limit;
   }
