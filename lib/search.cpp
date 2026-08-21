@@ -84,6 +84,10 @@ auto worker::begin_search() -> void {
   if (std::holds_alternative<ctrls::depth>(m_shared.ctrls)) {
     iterative_deepening<ctrls::depth>(g.root());
   }
+
+  if (std::holds_alternative<ctrls::clock>(m_shared.ctrls)) {
+    iterative_deepening<ctrls::clock>(g.root());
+  }
 }
 
 auto worker::make_move(

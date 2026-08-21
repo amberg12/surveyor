@@ -281,6 +281,82 @@ auto interface::uci_go(tokenizer& toks) -> void {
       continue;
     }
 
+    if (name == "wtime") {
+      if (!is_ctrls_set) {
+        c.emplace<ctrls::clock>();
+        is_ctrls_set = true;
+      }
+
+      if (!std::holds_alternative<ctrls::clock>(c)) {
+        uci_print_error("go", "wtime is incompatible with the other arguments");
+        return;
+      }
+
+      if (m_game.root().stm() != color::white()) {
+        continue;
+      }
+
+      std::get<ctrls::clock>(c).t = time::milliseconds{parsed_number};
+      continue;
+    }
+
+    if (name == "btime") {
+      if (!is_ctrls_set) {
+        c.emplace<ctrls::clock>();
+        is_ctrls_set = true;
+      }
+
+      if (!std::holds_alternative<ctrls::clock>(c)) {
+        uci_print_error("go", "btime is incompatible with the other arguments");
+        return;
+      }
+
+      if (m_game.root().stm() != color::black()) {
+        continue;
+      }
+
+      std::get<ctrls::clock>(c).t = time::milliseconds{parsed_number};
+      continue;
+    }
+
+    if (name == "winc") {
+      if (!is_ctrls_set) {
+        c.emplace<ctrls::clock>();
+        is_ctrls_set = true;
+      }
+
+      if (!std::holds_alternative<ctrls::clock>(c)) {
+        uci_print_error("go", "winc is incompatible with the other arguments");
+        return;
+      }
+
+      if (m_game.root().stm() != color::white()) {
+        continue;
+      }
+
+      std::get<ctrls::clock>(c).i = time::milliseconds{parsed_number};
+      continue;
+    }
+
+    if (name == "binc") {
+      if (!is_ctrls_set) {
+        c.emplace<ctrls::clock>();
+        is_ctrls_set = true;
+      }
+
+      if (!std::holds_alternative<ctrls::clock>(c)) {
+        uci_print_error("go", "wtime is incompatible with the other arguments");
+        return;
+      }
+
+      if (m_game.root().stm() != color::black()) {
+        continue;
+      }
+
+      std::get<ctrls::clock>(c).i = time::milliseconds{parsed_number};
+      continue;
+    }
+
     uci_print_error("go", "{} is an unknown argument", *name);
     return;
   }
