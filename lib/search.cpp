@@ -179,9 +179,28 @@ auto worker::iterative_deepening(const position& pos) -> void {
     print_info();
   }
 
+  // Emergency Move-Picker
+  if (last_pv.empty()) {
+    last_depth = 0;
+
+    const std::optional<tt::entry> entry = m_shared.tt.probe(pos, 0);
+
+    const move tt_move = entry.has_value() ? entry->mv : move::null();
+
+    move_picker mp{pos, tt_move, m_piece_to, m_capthist, ss.data() + 10, -250};
+    last_pv.emplace_back(mp.next_move());
+
+    if (entry.has_value()) {
+      last_score = entry->sc;
+    } else {
+      const position child = pos.make_move(last_pv[0]);
+      last_score = evaluate(child);
+    }
+  }
+
   m_shared.halt();
   print_info();
-  m_shared.output->best_move(last_pv.size() == 0 ? move::null() : last_pv[0]);
+  m_shared.output->best_move(last_pv[0]);
 }
 
 template<typename Ctrls>
