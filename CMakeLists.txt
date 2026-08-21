@@ -3,7 +3,7 @@ project(surveyor)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_library(libsurveyor
+add_library(surveyorcore
         lib/util/bit.h
         lib/util/bit_iterator.h
         lib/util/cast_iterator.h
@@ -47,7 +47,7 @@ add_library(libsurveyor
         lib/zobrist.h
 )
 
-target_include_directories(libsurveyor
+target_include_directories(surveyorcore
         PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/lib/include
 )
@@ -61,10 +61,10 @@ add_executable(surveyor
 )
 
 target_link_libraries(surveyor
-        PRIVATE libsurveyor
+        PRIVATE surveyorcore
 )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(surveyor PRIVATE -mavx2 -mbmi2)
-    target_compile_options(libsurveyor PRIVATE -mavx2 -mbmi2)
+    target_compile_options(surveyorcore PRIVATE -mavx2 -mbmi2)
 endif ()
