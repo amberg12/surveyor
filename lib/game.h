@@ -26,6 +26,8 @@ public:
   explicit game(const position& root);
 
   auto add_move(move mv) -> void;
+  auto set_uci_line() -> void;
+
   auto root() const -> const position&;
   auto repetition_table() const -> repetition_table;
 

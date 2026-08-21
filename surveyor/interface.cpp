@@ -162,6 +162,8 @@ auto interface::uci_position(tokenizer& toks) -> void {
 
     m_game.add_move(mv);
   }
+
+  m_game.set_uci_line();
 }
 
 auto interface::uci_uci(tokenizer& toks) -> void {

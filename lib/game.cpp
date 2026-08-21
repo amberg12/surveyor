@@ -19,12 +19,18 @@
 namespace surveyor {
 
 game::game(const position& root)
-    : m_root(root) {
+    : m_root(root)
+    , m_repetition_table() {
+  m_repetition_table.push(root);
 }
 
 auto game::add_move(move mv) -> void {
-  m_repetition_table.push(m_root);
   m_root = m_root.make_move(mv);
+  m_repetition_table.push(m_root);
+}
+
+auto game::set_uci_line() -> void {
+  m_repetition_table.set_uci_moves();
 }
 
 auto game::root() const -> const position& {
