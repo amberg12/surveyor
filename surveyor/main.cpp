@@ -18,8 +18,16 @@
 
 #include <iostream>
 
-auto main() -> int {
+auto main(int argc, char** argv) -> int {
   surveyor::interface interface{};
+
+  if (argc > 1) {
+    for (surveyor::i32 i = 1; i < argc; ++i) {
+      interface.parse_command(argv[i]);
+    }
+
+    return 0;
+  }
 
   std::string line;
 
