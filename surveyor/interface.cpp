@@ -112,7 +112,8 @@ auto interface::uci_position(tokenizer& toks) -> void {
   }
 
   if (pos_type == "startpos") {
-    m_game = game{position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")};
+    const auto pos = position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    m_game         = game{pos};
   } else if (pos_type == "fen") {
     const std::optional<std::string> board      = toks.next();
     const std::optional<std::string> color      = toks.next();
@@ -125,7 +126,7 @@ auto interface::uci_position(tokenizer& toks) -> void {
 
 #define SURVEYOR_ADD_FEN_PART(part)                       \
   if (part.has_value())                                   \
-    fen += *part;                                         \
+    fen += *part + " ";                                   \
   else                                                    \
     return uci_print_error("position", "missing " #part);
 
@@ -138,7 +139,9 @@ auto interface::uci_position(tokenizer& toks) -> void {
 
 #undef SURVEYOR_ADD_FEN_PART
 
-    m_game = game{position::parse(fen)};
+    std::println("{}", fen);
+    const auto pos = position::parse(fen);
+    m_game         = game{pos};
   } else {
     uci_print_bad_token("position", *pos_type);
   }

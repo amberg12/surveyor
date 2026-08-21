@@ -21,9 +21,7 @@
 #include <cassert>
 
 namespace surveyor {
-
 namespace {
-
 auto generate_king_moves(const position& pos, move_list& ml) -> void {
   const attack_box& at      = pos.pin_at();
   const color       stm     = pos.stm();
@@ -313,7 +311,6 @@ auto generate_moves_two_checkers(const position& pos) -> move_list {
 
   return ml;
 }
-
 }  // namespace
 
 auto generate_moves(const position& pos) -> move_list {
@@ -327,6 +324,8 @@ auto generate_moves(const position& pos) -> move_list {
   default:
     return generate_moves_two_checkers(pos);
   }
+
+  return ml;
 }
 
 }  // namespace surveyor
