@@ -51,6 +51,8 @@ auto interface::uci_parse_command(std::string_view command) -> void {
     uci_isready(toks);
   } else if (cmd == "bench") {
     uci_bench(toks);
+  } else if (cmd == "setoption") {
+    uci_setoption(toks);
   } else {
     if (cmd.has_value()) {
       uci_print_error(*cmd, "unknown command");
@@ -441,7 +443,7 @@ auto interface::uci_bench(tokenizer& toks) -> void {
 
   ctrls::depth depth = {.soft_depth = 13};
 
-  auto output = std::make_shared<bench_output>();
+  auto output        = std::make_shared<bench_output>();
   output->total_fens = fens.size();
   output->start_time = time::clock::now();
 
@@ -454,6 +456,54 @@ auto interface::uci_bench(tokenizer& toks) -> void {
     bench_engine.go(g, depth);
     bench_engine.await();
     bench_engine.reset();
+  }
+}
+
+auto interface::uci_setoption(tokenizer& toks) -> void {
+  const auto consume_name = toks.next();
+
+  if (!consume_name.has_value()) {
+    uci_print_error("setoption", "missing name");
+    return;
+  }
+
+  if (consume_name != "name") {
+    uci_print_bad_token("setoption", *consume_name);
+    return;
+  }
+
+  const auto name = toks.next();
+
+  const auto consume_value = toks.next();
+
+  if (!consume_value.has_value()) {
+    uci_print_error("setoption", "missing value");
+    return;
+  }
+
+  if (consume_value != "value") {
+    uci_print_bad_token("setoption", *consume_value);
+    return;
+  }
+
+  const auto value = toks.next();
+
+  if (name == "Hash") {
+    if (!value.has_value()) {
+      uci_print_error("setoption", "missing hash size");
+      return;
+    }
+
+    if (!parse_number<u64>(*value)) {
+      uci_print_bad_token("setoption", *value);
+      return;
+    }
+
+    m_engine.resize_hash(*parse_number<u64>(*value));
+  } else if (!name.has_value()) {
+    uci_print_error("setoption", "missing name");
+  } else {
+    uci_print_error("setoption", "unknown option: {}", *name);
   }
 }
 

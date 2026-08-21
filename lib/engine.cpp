@@ -56,6 +56,10 @@ auto engine::reset() -> void {
   m_searcher->reset();
 }
 
+auto engine::resize_hash(usize mb) -> void {
+  m_shared->tt = tt::transposition_table{mb};
+}
+
 auto engine::await() -> void {
   while (m_shared->message == engine_message::go) {
 
