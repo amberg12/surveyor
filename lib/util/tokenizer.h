@@ -18,6 +18,7 @@
 #define SURVEYOR_TOKENIZER_H
 #include "integer.h"
 
+#include <optional>
 #include <string>
 
 namespace surveyor {
