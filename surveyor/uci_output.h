@@ -50,6 +50,7 @@ public:
 
   auto best_move(move mv) -> void override {
     std::println("bestmove {}", mv);
+    std::flush(std::cout);
   }
 };
 }  // namespace surveyor
