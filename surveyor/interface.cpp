@@ -164,6 +164,7 @@ auto interface::uci_position(tokenizer& toks) -> void {
 auto interface::uci_uci(tokenizer& toks) -> void {
   std::println("id name surveyor");
   std::println("id author Amber Goulding");
+  std::println("option name Hash type spin default 64 min 1 max 1048576");
   std::println("uciok");
 }
 
