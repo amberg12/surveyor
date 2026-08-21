@@ -67,7 +67,7 @@ auto worker::begin_search() -> void {
   const game g = m_shared.g;
 
   m_repetition_table = g.repetition_table();
-  m_nodes      = 0;
+  m_nodes            = 0;
 
   if (std::holds_alternative<ctrls::infinite>(m_shared.ctrls)) {
     iterative_deepening<ctrls::infinite>(g.root());
@@ -294,14 +294,16 @@ auto worker::search(Ctrls&          ctrls,
 
     // Null move pruning.
     if (depth >= 3 && static_eval >= beta) {
+      line null_pv;
+
       const position null_child = pos.make_null_move();
       make_null_move(null_child, ply, ss);
       ss->conthist_subtable = nullptr;
 
       const i32 r = 3 + depth / 4 + std::min((static_eval - beta) / 250, 3);
 
-      const score null_score = -search(ctrls, node_type::all(), null_child, pv, -beta, -beta + 1,
-                                       ply + 1, depth - r, ss + 1);
+      const score null_score = -search(ctrls, node_type::all(), null_child, null_pv, -beta,
+                                       -beta + 1, ply + 1, depth - r, ss + 1);
 
       unmake_move();
 
@@ -445,12 +447,12 @@ auto worker::search(Ctrls&          ctrls,
     }
     // PV search
     else if (expected != node_type::pv() || (expected == node_type::pv() && move_idx > 1)) {
-      search_score = search_score = -search(ctrls, expected.next(), child, child_pv, -alpha - 1,
-                                            -alpha, ply + 1, new_depth, ss + 1);
+      search_score = -search(ctrls, expected.next(), child, child_pv, -alpha - 1, -alpha, ply + 1,
+                             new_depth, ss + 1);
     }
     // Full Window Search
     if (expected == node_type::pv() && (move_idx == 1 || search_score > alpha)) {
-      search_score = search_score =
+      search_score =
         -search(ctrls, node_type::pv(), child, child_pv, -beta, -alpha, ply + 1, new_depth, ss + 1);
     }
 
@@ -657,7 +659,8 @@ auto worker::quiesce(Ctrls&          ctrls,
     const position child = pos.make_move(mv);
     make_move(pos, child, mv, ply, ss);
 
-    const score search_score = -quiesce(ctrls, expected, child, pv, -beta, -alpha, ply + 1, ss + 1);
+    const score search_score =
+      -quiesce(ctrls, expected, child, child_pv, -beta, -alpha, ply + 1, ss + 1);
 
     unmake_move();
 
