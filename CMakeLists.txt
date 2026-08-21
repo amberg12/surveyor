@@ -3,50 +3,68 @@ project(surveyor)
 
 set(CMAKE_CXX_STANDARD 23)
 
-set(SRCS
-        src/uci.cpp
-        src/uci.hpp
-        src/square.hpp
-        src/util/integer.hpp
-        src/piece.hpp
-        src/util/constant.hpp
-        src/util/bit_iterator.hpp
-        src/util/bit.hpp
-        src/util/cast_iterator.hpp
-        src/position.cpp
-        src/position.hpp
-        src/util/parse.hpp
-        src/util/static_vector.hpp
-        src/move_generation.cpp
-        src/move_generation.hpp
-        src/move.cpp
-        src/move.hpp
-        src/geometry.hpp
-        src/bitboard.hpp
-        src/evaluate.hpp
-        src/score.hpp
-        src/search_controls.hpp
-        src/search.cpp
-        src/search.hpp
-        src/evaluation_constants.hpp
-        src/move_picker.hpp
-        src/zobrist.hpp
-        src/util/multi_array.hpp
-        src/transposition_table.cpp
-        src/transposition_table.hpp
-        src/repetition_table.hpp
-        src/node_type.hpp
-        src/history.hpp)
+add_library(libsurveyor
+        lib/util/bit.h
+        lib/util/bit_iterator.h
+        lib/util/cast_iterator.h
+        lib/util/constant.h
+        lib/util/integer.h
+        lib/util/math.h
+        lib/util/multi_array.h
+        lib/util/parse.h
+        lib/util/static_vector.h
+        lib/util/tokenizer.cpp
+        lib/util/tokenizer.h
+        lib/bitboard.h
+        lib/engine.cpp
+        lib/engine.h
+        lib/engine_output.h
+        lib/evaluate.h
+        lib/game.cpp
+        lib/game.h
+        lib/geometry.h
+        lib/history.h
+        lib/move.cpp
+        lib/move.h
+        lib/move_generation.cpp
+        lib/move_generation.h
+        lib/move_picker.h
+        lib/node_type.h
+        lib/perft.cpp
+        lib/perft.h
+        lib/piece.h
+        lib/position.cpp
+        lib/position.h
+        lib/repetition_table.h
+        lib/score.h
+        lib/search.cpp
+        lib/search.h
+        lib/search_ctrls.h
+        lib/see.h
+        lib/square.h
+        lib/transposition_table.cpp
+        lib/transposition_table.h
+        lib/zobrist.h
+)
 
-add_executable(surveyor src/main.cpp
-        ${SRCS}
-        src/util/math.hpp
-        src/see.hpp)
+target_include_directories(libsurveyor
+        PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/lib/include
+)
 
-add_executable(surveyor_tuner src/evaluation_tuner/evaluation_tuner_main.cpp
-        ${SRCS})
+add_executable(surveyor
+        surveyor/bench_output.h
+        surveyor/interface.cpp
+        surveyor/interface.h
+        surveyor/main.cpp
+        surveyor/uci_output.h
+)
+
+target_link_libraries(surveyor
+        PRIVATE libsurveyor
+)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(surveyor PRIVATE -mavx2 -mbmi2)
-    target_compile_options(surveyor_tuner PRIVATE -mavx2 -mbmi2)
-endif()
+    target_compile_options(libsurveyor PRIVATE -mavx2 -mbmi2)
+endif ()
