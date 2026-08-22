@@ -100,7 +100,7 @@ inline auto see(const position& pos, move mv) -> i32 {
   std::optional attacker = pos.ptype_at(mv.src());
   std::optional victim   = pos.ptype_at(mv.dst());
 
-  i32 sc    = score_ptype(*victim);
+  i32 sc    = victim.has_value() ? score_ptype(*victim) : 0;
   i32 alpha = -1000;
   i32 beta  = sc;
 

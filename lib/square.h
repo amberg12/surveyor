@@ -79,7 +79,7 @@ struct square {
     const int d_f = file() - other.file();
     const int d_r = rank() - other.rank();
 
-    return std::abs(d_f) == std::abs(d_r);
+    return (d_f < 0 ? -d_f : d_f) == (d_r < 0 ? -d_r : d_r);
   }
 
   [[nodiscard]] constexpr auto orth_to(square other) const -> bool {
