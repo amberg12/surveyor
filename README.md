@@ -4,6 +4,14 @@
 
 UCI Chess Engine written in C++.
 
+### Estimated playing strength:
+
+| Version | CCRL Blitz |
+|---------|------------|
+| 1       | 2830*      |
+
+*Rough estimate based on games of known playing strength.
+
 ### Building
 
 To build, simply use the makefile provided.
@@ -33,3 +41,4 @@ the speed of the program on your machine, but will produce a less portable buid.
 ### Acknowledgements
  - Lily (87Flowers), Lofty and Clockwork Authors for help and references for attack board style board representation.
  - Ciekce, Nanopixel and Stockfish Authors for references for search.
+ - Naman Thanki for assisting with Windows builds.
