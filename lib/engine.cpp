@@ -30,6 +30,7 @@ engine::engine() {
 engine::~engine() {
   m_shared->halt();
   m_shared->message = engine_message::destroy;
+  m_shared->message.notify_all();
 }
 
 auto engine::go(game g, ctrls::ctrls limits) -> void {
@@ -40,6 +41,7 @@ auto engine::go(game g, ctrls::ctrls limits) -> void {
 
   m_shared->stopped = false;
   m_shared->message = engine_message::go;
+  m_shared->message.notify_all();
 }
 
 auto engine::stop() -> void {
