@@ -123,47 +123,49 @@ struct bitboard {
   }
 
   // Ctor (needs to be at end)
-  static constexpr auto ray_exclusive(square src, square dst) {
-    constexpr std::array<std::array<bitboard, 64>, 64> rays = [] {
-      std::array<std::array<bitboard, 64>, 64> out;
+  static constexpr auto calculate_rays_exclusive() -> std::array<std::array<bitboard, 64>, 64> {
+    std::array<std::array<bitboard, 64>, 64> out{};
 
-      for (const square src : squares) {
-        for (const square dst : squares) {
-          if (src == dst) {
-            continue;
-          }
-
-          if (!src.diag_to(dst) && !src.orth_to(dst)) {
-            continue;
-          }
-
-          i8 d_file = signum(dst.file() - src.file());
-          i8 d_rank = signum(dst.rank() - src.rank());
-
-          i8 file = src.file() + d_file;
-          i8 rank = src.rank() + d_rank;
-
-          bitboard bb{};
-
-          while (file != dst.file() || rank != dst.rank()) {
-            bb |= square_bb(square{file, rank});
-            file += d_file;
-            rank += d_rank;
-          }
-
-          out[src.idx][dst.idx] = bb;
+    for (const square src : squares) {
+      for (const square dst : squares) {
+        if (src == dst) {
+          continue;
         }
+
+        if (!src.diag_to(dst) && !src.orth_to(dst)) {
+          continue;
+        }
+
+        i8 d_file = signum(dst.file() - src.file());
+        i8 d_rank = signum(dst.rank() - src.rank());
+
+        i8 file = src.file() + d_file;
+        i8 rank = src.rank() + d_rank;
+
+        bitboard bb{};
+
+        while (file != dst.file() || rank != dst.rank()) {
+          bb |= square_bb(square{file, rank});
+          file += d_file;
+          rank += d_rank;
+        }
+
+        out[src.idx][dst.idx] = bb;
       }
+    }
 
-      return out;
-    }();
+    return out;
+  }
 
+  static constexpr auto ray_exclusive(square src, square dst) {
+    constexpr auto rays = calculate_rays_exclusive();
     return rays[src.idx][dst.idx];
   }
 
   static constexpr auto ray_inclusive(square src, square dst) -> bitboard {
-    constexpr std::array<std::array<bitboard, 64>, 64> rays = [] {
-      std::array<std::array<bitboard, 64>, 64> out;
+    constexpr auto rays = [] {
+      constexpr auto exclusive = calculate_rays_exclusive();
+      std::array<std::array<bitboard, 64>, 64> out{};
 
       for (const square src : squares) {
         for (const square dst : squares) {
@@ -171,7 +173,7 @@ struct bitboard {
             continue;
           }
 
-          out[src.idx][dst.idx] = ray_exclusive(src, dst) | square_bb(src) | square_bb(dst);
+          out[src.idx][dst.idx] = exclusive[src.idx][dst.idx] | square_bb(src) | square_bb(dst);
         }
       }
 
