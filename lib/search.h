@@ -49,8 +49,9 @@ struct search_shared {
   game g{position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")};
 
   auto halt() -> void {
-    message = engine_message::idle;
     stopped = true;
+    message = engine_message::idle;
+    message.notify_all();
   }
 };
 

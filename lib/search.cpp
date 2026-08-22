@@ -50,6 +50,8 @@ auto worker::reset() -> void {
 
 auto worker::thread_main() -> void {
   while (true) {
+    m_shared.message.wait(engine_message::idle);
+
     switch (m_shared.message) {
     case engine_message::go: {
       begin_search();
