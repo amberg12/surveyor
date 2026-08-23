@@ -151,7 +151,7 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
 
       const f64 predicted_result = sigmoid(phase * dot_product_mg + (1.0 - phase) * dot_product_eg);
 
-      const f64 prediction_error = pos.result - predicted_result;
+      const f64 prediction_error = predicted_result - pos.result;
 
       for (const auto& [gmg, geg, feat] : rv::zip(gradient_mg, gradient_eg, feature_vector)) {
         gmg += prediction_error * phase * feat;
