@@ -9,9 +9,8 @@ def main () -> int:
 
     game_count = args.count
 
-    game_runner = GameRunner(1)
-
-    for i in range(game_count):
-        game_runner.generate_game()
+    with GameRunner(1) as game_runner:
+        for i in range(game_count):
+            game_runner.generate_game()
 
     return 0

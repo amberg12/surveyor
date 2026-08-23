@@ -53,6 +53,8 @@ auto interface::uci_parse_command(std::string_view command) -> void {
     uci_bench(toks);
   } else if (cmd == "setoption") {
     uci_setoption(toks);
+  } else if (cmd == "quit") {
+    uci_quit(toks);
   } else {
     if (cmd.has_value()) {
       uci_print_error(*cmd, "unknown command");
@@ -524,6 +526,10 @@ auto interface::uci_setoption(tokenizer& toks) -> void {
   } else {
     uci_print_error("setoption", "unknown option: {}", *name);
   }
+}
+
+auto interface::uci_quit(tokenizer& toks) -> void {
+  std::exit(0);
 }
 
 }  // namespace surveyor
