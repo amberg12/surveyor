@@ -54,32 +54,35 @@ class GameRunner:
         })
 
     def generate_game(self):
-        board = self._generate_board()
-        game = _Game(board.fen())
+        try:
+            board = self._generate_board()
+            game = _Game(board.fen())
 
-        while not board.is_game_over():
-            result = self._engine.play(
-                board,
-                chess.engine.Limit(nodes=NODES),
-                info=chess.engine.INFO_SCORE,
-            )
+            while not board.is_game_over():
+                result = self._engine.play(
+                    board,
+                    chess.engine.Limit(nodes=NODES),
+                    info=chess.engine.INFO_SCORE,
+                )
 
-            move = result.move
-            score = result.info["score"].relative
+                move = result.move
+                score = result.info["score"].relative
 
-            if score.is_mate():
-                game.push_move(move.uci(), score.mate(), True)
-            else:
-                game.push_move(move.uci(), score.score())
+                if score.is_mate():
+                    game.push_move(move.uci(), score.mate(), True)
+                else:
+                    game.push_move(move.uci(), score.score())
 
-            board.push(move)
+                board.push(move)
 
-        outcome = board.outcome()
+            outcome = board.outcome()
 
-        if outcome is not None:
-            game.set_outcome(outcome.winner)
+            if outcome is not None:
+                game.set_outcome(outcome.winner)
 
-        print(game.stringify(), file=self._writer)
+            print(game.stringify(), file=self._writer)
+        except chess.InvalidMoveError:
+            self.generate_game()
         
 
     def _generate_board(self) -> chess.Board:
