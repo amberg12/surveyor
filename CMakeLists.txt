@@ -71,9 +71,12 @@ if (BUILD_TOOLS)
             tuner/util/common.h
             tuner/util/filesystem.cpp
             tuner/util/filesystem.h
+            tuner/util/math.h
             tuner/data.cpp
             tuner/data.h
             tuner/main.cpp
+            tuner/tune_evaluation.cpp
+            tuner/tune_evaluation.h
     )
 
     target_link_libraries(tuner

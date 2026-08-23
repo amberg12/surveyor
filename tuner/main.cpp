@@ -15,6 +15,7 @@
  */
 
 #include "data.h"
+#include "tune_evaluation.h"
 #include "util/filesystem.h"
 
 #include <fstream>
@@ -28,4 +29,6 @@ auto main(int argc, char** argv) -> int {
   std::vector<surveyor_tuner::tuner_position> positions = surveyor_tuner::filter(games);
 
   std::println("Post Filtered Position Count: {}", positions.size());
+
+  surveyor_tuner::tune_evaluation(positions);
 }

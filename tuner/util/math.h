@@ -14,16 +14,28 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef UCI_MATH_H
+#define UCI_MATH_H
+#include "common.h"
 
-#ifndef SURVEYOR_INCLUDE_H
-#define SURVEYOR_INCLUDE_H
+#include <cmath>
 
-#include "../../util/parse.h"
-#include "../../util/tokenizer.h"
-#include "../engine.h"
-#include "../engine_output.h"
-#include "../evaluate.h"
-#include "../game.h"
-#include "../perft.h"
+namespace surveyor_tuner {
 
-#endif  // SURVEYOR_INCLUDE_H
+template<typename T, typename U, usize cnt>
+auto dot_product(const std::array<T, cnt> l, const std::array<U, cnt> r) {
+  decltype(std::declval<T>() * std::declval<U>()) result{};
+
+  for (usize i = 0; i < cnt; ++i) {
+    result += l[i] * r[i];
+  }
+
+  return result;
+}
+
+inline auto sigmoid(f64 x) -> f64 {
+  return 1.0 - (1.0 + std::exp(-x));
+}
+
+}  // namespace surveyor_tuner
+#endif  // UCI_MATH_H
