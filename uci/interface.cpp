@@ -171,6 +171,7 @@ auto interface::uci_uci(tokenizer& toks) -> void {
   std::println("id author Amber Goulding");
   std::println("option name Hash type spin default 64 min 1 max 1048576");
   std::println("option name Threads type spin default 1 min 1 max 1");
+  std::println("option name SoftNodes type check default false");
   std::println("uciok");
 }
 
@@ -211,7 +212,12 @@ auto interface::uci_go(tokenizer& toks) -> void {
         return;
       }
 
-      std::get<ctrls::nodes>(c).hard_nodes = parsed_number;
+      if (m_soft_nodes) {
+        std::get<ctrls::nodes>(c).soft_nodes = parsed_number;
+        std::get<ctrls::nodes>(c).hard_nodes = parsed_number * 1000;
+      } else {
+        std::get<ctrls::nodes>(c).hard_nodes = parsed_number;
+      }
       continue;
     }
 
@@ -507,6 +513,12 @@ auto interface::uci_setoption(tokenizer& toks) -> void {
     }
 
     m_engine.resize_hash(*parse_number<u64>(*value));
+  } else if (name == "SoftNodes") {
+    if (value == "true") {
+      m_soft_nodes = true;
+    } else {
+      m_soft_nodes = false;
+    }
   } else if (!name.has_value()) {
     uci_print_error("setoption", "missing name");
   } else {

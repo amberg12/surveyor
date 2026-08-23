@@ -52,6 +52,8 @@ private:
 
   game   m_game{position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")};
   engine m_engine;
+
+  bool m_soft_nodes = false;
 };
 
 }  // namespace surveyor
