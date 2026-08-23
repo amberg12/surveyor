@@ -1,3 +1,7 @@
 .idea/**/*
 build/**/*
 /surveyor
+
+# Python
+*/**/__pycache__
+*/**/*.egg-info

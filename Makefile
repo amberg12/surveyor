@@ -41,4 +41,5 @@ x86-64:
 	cmake --build build/x86-64
 	cp build/x86-64/$(CMAKE_EXE_OUT) ./$(EXE)
 
+
 .PHONY: default native avx2-bmi2 x86-64.cmake

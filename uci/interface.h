@@ -39,6 +39,7 @@ private:
   auto uci_isready(tokenizer& toks) -> void;
   auto uci_bench(tokenizer& toks) -> void;
   auto uci_setoption(tokenizer& toks) -> void;
+  auto uci_quit(tokenizer& toks) -> void;
 
   template<typename... Args>
   auto uci_print_error(std::string_view cmd, std::format_string<Args...> fmt, Args&&... args)
@@ -52,6 +53,8 @@ private:
 
   game   m_game{position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")};
   engine m_engine;
+
+  bool m_soft_nodes = false;
 };
 
 }  // namespace surveyor
