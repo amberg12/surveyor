@@ -1,6 +1,7 @@
 .idea/**/*
 build/**/*
 /surveyor
+/surveyor-tuner
 
 # Python
 */**/__pycache__

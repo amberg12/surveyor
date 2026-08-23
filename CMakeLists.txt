@@ -65,3 +65,13 @@ add_executable(surveyor
 target_link_libraries(surveyor
         PRIVATE surveyorcore
 )
+
+if (BUILD_TOOLS)
+    add_executable(tuner
+            tuner/main.cpp
+    )
+
+    target_link_libraries(tuner
+            PRIVATE surveyorcore
+    )
+endif ()
