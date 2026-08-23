@@ -57,7 +57,8 @@ auto filter(std::vector<game> games) -> std::vector<tuner_position> {
     position current_pos = g.root;
 
     for (const auto [uci_best_move, eval] : g.moves) {
-      result.emplace_back(g.result, current_pos);
+      const f32 game_result = current_pos.stm() == color::white() ? g.result : 1.0f - g.result;
+      result.emplace_back(game_result, current_pos);
       current_pos = current_pos.make_move(move::parse(uci_best_move, current_pos));
     }
   }
