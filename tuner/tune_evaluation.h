@@ -14,16 +14,13 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef UCI_TUNE_EVALUATION_H
+#define UCI_TUNE_EVALUATION_H
+#include "data.h"
+#include "util/common.h"
 
-#ifndef SURVEYOR_INCLUDE_H
-#define SURVEYOR_INCLUDE_H
+namespace surveyor_tuner {
+auto tune_evaluation(std::vector<tuner_position> dataset) -> void;
+}  // surveyor_tuner
 
-#include "../../util/parse.h"
-#include "../../util/tokenizer.h"
-#include "../engine.h"
-#include "../engine_output.h"
-#include "../evaluate.h"
-#include "../game.h"
-#include "../perft.h"
-
-#endif  // SURVEYOR_INCLUDE_H
+#endif  // UCI_TUNE_EVALUATION_H

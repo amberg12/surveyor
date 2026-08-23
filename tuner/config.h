@@ -14,16 +14,24 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef UCI_CONFIG_H
+#define UCI_CONFIG_H
+#include "util/common.h"
 
-#ifndef SURVEYOR_INCLUDE_H
-#define SURVEYOR_INCLUDE_H
+namespace surveyor_tuner::config {
 
-#include "../../util/parse.h"
-#include "../../util/tokenizer.h"
-#include "../engine.h"
-#include "../engine_output.h"
-#include "../evaluate.h"
-#include "../game.h"
-#include "../perft.h"
+constexpr usize feature_count = 5;
 
-#endif  // SURVEYOR_INCLUDE_H
+constexpr usize epochs                    = 100;
+constexpr usize initial_period_length     = 10;
+constexpr usize batch_size                = 2;
+constexpr f64   initial_learning_rate_max = 0.01;
+constexpr f64   initial_learning_rate_min = 0.001;
+constexpr f64   mu                        = 0.9;
+constexpr f64   lambda                    = 1e-4;
+constexpr i64   result_scale              = 300;
+
+
+}  // namespace surveyor_tuner::config
+
+#endif  // UCI_CONFIG_H

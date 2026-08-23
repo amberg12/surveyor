@@ -14,16 +14,11 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef UCI_COMMON_H
+#define UCI_COMMON_H
+#include <surveyor/include.h>
 
-#ifndef SURVEYOR_INCLUDE_H
-#define SURVEYOR_INCLUDE_H
-
-#include "../../util/parse.h"
-#include "../../util/tokenizer.h"
-#include "../engine.h"
-#include "../engine_output.h"
-#include "../evaluate.h"
-#include "../game.h"
-#include "../perft.h"
-
-#endif  // SURVEYOR_INCLUDE_H
+namespace surveyor_tuner {
+using namespace surveyor;
+}  // namespace surveyor_tuner
+#endif  // UCI_COMMON_H

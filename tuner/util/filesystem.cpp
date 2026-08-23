@@ -14,16 +14,17 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "filesystem.h"
 
-#ifndef SURVEYOR_INCLUDE_H
-#define SURVEYOR_INCLUDE_H
+namespace surveyor_tuner {
+// I do not want to handle anything super weird, so I don't.
+auto expand_home(std::string path) -> std::filesystem::path {
+  if (path.empty() || path.front() != '~') {
+    return path;
+  }
 
-#include "../../util/parse.h"
-#include "../../util/tokenizer.h"
-#include "../engine.h"
-#include "../engine_output.h"
-#include "../evaluate.h"
-#include "../game.h"
-#include "../perft.h"
+  const std::filesystem::path home = std::getenv("HOME");
 
-#endif  // SURVEYOR_INCLUDE_H
+  return home / path.substr(2);
+}
+}  // namespace surveyor_tuner

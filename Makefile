@@ -41,5 +41,14 @@ x86-64:
 	cmake --build build/x86-64
 	cp build/x86-64/$(CMAKE_EXE_OUT) ./$(EXE)
 
+tuner:
+	cmake -S . -B build/native \
+			$(GENERATOR) \
+    		-DCMAKE_BUILD_TYPE=Release \
+    		-DCMAKE_CXX_FLAGS="-march=native" \
+    		-DBUILD_TOOLS="ON" \
+    		$(TOOLCHAIN_FILE)
+	cmake --build build/native
+	cp build/native/tuner ./surveyor-tuner
 
-.PHONY: default native avx2-bmi2 x86-64.cmake
+.PHONY: default native avx2-bmi2 x86-64.cmake tuner

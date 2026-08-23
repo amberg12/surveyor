@@ -14,16 +14,21 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "data.h"
+#include "tune_evaluation.h"
+#include "util/filesystem.h"
 
-#ifndef SURVEYOR_INCLUDE_H
-#define SURVEYOR_INCLUDE_H
+#include <fstream>
+#include <print>
 
-#include "../../util/parse.h"
-#include "../../util/tokenizer.h"
-#include "../engine.h"
-#include "../engine_output.h"
-#include "../evaluate.h"
-#include "../game.h"
-#include "../perft.h"
+auto main(int argc, char** argv) -> int {
+  const std::string path = argv[1];
+  std::ifstream     fin(path);
 
-#endif  // SURVEYOR_INCLUDE_H
+  std::vector<surveyor_tuner::game>           games     = surveyor_tuner::parse(fin);
+  std::vector<surveyor_tuner::tuner_position> positions = surveyor_tuner::filter(games);
+
+  std::println("Post Filtered Position Count: {}", positions.size());
+
+  surveyor_tuner::tune_evaluation(positions);
+}

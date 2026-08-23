@@ -14,16 +14,13 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef UCI_FS_H
+#define UCI_FS_H
+#include <filesystem>
+#include <string>
 
-#ifndef SURVEYOR_INCLUDE_H
-#define SURVEYOR_INCLUDE_H
+namespace surveyor_tuner {
+auto expand_home(std::string path) -> std::filesystem::path;
+}
 
-#include "../../util/parse.h"
-#include "../../util/tokenizer.h"
-#include "../engine.h"
-#include "../engine_output.h"
-#include "../evaluate.h"
-#include "../game.h"
-#include "../perft.h"
-
-#endif  // SURVEYOR_INCLUDE_H
+#endif  // UCI_FS_H

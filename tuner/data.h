@@ -14,16 +14,27 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef UCI_DATA_H
+#define UCI_DATA_H
+#include "util/common.h"
 
-#ifndef SURVEYOR_INCLUDE_H
-#define SURVEYOR_INCLUDE_H
+#include <iosfwd>
 
-#include "../../util/parse.h"
-#include "../../util/tokenizer.h"
-#include "../engine.h"
-#include "../engine_output.h"
-#include "../evaluate.h"
-#include "../game.h"
-#include "../perft.h"
+namespace surveyor_tuner {
+struct game {
+  f32                                              result;
+  position                                         root;
+  std::vector<std::pair<std::string, std::string>> moves;
+};
 
-#endif  // SURVEYOR_INCLUDE_H
+struct tuner_position {
+  f32      result;
+  position pos;
+};
+
+auto parse(std::istream& is) -> std::vector<game>;
+
+auto filter(std::vector<game> games) -> std::vector<tuner_position>;
+
+}  // namespace surveyor_tuner
+#endif  // UCI_DATA_H
