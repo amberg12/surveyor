@@ -14,14 +14,19 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "data.h"
-#include "util/filesystem.h"
+#ifndef UCI_DATA_H
+#define UCI_DATA_H
+#include "util/common.h"
 
-#include <fstream>
+#include <iosfwd>
 
-auto main(int argc, char** argv) -> int {
-  const std::string path = argv[1];
-  std::ifstream fin(path);
+namespace surveyor_tuner {
+struct game {
+  f32                                      result;
+  position                                 root;
+  std::vector<std::pair<std::string, i32>> moves;
+};
 
-  std::vector<surveyor_tuner::game> games = surveyor_tuner::parse(fin);
-}
+auto parse(std::istream& is) -> std::vector<game>;
+}  // namespace surveyor_tuner
+#endif  // UCI_DATA_H

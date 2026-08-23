@@ -14,14 +14,17 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "data.h"
-#include "util/filesystem.h"
+#include "filesystem.h"
 
-#include <fstream>
+namespace surveyor_tuner {
+// I do not want to handle anything super weird, so I don't.
+auto expand_home(std::string path) -> std::filesystem::path {
+  if (path.empty() || path.front() != '~') {
+    return path;
+  }
 
-auto main(int argc, char** argv) -> int {
-  const std::string path = argv[1];
-  std::ifstream fin(path);
+  const std::filesystem::path home = std::getenv("HOME");
 
-  std::vector<surveyor_tuner::game> games = surveyor_tuner::parse(fin);
+  return home / path.substr(2);
 }
+}  // namespace surveyor_tuner

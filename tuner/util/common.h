@@ -14,14 +14,11 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "data.h"
-#include "util/filesystem.h"
+#ifndef UCI_COMMON_H
+#define UCI_COMMON_H
+#include <surveyor/include.h>
 
-#include <fstream>
-
-auto main(int argc, char** argv) -> int {
-  const std::string path = argv[1];
-  std::ifstream fin(path);
-
-  std::vector<surveyor_tuner::game> games = surveyor_tuner::parse(fin);
-}
+namespace surveyor_tuner {
+using namespace surveyor;
+}  // namespace surveyor_tuner
+#endif  // UCI_COMMON_H

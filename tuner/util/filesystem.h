@@ -14,14 +14,13 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "data.h"
-#include "util/filesystem.h"
+#ifndef UCI_FS_H
+#define UCI_FS_H
+#include <filesystem>
+#include <string>
 
-#include <fstream>
-
-auto main(int argc, char** argv) -> int {
-  const std::string path = argv[1];
-  std::ifstream fin(path);
-
-  std::vector<surveyor_tuner::game> games = surveyor_tuner::parse(fin);
+namespace surveyor_tuner {
+auto expand_home(std::string path) -> std::filesystem::path;
 }
+
+#endif  // UCI_FS_H

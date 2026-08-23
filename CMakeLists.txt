@@ -68,6 +68,11 @@ target_link_libraries(surveyor
 
 if (BUILD_TOOLS)
     add_executable(tuner
+            tuner/util/common.h
+            tuner/util/filesystem.cpp
+            tuner/util/filesystem.h
+            tuner/data.cpp
+            tuner/data.h
             tuner/main.cpp
     )
 

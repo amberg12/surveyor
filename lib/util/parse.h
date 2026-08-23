@@ -22,7 +22,8 @@
 
 namespace surveyor {
 
-template<std::integral T>
+template<typename T>
+  requires std::is_arithmetic<T>::value
 auto parse_number(std::string_view sv) -> std::optional<T> {
 
   if (T value{}; std::from_chars(sv.data(), sv.data() + sv.size(), value).ec == std::errc{}) {
@@ -31,6 +32,5 @@ auto parse_number(std::string_view sv) -> std::optional<T> {
 
   return std::nullopt;
 }
-
 }  // namespace surveyor
 #endif  // SURVEYOR_PARSE_H

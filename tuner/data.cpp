@@ -15,13 +15,38 @@
  */
 
 #include "data.h"
-#include "util/filesystem.h"
 
-#include <fstream>
+namespace surveyor_tuner {
 
-auto main(int argc, char** argv) -> int {
-  const std::string path = argv[1];
-  std::ifstream fin(path);
+auto parse(std::istream& is) -> std::vector<game> {
+  std::vector<game> result;
+  std::string       line;
 
-  std::vector<surveyor_tuner::game> games = surveyor_tuner::parse(fin);
+  while (std::getline(is, line)) {
+    std::string        tok;
+    std::istringstream ss(line);
+
+    ss >> tok;
+    f32 game_result = *parse_number<f32>(tok);
+
+    std::string fen;
+    for (i32 i = 0; i < 6; ++i) {
+      ss >> tok;
+      fen += tok + " ";
+    }
+
+    const position game_root = position::parse(fen);
+
+    std::vector<std::pair<std::string, i32>> game_moves;
+    while (ss >> tok) {
+      std::string move = tok;
+      ss >> tok;
+      game_moves.emplace_back(move, *parse_number<i32>(tok));
+    }
+
+    result.emplace_back(game_result, game_root, game_moves);
+  }
+
+  return result;
 }
+}  // namespace surveyor_tuner
