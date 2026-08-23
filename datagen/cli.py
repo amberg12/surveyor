@@ -1,4 +1,10 @@
+import argparse
+
+from .game import GameRunner
+
 def main () -> int:
-    print("Hello, world!")
+    game_runner = GameRunner(1)
+
+    game_runner.generate_game()
 
     return 0
