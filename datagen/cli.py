@@ -1,15 +1,17 @@
 import argparse
+import os
 from datetime import datetime
 from pathlib import Path
-import shutil
 
 from .game import GameRunner
+from .config import PRINT_FREQUENCY
+from .data_generation import begin_data_generation
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--count", type=int, required=True)
     parser.add_argument("-o", "--out", type=Path)
-
+    parser.add_argument("-j", "--jobs", type=int, default=os.cpu_count())
     args = parser.parse_args()
 
     if args.out is not None:
@@ -20,17 +22,9 @@ def main() -> int:
 
     fout.parent.mkdir(parents=True, exist_ok=True)
 
-    temp = fout.with_suffix(f".1.surveyor-data")
+    n_workers = max(1, min(args.jobs, args.count))
 
-    with temp.open("w") as output:
-        with GameRunner(output) as game_runner:
-            for _ in range(args.count):
-                game_runner.generate_game()
-
-    with fout.open("ab") as output:
-        with temp.open("rb") as input:
-            shutil.copyfileobj(input, output)
-
-    temp.unlink()
+    begin_data_generation(args.count, n_workers, fout)
 
     return 0
+    
