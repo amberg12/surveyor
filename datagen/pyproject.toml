@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "datagen"
+version = "0.1.0"
+description = "Data generation tool for myproject"
+requires-python = ">=3.12"
+dependencies = [
+    "chess>=1.10",
+]
+
+[project.scripts]
+datagen = "datagen.cli:main"
+
+[tool.setuptools]
+package-dir = {"datagen" = "."}
+packages = ["datagen"]
