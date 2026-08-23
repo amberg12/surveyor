@@ -65,13 +65,3 @@ add_executable(surveyor
 target_link_libraries(surveyor
         PRIVATE surveyorcore
 )
-
-if (BUILD_TOOLS)
-    add_executable(datagen
-            datagen/main.cpp
-    )
-
-    target_link_libraries(datagen
-            PRIVATE surveyorcore
-    )
-endif ()
