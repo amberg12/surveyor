@@ -49,6 +49,10 @@ auto trace_ids(const position& pos, E& tracer) -> void {
       tracer.trace_knight_material(stm);
     }
 
+    if (ptype == piece_type::rook()) {
+      tracer.trace_rook_material(stm);
+    }
+
     if (ptype == piece_type::bishop()) {
       tracer.trace_bishop_material(stm);
     }
