@@ -50,7 +50,7 @@ class GameRunner:
 
         self._engine.configure({
             "Hash": HASH,
-            "SoftNodes": True,
+            "SoftNodes": False,
         })
 
     def generate_game(self):
