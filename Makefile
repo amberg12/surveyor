@@ -41,4 +41,14 @@ x86-64:
 	cmake --build build/x86-64
 	cp build/x86-64/$(CMAKE_EXE_OUT) ./$(EXE)
 
+tooling:
+	cmake -S . -B build/native \
+			$(GENERATOR) \
+    		-DCMAKE_BUILD_TYPE=Release \
+    		-DCMAKE_CXX_FLAGS="-march=native" \
+    		$(TOOLCHAIN_FILE) \
+    		-DBUILD_TOOLS=ON
+	cmake --build build/native
+	cp build/native/datagen ./surveyor-datagen
+
 .PHONY: default native avx2-bmi2 x86-64.cmake

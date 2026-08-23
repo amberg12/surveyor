@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.31.6)
 project(uci)
 
+option(BUILD_TOOLS "Build extra tooling binaries" OFF)
+
 set(CMAKE_CXX_STANDARD 23)
 
 add_library(surveyorcore
@@ -63,3 +65,13 @@ add_executable(surveyor
 target_link_libraries(surveyor
         PRIVATE surveyorcore
 )
+
+if (BUILD_TOOLS)
+    add_executable(datagen
+            datagen/main.cpp
+    )
+
+    target_link_libraries(datagen
+            PRIVATE surveyorcore
+    )
+endif ()
