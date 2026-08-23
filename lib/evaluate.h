@@ -64,6 +64,9 @@ auto trace_ids(const position& pos, E& tracer) -> void {
 template<eval_tracer E>
 auto trace_eval(const position& pos, E& tracer) -> void {
   using namespace evaluate_detail;
+
+  trace_ids<E, white_constant>(pos, tracer);
+  trace_ids<E, black_constant>(pos, tracer);
 }
 
 inline auto evaluate(const position& pos) -> score {

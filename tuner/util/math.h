@@ -34,7 +34,7 @@ auto dot_product(const std::array<T, cnt> l, const std::array<U, cnt> r) {
 }
 
 inline auto sigmoid(f64 x) -> f64 {
-  return 1.0 - (1.0 + std::exp(-x));
+  return 1.0 / (1.0 + std::exp(-x));
 }
 
 }  // namespace surveyor_tuner

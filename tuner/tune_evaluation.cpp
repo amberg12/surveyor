@@ -21,6 +21,7 @@
 
 #include <cmath>
 #include <print>
+#include <random>
 
 namespace surveyor_tuner {
 namespace {
@@ -107,6 +108,8 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   namespace rg = std::ranges;
   namespace rv = std::ranges::views;
 
+  std::mt19937 rng(std::random_device{}());
+
   usize step_counter  = 0;
   usize period_length = config::initial_period_length;
 
@@ -120,6 +123,8 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   feature_array<f64> weight_eg{};
 
   for (const usize epoch : rv::iota(usize{0}, config::epochs)) {
+    rg::shuffle(dataset, rng);
+
     if (step_counter == period_length) {
       period_length *= 2;
       step_counter = 0;
@@ -136,24 +141,22 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
     const f64 local_learning_rate = calculate_local_learning_rate(
       learning_rate_min, learning_rate_max, step_counter, period_length);
 
-    feature_array<f64> gradient_mg;
-    feature_array<f64> gradient_eg;
+    feature_array<f64> gradient_mg{};
+    feature_array<f64> gradient_eg{};
 
     i32 batch_pos = 0;
 
-    for (const tuner_position& pos : dataset) {
+    for (tuner_position& pos : dataset) {
       const feature_array<i8> feature_vector = extract_features(pos.pos);
 
       const f64 dot_product_mg = dot_product(feature_vector, weight_mg);
       const f64 dot_product_eg = dot_product(feature_vector, weight_eg);
 
-      const f64 phase = static_cast<f64>(pos.pos.phase() / 24.0);
-
+      const f64 phase            = static_cast<f64>(pos.pos.phase()) / 24.0;
       const f64 predicted_result = sigmoid(phase * dot_product_mg + (1.0 - phase) * dot_product_eg);
-
       const f64 prediction_error = predicted_result - pos.result;
 
-      for (const auto& [gmg, geg, feat] : rv::zip(gradient_mg, gradient_eg, feature_vector)) {
+      for (auto [gmg, geg, feat] : rv::zip(gradient_mg, gradient_eg, feature_vector)) {
         gmg += prediction_error * phase * feat;
         geg += prediction_error * (1.0 - phase) * feat;
       }
@@ -161,7 +164,7 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
       ++batch_pos;
 
       if (batch_pos == config::batch_size || &pos == &dataset.back()) {
-        for (const auto& [gmg, geg, mmg, meg, wmg, weg] :
+        for (auto [gmg, geg, mmg, meg, wmg, weg] :
              rv::zip(gradient_mg, gradient_eg, momentum_mg, momentum_eg, weight_mg, weight_eg)) {
           const f64 avg_gmg = gmg / static_cast<f64>(batch_pos) + config::lambda * wmg;
           const f64 avg_geg = geg / static_cast<f64>(batch_pos) + config::lambda * weg;
