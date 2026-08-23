@@ -90,7 +90,12 @@ class GameRunner:
             board = chess.Board()
 
             for _ in range(random.randint(5, 8)):
-                board.push(random.choice(list(board.legal_moves)))
+                move_list = list(board.legal_moves)
+
+                if not len(move_list):
+                    return self._generate_board()
+
+                board.push(random.choice(move_list))
 
             info = self._engine.analyse(
                 board,
