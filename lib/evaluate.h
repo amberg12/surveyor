@@ -24,87 +24,39 @@ namespace surveyor {
 template<typename E>
 concept eval_tracer = requires(E et, color stm, square sq) {
   { et.trace_pawn_material(stm) };
-  { et.trace_pawn_psqt(stm, sq) };
   { et.trace_knight_material(stm) };
-  { et.trace_knight_psqt(stm, sq) };
   { et.trace_bishop_material(stm) };
-  { et.trace_bishop_psqt(stm, sq) };
   { et.trace_rook_material(stm) };
-  { et.trace_rook_psqt(stm, sq) };
   { et.trace_queen_material(stm) };
-  { et.trace_queen_psqt(stm, sq) };
-  { et.trace_king_psqt(stm, sq) };
 };
 
 namespace evaluate_detail {
 
 template<eval_tracer E, color_constant Stm>
-auto trace_pawns(const position& pos, E& tracer) -> void {
+auto trace_ids(const position& pos, E& tracer) -> void {
   const color stm = constant_v<Stm>;
 
-  const piece_mask pawns = pos.ptype_mask(stm, piece_type::pawn());
+  const piece_mask piece_ids = pos.mask(stm);
 
-  for (const piece_id pawn : pawns) {
-    const square sq = pos.sq_of(stm, pawn);
+  for (const auto id : piece_ids) {
+    const piece_type ptype = pos.ptype_of(stm, id);
 
-    tracer.trace_pawn_material(stm);
-    tracer.trace_pawn_psqt(stm, sq);
+    if (ptype == piece_type::pawn()) {
+      tracer.trace_pawn_material(stm);
+    }
+
+    if (ptype == piece_type::knight()) {
+      tracer.trace_knight_material(stm);
+    }
+
+    if (ptype == piece_type::bishop()) {
+      tracer.trace_bishop_material(stm);
+    }
+
+    if (ptype == piece_type::queen()) {
+      tracer.trace_queen_material(stm);
+    }
   }
-}
-
-template<eval_tracer E, color_constant Stm>
-auto trace_knights(const position& pos, E& tracer) -> void {
-  const color      stm     = constant_v<Stm>;
-  const piece_mask knights = pos.ptype_mask(stm, piece_type::knight());
-
-  for (const piece_id n : knights) {
-    const square sq = pos.sq_of(stm, n);
-    tracer.trace_knight_material(stm);
-    tracer.trace_knight_psqt(stm, sq);
-  }
-}
-
-template<eval_tracer E, color_constant Stm>
-auto trace_bishops(const position& pos, E& tracer) -> void {
-  const color      stm     = constant_v<Stm>;
-  const piece_mask bishops = pos.ptype_mask(stm, piece_type::bishop());
-
-  for (const piece_id b : bishops) {
-    const square sq = pos.sq_of(stm, b);
-    tracer.trace_bishop_material(stm);
-    tracer.trace_bishop_psqt(stm, sq);
-  }
-}
-
-template<eval_tracer E, color_constant Stm>
-auto trace_rooks(const position& pos, E& tracer) -> void {
-  const color      stm   = constant_v<Stm>;
-  const piece_mask rooks = pos.ptype_mask(stm, piece_type::rook());
-
-  for (const piece_id r : rooks) {
-    const square sq = pos.sq_of(stm, r);
-    tracer.trace_rook_material(stm);
-    tracer.trace_rook_psqt(stm, sq);
-  }
-}
-
-template<eval_tracer E, color_constant Stm>
-auto trace_queens(const position& pos, E& tracer) -> void {
-  const color      stm    = constant_v<Stm>;
-  const piece_mask queens = pos.ptype_mask(stm, piece_type::queen());
-
-  for (const piece_id q : queens) {
-    const square sq = pos.sq_of(stm, q);
-    tracer.trace_queen_material(stm);
-    tracer.trace_queen_psqt(stm, sq);
-  }
-}
-
-template<eval_tracer E, color_constant Stm>
-auto trace_king(const position& pos, E& tracer) -> void {
-  const color  stm = constant_v<Stm>;
-  const square sq  = pos.king_square(stm);
-  tracer.trace_king_psqt(stm, sq);
 }
 
 }  // namespace evaluate_detail
@@ -112,19 +64,6 @@ auto trace_king(const position& pos, E& tracer) -> void {
 template<eval_tracer E>
 auto trace_eval(const position& pos, E& tracer) -> void {
   using namespace evaluate_detail;
-
-  trace_pawns<E, white_constant>(pos, tracer);
-  trace_pawns<E, black_constant>(pos, tracer);
-  trace_knights<E, white_constant>(pos, tracer);
-  trace_knights<E, black_constant>(pos, tracer);
-  trace_bishops<E, white_constant>(pos, tracer);
-  trace_bishops<E, black_constant>(pos, tracer);
-  trace_rooks<E, white_constant>(pos, tracer);
-  trace_rooks<E, black_constant>(pos, tracer);
-  trace_queens<E, white_constant>(pos, tracer);
-  trace_queens<E, black_constant>(pos, tracer);
-  trace_king<E, white_constant>(pos, tracer);
-  trace_king<E, black_constant>(pos, tracer);
 }
 
 inline auto evaluate(const position& pos) -> score {
@@ -142,16 +81,6 @@ inline auto evaluate(const position& pos) -> score {
       }
     }
 
-    constexpr auto trace_pawn_psqt(color stm, square sq) -> void {
-      if (stm == color::white()) {
-        mg += std::get<0>(evaluation_constants::pawn_psqt[sq.idx - 8]);
-        eg += std::get<1>(evaluation_constants::pawn_psqt[sq.idx - 8]);
-      } else {
-        mg -= std::get<0>(evaluation_constants::pawn_psqt[sq.mirror().idx - 8]);
-        eg -= std::get<1>(evaluation_constants::pawn_psqt[sq.mirror().idx - 8]);
-      }
-    }
-
     constexpr auto trace_knight_material(color stm) -> void {
       if (stm == color::white()) {
         mg += std::get<0>(evaluation_constants::knight_material);
@@ -159,16 +88,6 @@ inline auto evaluate(const position& pos) -> score {
       } else {
         mg -= std::get<0>(evaluation_constants::knight_material);
         eg -= std::get<1>(evaluation_constants::knight_material);
-      }
-    }
-
-    constexpr auto trace_knight_psqt(color stm, square sq) -> void {
-      if (stm == color::white()) {
-        mg += std::get<0>(evaluation_constants::knight_psqt[sq.idx]);
-        eg += std::get<1>(evaluation_constants::knight_psqt[sq.idx]);
-      } else {
-        mg -= std::get<0>(evaluation_constants::knight_psqt[sq.mirror().idx]);
-        eg -= std::get<1>(evaluation_constants::knight_psqt[sq.mirror().idx]);
       }
     }
 
@@ -182,16 +101,6 @@ inline auto evaluate(const position& pos) -> score {
       }
     }
 
-    constexpr auto trace_bishop_psqt(color stm, square sq) -> void {
-      if (stm == color::white()) {
-        mg += std::get<0>(evaluation_constants::bishop_psqt[sq.idx]);
-        eg += std::get<1>(evaluation_constants::bishop_psqt[sq.idx]);
-      } else {
-        mg -= std::get<0>(evaluation_constants::bishop_psqt[sq.mirror().idx]);
-        eg -= std::get<1>(evaluation_constants::bishop_psqt[sq.mirror().idx]);
-      }
-    }
-
     constexpr auto trace_rook_material(color stm) -> void {
       if (stm == color::white()) {
         mg += std::get<0>(evaluation_constants::rook_material);
@@ -202,16 +111,6 @@ inline auto evaluate(const position& pos) -> score {
       }
     }
 
-    constexpr auto trace_rook_psqt(color stm, square sq) -> void {
-      if (stm == color::white()) {
-        mg += std::get<0>(evaluation_constants::rook_psqt[sq.idx]);
-        eg += std::get<1>(evaluation_constants::rook_psqt[sq.idx]);
-      } else {
-        mg -= std::get<0>(evaluation_constants::rook_psqt[sq.mirror().idx]);
-        eg -= std::get<1>(evaluation_constants::rook_psqt[sq.mirror().idx]);
-      }
-    }
-
     constexpr auto trace_queen_material(color stm) -> void {
       if (stm == color::white()) {
         mg += std::get<0>(evaluation_constants::queen_material);
@@ -219,26 +118,6 @@ inline auto evaluate(const position& pos) -> score {
       } else {
         mg -= std::get<0>(evaluation_constants::queen_material);
         eg -= std::get<1>(evaluation_constants::queen_material);
-      }
-    }
-
-    constexpr auto trace_queen_psqt(color stm, square sq) -> void {
-      if (stm == color::white()) {
-        mg += std::get<0>(evaluation_constants::queen_psqt[sq.idx]);
-        eg += std::get<1>(evaluation_constants::queen_psqt[sq.idx]);
-      } else {
-        mg -= std::get<0>(evaluation_constants::queen_psqt[sq.mirror().idx]);
-        eg -= std::get<1>(evaluation_constants::queen_psqt[sq.mirror().idx]);
-      }
-    }
-
-    constexpr auto trace_king_psqt(color stm, square sq) -> void {
-      if (stm == color::white()) {
-        mg += std::get<0>(evaluation_constants::king_psqt[sq.idx]);
-        eg += std::get<1>(evaluation_constants::king_psqt[sq.idx]);
-      } else {
-        mg -= std::get<0>(evaluation_constants::king_psqt[sq.mirror().idx]);
-        eg -= std::get<1>(evaluation_constants::king_psqt[sq.mirror().idx]);
       }
     }
   };
