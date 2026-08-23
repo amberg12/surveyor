@@ -37,14 +37,29 @@ auto parse(std::istream& is) -> std::vector<game> {
 
     const position game_root = position::parse(fen);
 
-    std::vector<std::pair<std::string, i32>> game_moves;
+    std::vector<std::pair<std::string, std::string>> game_moves;
     while (ss >> tok) {
       std::string move = tok;
       ss >> tok;
-      game_moves.emplace_back(move, *parse_number<i32>(tok));
+      game_moves.emplace_back(move, tok);
     }
 
     result.emplace_back(game_result, game_root, game_moves);
+  }
+
+  return result;
+}
+
+auto filter(std::vector<game> games) -> std::vector<tuner_position> {
+  std::vector<tuner_position> result;
+
+  for (const auto& g : games) {
+    position current_pos = g.root;
+
+    for (const auto [uci_best_move, eval] : g.moves) {
+      result.emplace_back(g.result, current_pos);
+      current_pos = current_pos.make_move(move::parse(uci_best_move, current_pos));
+    }
   }
 
   return result;

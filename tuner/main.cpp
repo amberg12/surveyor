@@ -18,10 +18,14 @@
 #include "util/filesystem.h"
 
 #include <fstream>
+#include <print>
 
 auto main(int argc, char** argv) -> int {
   const std::string path = argv[1];
-  std::ifstream fin(path);
+  std::ifstream     fin(path);
 
-  std::vector<surveyor_tuner::game> games = surveyor_tuner::parse(fin);
+  std::vector<surveyor_tuner::game>           games     = surveyor_tuner::parse(fin);
+  std::vector<surveyor_tuner::tuner_position> positions = surveyor_tuner::filter(games);
+
+  std::println("Post Filtered Position Count: {}", positions.size());
 }

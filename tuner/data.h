@@ -22,11 +22,19 @@
 
 namespace surveyor_tuner {
 struct game {
-  f32                                      result;
-  position                                 root;
-  std::vector<std::pair<std::string, i32>> moves;
+  f32                                              result;
+  position                                         root;
+  std::vector<std::pair<std::string, std::string>> moves;
+};
+
+struct tuner_position {
+  f32      result;
+  position pos;
 };
 
 auto parse(std::istream& is) -> std::vector<game>;
+
+auto filter(std::vector<game> games) -> std::vector<tuner_position>;
+
 }  // namespace surveyor_tuner
 #endif  // UCI_DATA_H
