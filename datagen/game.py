@@ -58,7 +58,7 @@ class GameRunner:
             board = self._generate_board()
             game = _Game(board.fen())
 
-            while not board.is_game_over():
+            while not board.is_game_over(claim_draw=True):
                 result = self._engine.play(
                     board,
                     chess.engine.Limit(nodes=NODES),
@@ -96,6 +96,9 @@ class GameRunner:
                     return self._generate_board()
 
                 board.push(random.choice(move_list))
+
+            if board.is_game_over():
+                return self._generate_board()
 
             info = self._engine.analyse(
                 board,
