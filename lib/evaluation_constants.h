@@ -19,10 +19,10 @@
 #include "score.h"
 
 namespace surveyor::evaluation_constants {
-constexpr std::pair<score, score> pawn_material = {68, 124};
-constexpr std::pair<score, score> knight_material = {99, 214};
-constexpr std::pair<score, score> bishop_material = {131, 277};
-constexpr std::pair<score, score> rook_material = {173, 464};
-constexpr std::pair<score, score> queen_material = {438, 575};
+constexpr std::pair<score, score> pawn_material = {75, 162};
+constexpr std::pair<score, score> knight_material = {296, 259};
+constexpr std::pair<score, score> bishop_material = {332, 287};
+constexpr std::pair<score, score> rook_material = {425, 411};
+constexpr std::pair<score, score> queen_material = {761, 552};
 }  // namespace surveyor::evaluation_constants
 #endif  // SURVEYOR_EVALUATION_CONSTANTS_H
