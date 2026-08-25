@@ -39,13 +39,21 @@ CREATE_FEATURE(knight_material, pawn_material.idx + pawn_material.cnt, 1)
 CREATE_FEATURE(bishop_material, knight_material.idx + knight_material.cnt, 1)
 CREATE_FEATURE(rook_material, bishop_material.idx + bishop_material.cnt, 1)
 CREATE_FEATURE(queen_material, rook_material.idx + rook_material.cnt, 1)
+CREATE_FEATURE(pawn_psqt, queen_material.idx + queen_material.cnt, 64)
+CREATE_FEATURE(knight_psqt, pawn_psqt.idx + pawn_psqt.cnt, 64)
+CREATE_FEATURE(bishop_psqt, knight_psqt.idx + knight_psqt.cnt, 64)
+CREATE_FEATURE(rook_psqt, bishop_psqt.idx + bishop_psqt.cnt, 64)
+CREATE_FEATURE(queen_psqt, rook_psqt.idx + rook_psqt.cnt, 64)
+CREATE_FEATURE(king_psqt, queen_psqt.idx + queen_psqt.cnt, 64)
 
 #undef CREATE_FEATURE
 
 }  // namespace features
 
+constexpr usize feature_count = features::king_psqt.idx + features::king_psqt.cnt;
+
 template<typename T>
-using feature_array = std::array<T, config::feature_count>;
+using feature_array = std::array<T, feature_count>;
 
 auto calculate_local_learning_rate(f64 min, f64 max, usize step_counter, usize period_length)
   -> f64 {
@@ -67,24 +75,39 @@ auto extract_features(const position& pos) -> feature_array<i8> {
       return stm == e_pos.stm() ? 1 : -1;
     }
 
-    auto trace_pawn_material(color stm) const -> void {
+    auto trace_pawn_material(color stm, square sq) const -> void {
+      const square rel = sq.relative(stm);
       backing_array[features::pawn_material.idx] += sgn(stm);
+      backing_array[features::pawn_psqt.idx + rel.idx] += sgn(stm);
     }
 
-    auto trace_knight_material(color stm) const -> void {
+    auto trace_knight_material(color stm, square sq) const -> void {
+      const square rel = sq.relative(stm);
       backing_array[features::knight_material.idx] += sgn(stm);
+      backing_array[features::knight_psqt.idx + rel.idx] += sgn(stm);
     }
 
-    auto trace_bishop_material(color stm) const -> void {
+    auto trace_bishop_material(color stm, square sq) const -> void {
+      const square rel = sq.relative(stm);
       backing_array[features::bishop_material.idx] += sgn(stm);
+      backing_array[features::bishop_psqt.idx + rel.idx] += sgn(stm);
     }
 
-    auto trace_rook_material(color stm) const -> void {
+    auto trace_rook_material(color stm, square sq) const -> void {
+      const square rel = sq.relative(stm);
       backing_array[features::rook_material.idx] += sgn(stm);
+      backing_array[features::rook_psqt.idx + rel.idx] += sgn(stm);
     }
 
-    auto trace_queen_material(color stm) const -> void {
+    auto trace_queen_material(color stm, square sq) const -> void {
+      const square rel = sq.relative(stm);
       backing_array[features::queen_material.idx] += sgn(stm);
+      backing_array[features::queen_psqt.idx + rel.idx] += sgn(stm);
+    }
+
+    auto trace_king_material(color stm, square sq) const -> void {
+      const square rel = sq.relative(stm);
+      backing_array[features::king_psqt.idx + rel.idx] += sgn(stm);
     }
   };
 
@@ -100,6 +123,16 @@ auto print_feature(features::f feat, feature_array<f64> mg, feature_array<f64> e
     const i32 eg_score = eg[feat.idx] * config::result_scale;
     std::println("constexpr std::pair<score, score> {} = {{{}, {}}};", feat.name, mg_score,
                  eg_score);
+  } else {
+    std::print("constexpr std::array<std::pair<score, score>, {}> {} = {{{{", feat.cnt, feat.name);
+
+    for (i32 i = 0; i < feat.cnt; ++i) {
+      const i32 mg_score = mg[feat.idx + i] * config::result_scale;
+      const i32 eg_score = eg[feat.idx + i] * config::result_scale;
+      std::print("{{{}, {}}}, ", mg_score, eg_score);
+    }
+
+    std::println("}}}};");
   }
 }
 }  // namespace
@@ -188,5 +221,11 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   print_feature(features::bishop_material, weight_mg, weight_eg);
   print_feature(features::rook_material, weight_mg, weight_eg);
   print_feature(features::queen_material, weight_mg, weight_eg);
+  print_feature(features::pawn_psqt, weight_mg, weight_eg);
+  print_feature(features::knight_psqt, weight_mg, weight_eg);
+  print_feature(features::bishop_psqt, weight_mg, weight_eg);
+  print_feature(features::rook_psqt, weight_mg, weight_eg);
+  print_feature(features::queen_psqt, weight_mg, weight_eg);
+  print_feature(features::king_psqt, weight_mg, weight_eg);
 }
 }  // namespace surveyor_tuner
