@@ -20,8 +20,6 @@
 
 namespace surveyor_tuner::config {
 
-constexpr usize feature_count = 5;
-
 constexpr usize epochs                    = 400;
 constexpr usize initial_period_length     = 10;
 constexpr usize batch_size                = 32;
