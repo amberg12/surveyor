@@ -92,9 +92,9 @@ inline auto evaluate(const position& pos) -> score {
 
     constexpr auto trace_pawn_material(color stm, square sq) -> void {
       mg += (evaluation_constants::pawn_material.first
-             + evaluation_constants::knight_psqt[sq.relative(stm).idx].first);
+             + evaluation_constants::pawn_psqt[sq.relative(stm).idx].first) * sgn(stm);
       eg += (evaluation_constants::pawn_material.second
-             + evaluation_constants::knight_psqt[sq.relative(stm).idx].second);
+             + evaluation_constants::pawn_psqt[sq.relative(stm).idx].second) * sgn(stm);
     }
 
     constexpr auto trace_knight_material(color stm, square sq) -> void {
@@ -144,9 +144,7 @@ inline auto evaluate(const position& pos) -> score {
 
   const i32 phase = pos.phase();
 
-  score s = (t.mg * phase + t.eg * (position::max_phase - phase)) / position::max_phase;
-
-  return pos.stm() == color::white() ? s : -s;
+  return (t.mg * phase + t.eg * (position::max_phase - phase)) / position::max_phase;
 }
 
 }  // namespace surveyor
