@@ -55,6 +55,8 @@ auto interface::uci_parse_command(std::string_view command) -> void {
     uci_setoption(toks);
   } else if (cmd == "quit") {
     uci_quit(toks);
+  } else if (cmd == "eval") {
+    uci_eval(toks);
   } else {
     if (cmd.has_value()) {
       uci_print_error(*cmd, "unknown command");
@@ -530,6 +532,10 @@ auto interface::uci_setoption(tokenizer& toks) -> void {
 
 auto interface::uci_quit(tokenizer& toks) -> void {
   std::exit(0);
+}
+
+auto interface::uci_eval(tokenizer& toks) -> void {
+  std::println("static_eval: {}", evaluate(m_game.root()));
 }
 
 }  // namespace surveyor
