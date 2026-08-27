@@ -34,6 +34,7 @@ concept eval_tracer = requires(E et, color stm, square sq) {
   { et.trace_rook_psqt(stm, sq) };
   { et.trace_queen_psqt(stm, sq) };
   { et.trace_king_psqt(stm, sq) };
+  { et.trace_bishop_pair(stm) };
 };
 
 namespace evaluate_detail {
@@ -79,6 +80,16 @@ auto trace_ids(const position& pos, E& tracer) -> void {
   }
 }
 
+template<eval_tracer E, color_constant Stm>
+auto trace_bishops(const position& pos, E& tracer) -> void {
+  const color stm = constant_v<Stm>;
+  const i32 bishop_count = pos.bb(stm, piece_type::bishop()).ipopcount();
+
+  if (bishop_count >= 2) {
+    tracer.trace_bishop_pair(stm);
+  }
+}
+
 }  // namespace evaluate_detail
 
 template<eval_tracer E>
@@ -87,6 +98,8 @@ auto trace_eval(const position& pos, E& tracer) -> void {
 
   trace_ids<E, white_constant>(pos, tracer);
   trace_ids<E, black_constant>(pos, tracer);
+  trace_bishops<E, white_constant>(pos, tracer);
+  trace_bishops<E, black_constant>(pos, tracer);
 }
 
 inline auto evaluate(const position& pos) -> score {
@@ -131,6 +144,7 @@ inline auto evaluate(const position& pos) -> score {
     SURVEYOR_TRACE_SQUARE(rook_psqt);
     SURVEYOR_TRACE_SQUARE(queen_psqt);
     SURVEYOR_TRACE_SQUARE(king_psqt);
+    SURVEYOR_TRACE_VALUE(bishop_pair);
 
     // And is it really macro abuse if I undefine them straight after?
 #undef SURVEYOR_TRACE_VALUE
