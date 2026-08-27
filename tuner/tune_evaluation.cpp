@@ -75,40 +75,31 @@ auto extract_features(const position& pos) -> feature_array<i8> {
       return stm == e_pos.stm() ? 1 : -1;
     }
 
-    auto trace_pawn_material(color stm, square sq) const -> void {
-      const square rel = sq.relative(stm);
-      backing_array[features::pawn_material.idx] += sgn(stm);
-      backing_array[features::pawn_psqt.idx + rel.idx] += sgn(stm);
-    }
+#define SURVEYOR_TRACE_VALUE(name)                 \
+  auto trace_##name(color stm) -> void {           \
+    backing_array[features::name.idx] += sgn(stm); \
+  }
 
-    auto trace_knight_material(color stm, square sq) const -> void {
-      const square rel = sq.relative(stm);
-      backing_array[features::knight_material.idx] += sgn(stm);
-      backing_array[features::knight_psqt.idx + rel.idx] += sgn(stm);
-    }
+#define SURVEYOR_TRACE_SQUARE(name)                          \
+  auto trace_##name(color stm, square sq) -> void {          \
+    const square rel = sq.relative(stm);                     \
+    backing_array[features::name.idx + rel.idx] += sgn(stm); \
+  }
 
-    auto trace_bishop_material(color stm, square sq) const -> void {
-      const square rel = sq.relative(stm);
-      backing_array[features::bishop_material.idx] += sgn(stm);
-      backing_array[features::bishop_psqt.idx + rel.idx] += sgn(stm);
-    }
+    SURVEYOR_TRACE_VALUE(pawn_material)
+    SURVEYOR_TRACE_VALUE(knight_material)
+    SURVEYOR_TRACE_VALUE(bishop_material)
+    SURVEYOR_TRACE_VALUE(rook_material)
+    SURVEYOR_TRACE_VALUE(queen_material)
+    SURVEYOR_TRACE_SQUARE(pawn_psqt)
+    SURVEYOR_TRACE_SQUARE(knight_psqt)
+    SURVEYOR_TRACE_SQUARE(bishop_psqt)
+    SURVEYOR_TRACE_SQUARE(rook_psqt)
+    SURVEYOR_TRACE_SQUARE(queen_psqt)
+    SURVEYOR_TRACE_SQUARE(king_psqt)
 
-    auto trace_rook_material(color stm, square sq) const -> void {
-      const square rel = sq.relative(stm);
-      backing_array[features::rook_material.idx] += sgn(stm);
-      backing_array[features::rook_psqt.idx + rel.idx] += sgn(stm);
-    }
-
-    auto trace_queen_material(color stm, square sq) const -> void {
-      const square rel = sq.relative(stm);
-      backing_array[features::queen_material.idx] += sgn(stm);
-      backing_array[features::queen_psqt.idx + rel.idx] += sgn(stm);
-    }
-
-    auto trace_king_material(color stm, square sq) const -> void {
-      const square rel = sq.relative(stm);
-      backing_array[features::king_psqt.idx + rel.idx] += sgn(stm);
-    }
+#undef SURVEYOR_TRACE_VALUE
+#undef SURVEYOR_TRACE_SQUARE
   };
 
   extractor e{pos, out};
