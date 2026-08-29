@@ -35,6 +35,10 @@ concept eval_tracer = requires(E et, color stm, square sq, i32 n) {
   { et.trace_queen_psqt(stm, sq) };
   { et.trace_king_psqt(stm, sq) };
   { et.trace_bishop_pair(stm) };
+  { et.trace_knight_mobility(stm, n) };
+  { et.trace_bishop_mobility(stm, n) };
+  { et.trace_rook_mobility(stm, n) };
+  { et.trace_queen_mobility(stm, n) };
   { et.trace_passed_pawn(stm, n) };
 };
 
@@ -132,6 +136,31 @@ auto trace_pawns(const position& pos, E& tracer) -> void {
   }
 }
 
+template<eval_tracer E, color_constant Stm>
+auto trace_threats(const position& pos, E& tracer) -> void {
+  constexpr auto stm = constant_v<Stm>;
+
+  for (const piece_id id : pos.ptype_mask(stm, piece_type::knight())) {
+    const bitboard attack_bb = pos.threat_bb(stm, id);
+    tracer.trace_knight_mobility(stm, (attack_bb & ~pos.bb()).ipopcount());
+  }
+
+  for (const piece_id id : pos.ptype_mask(stm, piece_type::bishop())) {
+    const bitboard attack_bb = pos.threat_bb(stm, id);
+    tracer.trace_bishop_mobility(stm, (attack_bb & ~pos.bb()).ipopcount());
+  }
+
+  for (const piece_id id : pos.ptype_mask(stm, piece_type::rook())) {
+    const bitboard attack_bb = pos.threat_bb(stm, id);
+    tracer.trace_rook_mobility(stm, (attack_bb & ~pos.bb()).ipopcount());
+  }
+
+  for (const piece_id id : pos.ptype_mask(stm, piece_type::queen())) {
+    const bitboard attack_bb = pos.threat_bb(stm, id);
+    tracer.trace_queen_mobility(stm, (attack_bb & ~pos.bb()).ipopcount());
+  }
+}
+
 }  // namespace evaluate_detail
 
 template<eval_tracer E>
@@ -144,6 +173,8 @@ auto trace_eval(const position& pos, E& tracer) -> void {
   trace_bishops<E, black_constant>(pos, tracer);
   trace_pawns<E, white_constant>(pos, tracer);
   trace_pawns<E, black_constant>(pos, tracer);
+  trace_threats<E, white_constant>(pos, tracer);
+  trace_threats<E, black_constant>(pos, tracer);
 }
 
 inline auto evaluate(const position& pos) -> score {
@@ -189,6 +220,10 @@ inline auto evaluate(const position& pos) -> score {
     SURVEYOR_TRACE_SQUARE(queen_psqt);
     SURVEYOR_TRACE_SQUARE(king_psqt);
     SURVEYOR_TRACE_VALUE(bishop_pair);
+    SURVEYOR_TRACE_NUMBER(knight_mobility);
+    SURVEYOR_TRACE_NUMBER(bishop_mobility);
+    SURVEYOR_TRACE_NUMBER(rook_mobility);
+    SURVEYOR_TRACE_NUMBER(queen_mobility);
     SURVEYOR_TRACE_NUMBER(passed_pawn);
 
     // And is it really macro abuse if I undefine them straight after?

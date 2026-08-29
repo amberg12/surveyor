@@ -46,8 +46,11 @@ CREATE_FEATURE(rook_psqt, bishop_psqt.idx + bishop_psqt.cnt, 64)
 CREATE_FEATURE(queen_psqt, rook_psqt.idx + rook_psqt.cnt, 64)
 CREATE_FEATURE(king_psqt, queen_psqt.idx + queen_psqt.cnt, 64)
 CREATE_FEATURE(bishop_pair, king_psqt.idx + king_psqt.cnt, 1)
-CREATE_FEATURE(passed_pawn, bishop_pair.idx + bishop_pair.cnt, 8)
-
+CREATE_FEATURE(knight_mobility, bishop_pair.idx + bishop_pair.cnt, 9);
+CREATE_FEATURE(bishop_mobility, knight_mobility.idx + knight_mobility.cnt, 14);
+CREATE_FEATURE(rook_mobility, bishop_mobility.idx + bishop_mobility.cnt, 15);
+CREATE_FEATURE(queen_mobility, rook_mobility.idx + rook_mobility.cnt, 28);
+CREATE_FEATURE(passed_pawn, queen_mobility.idx + queen_mobility.cnt, 8)
 #undef CREATE_FEATURE
 
 }  // namespace features
@@ -105,6 +108,10 @@ auto extract_features(const position& pos) -> feature_array<i8> {
     SURVEYOR_TRACE_SQUARE(queen_psqt)
     SURVEYOR_TRACE_SQUARE(king_psqt)
     SURVEYOR_TRACE_VALUE(bishop_pair)
+    SURVEYOR_TRACE_NUMBER(knight_mobility)
+    SURVEYOR_TRACE_NUMBER(bishop_mobility)
+    SURVEYOR_TRACE_NUMBER(rook_mobility)
+    SURVEYOR_TRACE_NUMBER(queen_mobility)
     SURVEYOR_TRACE_NUMBER(passed_pawn)
 
 #undef SURVEYOR_TRACE_VALUE
@@ -229,6 +236,10 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   print_feature(features::queen_psqt, weight_mg, weight_eg);
   print_feature(features::king_psqt, weight_mg, weight_eg);
   print_feature(features::bishop_pair, weight_mg, weight_eg);
+  print_feature(features::knight_mobility, weight_mg, weight_eg);
+  print_feature(features::bishop_mobility, weight_mg, weight_eg);
+  print_feature(features::rook_mobility, weight_mg, weight_eg);
+  print_feature(features::queen_mobility, weight_mg, weight_eg);
   print_feature(features::passed_pawn, weight_mg, weight_eg);
 }
 }  // namespace surveyor_tuner
