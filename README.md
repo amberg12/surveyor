@@ -6,9 +6,9 @@ UCI Chess Engine written in C++.
 
 ### Estimated playing strength:
 
-| Version | CCRL Blitz |
-|---------|------------|
-| 1       | 2830*      |
+| Version | CCRL Blitz | COPE Bullet |
+|---------|------------|-------------|
+| ONE.1   | 2830*      | 2875        |
 
 *Rough estimate based on games of known playing strength.
 
