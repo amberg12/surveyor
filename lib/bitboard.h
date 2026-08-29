@@ -84,7 +84,7 @@ struct bitboard {
     return square{static_cast<u8>(std::bit_width(raw) - 1)};
   }
 
-  [[nodiscard]] constexpr auto frontmost(color stm) const -> square {
+  [[nodiscard]] constexpr auto backmost(color stm) const -> square {
     return stm == color::white() ? lsb() : msb();
   }
 
