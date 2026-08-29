@@ -20,7 +20,7 @@
 
 namespace surveyor_tuner::config {
 
-constexpr usize epochs                    = 400;
+constexpr usize epochs                    = 200;
 constexpr usize initial_period_length     = 10;
 constexpr usize batch_size                = 32;
 constexpr f64   initial_learning_rate_max = 0.01;

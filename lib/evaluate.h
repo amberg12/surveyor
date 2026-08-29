@@ -22,7 +22,7 @@
 namespace surveyor {
 
 template<typename E>
-concept eval_tracer = requires(E et, color stm, square sq) {
+concept eval_tracer = requires(E et, color stm, square sq, i32 n) {
   { et.trace_pawn_material(stm) };
   { et.trace_knight_material(stm) };
   { et.trace_bishop_material(stm) };
@@ -35,6 +35,7 @@ concept eval_tracer = requires(E et, color stm, square sq) {
   { et.trace_queen_psqt(stm, sq) };
   { et.trace_king_psqt(stm, sq) };
   { et.trace_bishop_pair(stm) };
+  { et.trace_passed_pawn(stm, n) };
 };
 
 namespace evaluate_detail {
@@ -90,6 +91,47 @@ auto trace_bishops(const position& pos, E& tracer) -> void {
   }
 }
 
+template<eval_tracer E, color_constant Stm>
+auto trace_pawns(const position& pos, E& tracer) -> void {
+  constexpr color stm = constant_v<Stm>;
+
+  const piece_mask pawns = pos.ptype_mask(stm, piece_type::pawn());
+
+  for (const auto id : pawns) {
+    const square sq = pos.sq_of(stm, id);
+    const i32 file = sq.file();
+    const i32 rank = sq.rank();
+
+    const auto file_bb = bitboard::file_bb(file);
+    const auto file_bl = bitboard::file_bb(std::clamp(file - 1, 0 ,7));
+    const auto file_br = bitboard::file_bb(std::clamp(file + 1, 0, 7));
+
+    const auto lane_3 = file_bb | file_bl | file_br;
+
+    const auto ahead_bb = [&] {
+      auto out = bitboard::full();
+      if constexpr (stm == color::white()) {
+        for (i32 i = 0; i < rank; ++i) {
+          out = out.shift(geometry::n_orth);
+        }
+      } else {
+        for (i32 i = 0; i < rank; ++i) {
+          out = out.shift(geometry::s_orth);
+        }
+      }
+      return out;
+    }();
+
+    if ((pos.bb(~stm, piece_type::pawn()) & ahead_bb & lane_3) == bitboard::empty()) {
+      if constexpr (stm == color::white()) {
+        tracer.trace_passed_pawn(stm, rank);
+      } else {
+        tracer.trace_passed_pawn(stm, 7 - rank);
+      }
+    }
+  }
+}
+
 }  // namespace evaluate_detail
 
 template<eval_tracer E>
@@ -100,6 +142,8 @@ auto trace_eval(const position& pos, E& tracer) -> void {
   trace_ids<E, black_constant>(pos, tracer);
   trace_bishops<E, white_constant>(pos, tracer);
   trace_bishops<E, black_constant>(pos, tracer);
+  trace_pawns<E, white_constant>(pos, tracer);
+  trace_pawns<E, black_constant>(pos, tracer);
 }
 
 inline auto evaluate(const position& pos) -> score {
@@ -145,6 +189,7 @@ inline auto evaluate(const position& pos) -> score {
     SURVEYOR_TRACE_SQUARE(queen_psqt);
     SURVEYOR_TRACE_SQUARE(king_psqt);
     SURVEYOR_TRACE_VALUE(bishop_pair);
+    SURVEYOR_TRACE_NUMBER(passed_pawn);
 
     // And is it really macro abuse if I undefine them straight after?
 #undef SURVEYOR_TRACE_VALUE

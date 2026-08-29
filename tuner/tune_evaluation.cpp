@@ -46,12 +46,13 @@ CREATE_FEATURE(rook_psqt, bishop_psqt.idx + bishop_psqt.cnt, 64)
 CREATE_FEATURE(queen_psqt, rook_psqt.idx + rook_psqt.cnt, 64)
 CREATE_FEATURE(king_psqt, queen_psqt.idx + queen_psqt.cnt, 64)
 CREATE_FEATURE(bishop_pair, king_psqt.idx + king_psqt.cnt, 1)
+CREATE_FEATURE(passed_pawn, bishop_pair.idx + bishop_pair.cnt, 8)
 
 #undef CREATE_FEATURE
 
 }  // namespace features
 
-constexpr usize feature_count = features::bishop_pair.idx + features::bishop_pair.cnt;
+constexpr usize feature_count = features::passed_pawn.idx + features::passed_pawn.cnt;
 
 template<typename T>
 using feature_array = std::array<T, feature_count>;
@@ -87,6 +88,11 @@ auto extract_features(const position& pos) -> feature_array<i8> {
     backing_array[features::name.idx + rel.idx] += sgn(stm); \
   }
 
+#define SURVEYOR_TRACE_NUMBER(name)                    \
+  auto trace_##name(color stm, i32 n) -> void {        \
+    backing_array[features::name.idx + n] += sgn(stm); \
+  }
+
     SURVEYOR_TRACE_VALUE(pawn_material)
     SURVEYOR_TRACE_VALUE(knight_material)
     SURVEYOR_TRACE_VALUE(bishop_material)
@@ -99,9 +105,11 @@ auto extract_features(const position& pos) -> feature_array<i8> {
     SURVEYOR_TRACE_SQUARE(queen_psqt)
     SURVEYOR_TRACE_SQUARE(king_psqt)
     SURVEYOR_TRACE_VALUE(bishop_pair)
+    SURVEYOR_TRACE_NUMBER(passed_pawn)
 
 #undef SURVEYOR_TRACE_VALUE
 #undef SURVEYOR_TRACE_SQUARE
+#undef SURVEYOR_TRACE_NUMBER
   };
 
   extractor e{pos, out};
@@ -221,5 +229,6 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   print_feature(features::queen_psqt, weight_mg, weight_eg);
   print_feature(features::king_psqt, weight_mg, weight_eg);
   print_feature(features::bishop_pair, weight_mg, weight_eg);
+  print_feature(features::passed_pawn, weight_mg, weight_eg);
 }
 }  // namespace surveyor_tuner
