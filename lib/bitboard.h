@@ -64,6 +64,10 @@ struct bitboard {
     return (*this & square_bb(sq)).raw != 0;
   }
 
+  [[nodiscard]] constexpr auto any() const -> bool {
+    return raw;
+  }
+
   [[nodiscard]] constexpr auto popcount() const -> usize {
     return std::popcount(raw);
   }
@@ -74,6 +78,14 @@ struct bitboard {
 
   [[nodiscard]] constexpr auto lsb() const -> square {
     return square{std::countr_zero(surveyor::lsb(raw))};
+  }
+
+  [[nodiscard]] constexpr auto msb() const -> square {
+    return square{static_cast<u8>(std::bit_width(raw) - 1)};
+  }
+
+  [[nodiscard]] constexpr auto backmost(color stm) const -> square {
+    return stm == color::white() ? lsb() : msb();
   }
 
   [[nodiscard]] constexpr auto shift(geometry::direction dir) const -> bitboard {

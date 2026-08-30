@@ -40,6 +40,9 @@ concept eval_tracer = requires(E et, color stm, square sq, i32 n) {
   { et.trace_rook_mobility(stm, n) };
   { et.trace_queen_mobility(stm, n) };
   { et.trace_passed_pawn(stm, n) };
+  { et.trace_shelter_edge(stm, n) };
+  { et.trace_shelter_mid(stm, n) };
+  { et.trace_shelter_centre(stm, n) };
 };
 
 namespace evaluate_detail {
@@ -87,8 +90,8 @@ auto trace_ids(const position& pos, E& tracer) -> void {
 
 template<eval_tracer E, color_constant Stm>
 auto trace_bishops(const position& pos, E& tracer) -> void {
-  const color stm = constant_v<Stm>;
-  const i32 bishop_count = pos.bb(stm, piece_type::bishop()).ipopcount();
+  const color stm          = constant_v<Stm>;
+  const i32   bishop_count = pos.bb(stm, piece_type::bishop()).ipopcount();
 
   if (bishop_count >= 2) {
     tracer.trace_bishop_pair(stm);
@@ -102,12 +105,12 @@ auto trace_pawns(const position& pos, E& tracer) -> void {
   const piece_mask pawns = pos.ptype_mask(stm, piece_type::pawn());
 
   for (const auto id : pawns) {
-    const square sq = pos.sq_of(stm, id);
-    const i32 file = sq.file();
-    const i32 rank = sq.rank();
+    const square sq   = pos.sq_of(stm, id);
+    const i32    file = sq.file();
+    const i32    rank = sq.rank();
 
     const auto file_bb = bitboard::file_bb(file);
-    const auto file_bl = bitboard::file_bb(std::clamp(file - 1, 0 ,7));
+    const auto file_bl = bitboard::file_bb(std::clamp(file - 1, 0, 7));
     const auto file_br = bitboard::file_bb(std::clamp(file + 1, 0, 7));
 
     const auto lane_3 = file_bb | file_bl | file_br;
@@ -132,6 +135,38 @@ auto trace_pawns(const position& pos, E& tracer) -> void {
       } else {
         tracer.trace_passed_pawn(stm, 7 - rank);
       }
+    }
+  }
+}
+
+template<eval_tracer E, color_constant Stm>
+auto trace_shelter(const position& pos, E& tracer) -> void {
+  constexpr color stm = constant_v<Stm>;
+
+  const square king_sq  = pos.king_square(stm);
+  const bool   lhs_king = king_sq.file() < 4;
+
+  const i32 shelter_mid_file = std::clamp<i32>(king_sq.file(), 1, 6);
+
+  for (i32 i = -1; i <= 1; ++i) {
+    const auto     file      = bitboard::file_bb(shelter_mid_file + i);
+    const bitboard our_pawns = pos.bb(stm, piece_type::pawn());
+
+    const i32 shelter_rank =
+      (our_pawns & file).any() ? our_pawns.backmost(stm).relative_rank(stm) : 0;
+
+    const i32 rel_i = lhs_king ? i : -i;
+
+    if (rel_i == -1) {
+      tracer.trace_shelter_edge(stm, shelter_rank);
+    }
+
+    if (rel_i == 0) {
+      tracer.trace_shelter_mid(stm, shelter_rank);
+    }
+
+    if (rel_i == 1) {
+      tracer.trace_shelter_centre(stm, shelter_rank);
     }
   }
 }
@@ -175,6 +210,8 @@ auto trace_eval(const position& pos, E& tracer) -> void {
   trace_pawns<E, black_constant>(pos, tracer);
   trace_threats<E, white_constant>(pos, tracer);
   trace_threats<E, black_constant>(pos, tracer);
+  trace_shelter<E, white_constant>(pos, tracer);
+  trace_shelter<E, black_constant>(pos, tracer);
 }
 
 inline auto evaluate(const position& pos) -> score {
@@ -225,6 +262,9 @@ inline auto evaluate(const position& pos) -> score {
     SURVEYOR_TRACE_NUMBER(rook_mobility);
     SURVEYOR_TRACE_NUMBER(queen_mobility);
     SURVEYOR_TRACE_NUMBER(passed_pawn);
+    SURVEYOR_TRACE_NUMBER(shelter_edge);
+    SURVEYOR_TRACE_NUMBER(shelter_mid);
+    SURVEYOR_TRACE_NUMBER(shelter_centre);
 
     // And is it really macro abuse if I undefine them straight after?
 #undef SURVEYOR_TRACE_VALUE
