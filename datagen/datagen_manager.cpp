@@ -50,7 +50,7 @@ auto manager::submit_work(std::span<std::string> work) -> void {
   m_completed += work.size();
 
   for (const auto s : work) {
-    std::println("s");
+    std::println("{}", s);
   }
 }
 

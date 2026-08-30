@@ -18,6 +18,8 @@
 #define UCI_DATAGEN_NODE_H
 #include "common.h"
 
+#include <random>
+
 namespace surveyor_datagen {
 struct manager;
 
@@ -32,9 +34,13 @@ public:
 private:
   auto thread_main() -> void;
 
+  auto generate_game() -> std::string;
+
   manager& m_manager;
 
   std::jthread m_thread;
+
+  std::mt19937_64 m_rng;
 };
 }  // namespace surveyor_datagen
 
