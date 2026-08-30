@@ -82,4 +82,17 @@ if (BUILD_TOOLS)
     target_link_libraries(tuner
             PRIVATE surveyorcore
     )
+
+    add_executable(datagen
+            datagen/common.h
+            datagen/datagen_manager.cpp
+            datagen/datagen_manager.h
+            datagen/datagen_node.cpp
+            datagen/datagen_node.h
+            datagen/main.cpp
+    )
+
+    target_link_libraries(datagen
+            PRIVATE surveyorcore
+    )
 endif ()
