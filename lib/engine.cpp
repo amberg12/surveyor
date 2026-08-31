@@ -63,8 +63,8 @@ auto engine::resize_hash(usize mb) -> void {
 }
 
 auto engine::await() -> void {
-  while (m_shared->message == engine_message::go) {
-
+  while (m_shared->message.load() == engine_message::go) {
+    m_shared->message.wait(engine_message::go);
   }
 }
 

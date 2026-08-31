@@ -200,9 +200,9 @@ auto worker::iterative_deepening(const position& pos) -> void {
     }
   }
 
-  m_shared.halt();
   print_info();
   m_shared.output->best_move(last_pv[0]);
+  m_shared.halt();
 }
 
 template<typename Ctrls>
