@@ -66,6 +66,9 @@ node::node(i32 id, manager& m)
   m_engine_a = std::make_unique<engine>();
   m_engine_b = std::make_unique<engine>();
 
+  m_engine_a->resize_hash(1);
+  m_engine_b->resize_hash(1);
+
   m_engine_a->set_output(m_a_extractor);
   m_engine_b->set_output(m_b_extractor);
 }
@@ -109,7 +112,7 @@ auto node::thread_main() -> void {
 auto node::generate_game() -> std::string {
   namespace rv = std::views;
 
-  constexpr ctrls::ctrls verify = ctrls::nodes{.soft_nodes = 50000, .hard_nodes = 8000000};
+  constexpr ctrls::ctrls verify = ctrls::nodes{.soft_nodes = 20000, .hard_nodes = 8000000};
   constexpr ctrls::ctrls search = ctrls::nodes{.soft_nodes = 5000, .hard_nodes = 8000000};
 
   game g{position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")};
