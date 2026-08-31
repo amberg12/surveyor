@@ -51,4 +51,14 @@ tuner:
 	cmake --build build/native
 	cp build/native/tuner ./surveyor-tuner
 
-.PHONY: default native avx2-bmi2 x86-64.cmake tuner
+datagen:
+	cmake -S . -B build/native \
+			$(GENERATOR) \
+    		-DCMAKE_BUILD_TYPE=Release \
+    		-DCMAKE_CXX_FLAGS="-march=native" \
+    		-DBUILD_TOOLS="ON" \
+    		$(TOOLCHAIN_FILE)
+	cmake --build build/native
+	cp build/native/datagen ./surveyor-datagen
+
+.PHONY: default native avx2-bmi2 x86-64.cmake tuner datagen

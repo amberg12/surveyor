@@ -52,6 +52,20 @@ public:
     return false;
   }
 
+  [[nodiscard]] auto is_threefold_repetition(const position& pos) const -> bool {
+    i32 times_position_found = 0;
+
+    for (i32 i = static_cast<i32>(m_keys.size()) - 1; i >= 0; i -= 1) {
+      times_position_found += m_keys[i] == pos.key();
+
+      if (times_position_found == 2) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
 private:
   usize m_uci_moves = 0;
 
