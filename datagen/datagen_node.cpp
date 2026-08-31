@@ -25,8 +25,20 @@
 
 namespace surveyor_datagen {
 namespace {
-class extractor : public engine_output {
-public:
+constexpr i32 max_game_plies = 300;
+
+auto stamp_start_time(ctrls::ctrls limits) -> ctrls::ctrls {
+  std::visit(
+    [](auto& x) {
+      x.start_time = time::clock::now();
+    },
+    limits);
+
+  return limits;
+}
+}  // namespace
+
+struct node::extractor : public engine_output {
   score sc{};
   move  bm{};
 
@@ -43,12 +55,33 @@ public:
     bm = move::null();
   }
 };
-}  // namespace
+
+node::node(i32 id, manager& m)
+    : m_manager(m) {
+  m_rng.seed(id * 0x8008153);
+
+  m_a_extractor = std::make_shared<extractor>();
+  m_b_extractor = std::make_shared<extractor>();
+
+  m_engine_a = std::make_unique<engine>();
+  m_engine_b = std::make_unique<engine>();
+
+  m_engine_a->set_output(m_a_extractor);
+  m_engine_b->set_output(m_b_extractor);
+}
+
+node::~node() = default;
 
 auto node::launch() -> void {
   m_thread = std::jthread([this] {
     this->thread_main();
   });
+}
+
+auto node::join() -> void {
+  if (m_thread.joinable()) {
+    m_thread.join();
+  }
 }
 
 auto node::thread_main() -> void {
@@ -59,23 +92,25 @@ auto node::thread_main() -> void {
   while (m_manager.requires_games()) {
     work.clear();
 
-    for ([[maybe_unused]] const i32 work_slice : rv::iota(0, 1)) {
-      const auto g = generate_game();
-      work.emplace_back(g);
+    for ([[maybe_unused]] const i32 work_slice : rv::iota(0, 4)) {
+      if (!m_manager.requires_games()) {
+        break;
+      }
+
+      work.emplace_back(generate_game());
     }
 
-    m_manager.submit_work(work);
+    if (!work.empty()) {
+      m_manager.submit_work(work);
+    }
   }
 }
 
 auto node::generate_game() -> std::string {
   namespace rv = std::views;
-  namespace rg = std::ranges;
 
   constexpr ctrls::ctrls verify = ctrls::nodes{.soft_nodes = 50000, .hard_nodes = 8000000};
   constexpr ctrls::ctrls search = ctrls::nodes{.soft_nodes = 5000, .hard_nodes = 8000000};
-
-  auto output = std::make_shared<null_output>();
 
   game g{position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")};
 
@@ -101,72 +136,80 @@ auto node::generate_game() -> std::string {
     return ml.empty() || g.repetition_table().is_threefold_repetition(g.root());
   };
 
-  // Select a position
+  for ([[maybe_unused]] const i32 attempt : rv::iota(0, 32)) {
+    g = game{position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")};
 
-  std::string out = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    std::string out = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-  for ([[maybe_unused]] const i32 i : rv::iota(0, std::uniform_int_distribution(5, 9)(m_rng))) {
-    const move_list ml = generate_moves(g.root());
+    bool restart = false;
 
-    if (is_game_over()) {
-      return generate_game();
+    for ([[maybe_unused]] const i32 i : rv::iota(0, std::uniform_int_distribution(5, 9)(m_rng))) {
+      const move_list ml = generate_moves(g.root());
+
+      if (ml.empty() || is_game_over()) {
+        restart = true;
+        break;
+      }
+
+      const move selected_move =
+        ml[std::uniform_int_distribution<usize>(usize{0}, ml.size() - 1)(m_rng)];
+
+      g.add_move(selected_move);
+      out += std::format(" {} {}", selected_move, 0);
     }
 
-    const move selected_move =
-      ml[std::uniform_int_distribution<usize>(usize{0}, ml.size() - 1)(m_rng)];
-
-    g.add_move(selected_move);
-    out += std::format(" {} {}", selected_move, 0);
-  }
-
-  if (is_game_over()) {
-    return generate_game();
-  }
-
-  engine a;
-  engine b;
-
-  auto a_e = std::make_shared<extractor>();
-  auto b_e = std::make_shared<extractor>();
-
-  a.set_output(a_e);
-  b.set_output(b_e);
-
-  // Verify exit
-  a.go(g, verify);
-  a.await();
-
-  if (std::abs(a_e->sc) > 200) {
-    return generate_game();
-  }
-
-  a_e->reset();
-
-  while (true) {
-    a.go(g, search);
-    a.await();
-
-    if (is_game_over()) {
-      break;
+    if (restart || is_game_over()) {
+      continue;
     }
 
-    g.add_move(a_e->bm);
-    out += std::format(" {} {}", a_e->bm, a_e->sc);
-    a_e->reset();
+    m_a_extractor->reset();
 
-    b.go(g, search);
-    b.await();
+    m_engine_a->go(g, stamp_start_time(verify));
+    m_engine_a->await();
 
-    if (is_game_over()) {
-      break;
+    if (std::abs(m_a_extractor->sc) > 200) {
+      continue;
     }
 
-    g.add_move(b_e->bm);
-    out += std::format(" {} {}", b_e->bm, b_e->sc);
-    b_e->reset();
+    m_a_extractor->reset();
+    m_b_extractor->reset();
+
+    for (i32 ply = 0; ply < max_game_plies; ++ply) {
+      if (is_game_over()) {
+        return std::format("{} {}", game_result(), out);
+      }
+
+      m_engine_a->go(g, stamp_start_time(search));
+      m_engine_a->await();
+
+      if (is_game_over()) {
+        return std::format("{} {}", game_result(), out);
+      }
+
+      g.add_move(m_a_extractor->bm);
+      out += std::format(" {} {}", m_a_extractor->bm, m_a_extractor->sc);
+      m_a_extractor->reset();
+
+      if (is_game_over()) {
+        return std::format("{} {}", game_result(), out);
+      }
+
+      m_engine_b->go(g, stamp_start_time(search));
+      m_engine_b->await();
+
+      if (is_game_over()) {
+        return std::format("{} {}", game_result(), out);
+      }
+
+      g.add_move(m_b_extractor->bm);
+      out += std::format(" {} {}", m_b_extractor->bm, m_b_extractor->sc);
+      m_b_extractor->reset();
+    }
+
+    return std::format("{} {}", game_result(), out);
   }
 
-  return std::format("{} {}", game_result(), out);
+  return std::format("{} rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", game_result());
 }
 
 }  // namespace surveyor_datagen

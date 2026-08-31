@@ -27,8 +27,8 @@ manager::manager(usize concurrency, i64 games)
   namespace rg = std::ranges;
   namespace rv = std::views;
 
-  for ([[maybe_unused]] const usize i : rv::iota(usize{0}, concurrency)) {
-    m_nodes.emplace_back(std::make_unique<node>(*this));
+  for (const usize i : rv::iota(usize{0}, concurrency)) {
+    m_nodes.emplace_back(std::make_unique<node>(i, *this));
   }
 }
 
@@ -38,18 +38,20 @@ auto manager::run() -> void {
   for (auto& node : m_nodes) {
     node->launch();
   }
+
+  for (auto& node : m_nodes) {
+    node->join();
+  }
 }
 
 auto manager::requires_games() const -> bool {
-  return m_completed < m_target;
+  return m_completed.load() < m_target;
 }
 
 auto manager::submit_work(std::span<std::string> work) -> void {
-  std::lock_guard guard(m_submit_lock);
+  m_completed.fetch_add(static_cast<i64>(work.size()));
 
-  m_completed += work.size();
-
-  for (const auto s : work) {
+  for (const auto& s : work) {
     std::println("{}", s);
   }
 

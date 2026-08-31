@@ -18,6 +18,9 @@
 #define UCI_DATAGEN_NODE_H
 #include "common.h"
 
+#include "../lib/engine.h"
+
+#include <memory>
 #include <random>
 
 namespace surveyor_datagen {
@@ -25,13 +28,15 @@ struct manager;
 
 class node {
 public:
-  node(manager& m)
-      : m_manager(m) {
-  }
+  node(i32 id, manager& m);
+  ~node();
 
   auto launch() -> void;
+  auto join() -> void;
 
 private:
+  struct extractor;
+
   auto thread_main() -> void;
 
   auto generate_game() -> std::string;
@@ -41,6 +46,11 @@ private:
   std::jthread m_thread;
 
   std::mt19937_64 m_rng;
+
+  std::unique_ptr<engine>            m_engine_a;
+  std::unique_ptr<engine>            m_engine_b;
+  std::shared_ptr<extractor>         m_a_extractor;
+  std::shared_ptr<extractor>         m_b_extractor;
 };
 }  // namespace surveyor_datagen
 

@@ -40,9 +40,7 @@ public:
 private:
   std::vector<std::unique_ptr<node>> m_nodes;
   i64                                m_target;
-  std::atomic_int64_t                m_completed;
-
-  std::mutex m_submit_lock;
+  std::atomic_int64_t                m_completed{0};
 };
 
 }  // namespace surveyor_datagen
