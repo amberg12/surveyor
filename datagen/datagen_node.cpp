@@ -21,6 +21,7 @@
 #include "datagen_manager.h"
 
 #include <iostream>
+#include <print>
 
 namespace surveyor_datagen {
 namespace {
@@ -117,8 +118,11 @@ auto node::generate_game() -> std::string {
     return generate_game();
   }
 
-  engine a;
-  engine b;
+  thread_local engine a;
+  thread_local engine b;
+
+  a.reset();
+  b.reset();
 
   auto e = std::make_shared<extractor>();
 
@@ -142,7 +146,7 @@ auto node::generate_game() -> std::string {
 
     const move_list a_ml = generate_moves(g.root());
 
-    if (const auto it = rg::find(a_ml, e->bm); it != a_ml.end()) {
+    if (const auto it = rg::find(a_ml, e->bm); it == a_ml.end()) {
       return generate_game();
     }
 
@@ -158,7 +162,7 @@ auto node::generate_game() -> std::string {
 
     const move_list b_ml = generate_moves(g.root());
 
-    if (const auto it = rg::find(b_ml, e->bm); it != b_ml.end()) {
+    if (const auto it = rg::find(b_ml, e->bm); it == b_ml.end()) {
       return generate_game();
     }
 
