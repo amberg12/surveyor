@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+data_path=$1
+
+get_count() {
+    local count
+    count=$(sed -E 's/^([^[:space:]]+[[:space:]]+){7}//' "$data_path" | wc -w)
+    echo $((count / 2))
+}
+
+start_count=$(get_count)
+start_time=$(date +%s.%N)
+last_mtime=$(stat -c %Y "$data_path")
+
+echo "$start_count"
+
+while true; do
+    mtime=$(stat -c %Y "$data_path")
+
+    if [[ "$mtime" != "$last_mtime" ]]; then
+        current_count=$(get_count)
+        current_time=$(date +%s.%N)
+
+        change=$((current_count - start_count))
+
+        elapsed=$(awk -v now="$current_time" -v start="$start_time" \
+            'BEGIN { print now - start }')
+
+        rate=$(awk -v change="$change" -v elapsed="$elapsed" \
+            'BEGIN { printf "%.0f", change / elapsed }')
+
+        echo "$current_count (+$change, $rate pos/s)"
+
+        last_mtime=$mtime
+    fi
+
+    sleep 1
+done
