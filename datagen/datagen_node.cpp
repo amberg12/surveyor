@@ -27,8 +27,8 @@ namespace surveyor_datagen {
 namespace {
 class extractor : public engine_output {
 public:
-  score sc;
-  move  bm;
+  score sc{};
+  move  bm{};
 
   auto info(info_line info) -> void override {
     sc = info.sc;
@@ -36,6 +36,11 @@ public:
 
   auto best_move(move mv) -> void override {
     bm = mv;
+  }
+
+  auto reset() -> void {
+    sc = scoring::none;
+    bm = move::null();
   }
 };
 }  // namespace
@@ -54,7 +59,7 @@ auto node::thread_main() -> void {
   while (m_manager.requires_games()) {
     work.clear();
 
-    for ([[maybe_unused]] const i32 work_slice : rv::iota(0, 5)) {
+    for ([[maybe_unused]] const i32 work_slice : rv::iota(0, 1)) {
       const auto g = generate_game();
       work.emplace_back(g);
     }
@@ -93,7 +98,7 @@ auto node::generate_game() -> std::string {
     g.set_uci_line();
     const move_list ml = generate_moves(g.root());
 
-    return ml.empty() || g.repetition_table().is_repetition(g.root());
+    return ml.empty() || g.repetition_table().is_threefold_repetition(g.root());
   };
 
   // Select a position
@@ -118,23 +123,24 @@ auto node::generate_game() -> std::string {
     return generate_game();
   }
 
-  thread_local engine a;
-  thread_local engine b;
+  engine a;
+  engine b;
 
-  a.reset();
-  b.reset();
+  auto a_e = std::make_shared<extractor>();
+  auto b_e = std::make_shared<extractor>();
 
-  auto e = std::make_shared<extractor>();
-
-  a.set_output(e);
-  b.set_output(e);
+  a.set_output(a_e);
+  b.set_output(b_e);
 
   // Verify exit
   a.go(g, verify);
+  a.await();
 
-  if (std::abs(e->sc) > 200) {
+  if (std::abs(a_e->sc) > 200) {
     return generate_game();
   }
+
+  a_e->reset();
 
   while (true) {
     a.go(g, search);
@@ -144,14 +150,9 @@ auto node::generate_game() -> std::string {
       break;
     }
 
-    const move_list a_ml = generate_moves(g.root());
-
-    if (const auto it = rg::find(a_ml, e->bm); it == a_ml.end()) {
-      return generate_game();
-    }
-
-    g.add_move(e->bm);
-    out += std::format(" {} {}", e->bm, e->sc);
+    g.add_move(a_e->bm);
+    out += std::format(" {} {}", a_e->bm, a_e->sc);
+    a_e->reset();
 
     b.go(g, search);
     b.await();
@@ -160,15 +161,9 @@ auto node::generate_game() -> std::string {
       break;
     }
 
-    const move_list b_ml = generate_moves(g.root());
-
-    if (const auto it = rg::find(b_ml, e->bm); it == b_ml.end()) {
-      return generate_game();
-    }
-
-    g.add_move(e->bm);
-
-    out += std::format(" {} {}", e->bm, e->sc);
+    g.add_move(b_e->bm);
+    out += std::format(" {} {}", b_e->bm, b_e->sc);
+    b_e->reset();
   }
 
   return std::format("{} {}", game_result(), out);
