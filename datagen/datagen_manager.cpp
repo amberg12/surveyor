@@ -52,6 +52,8 @@ auto manager::submit_work(std::span<std::string> work) -> void {
   for (const auto s : work) {
     std::println("{}", s);
   }
+
+  std::fflush(stdout);
 }
 
 }  // namespace surveyor_datagen

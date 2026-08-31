@@ -20,7 +20,24 @@
 #include "common.h"
 #include "datagen_manager.h"
 
+#include <iostream>
+
 namespace surveyor_datagen {
+namespace {
+class extractor : public engine_output {
+public:
+  score sc;
+  move  bm;
+
+  auto info(info_line info) -> void override {
+    sc = info.sc;
+  }
+
+  auto best_move(move mv) -> void override {
+    bm = mv;
+  }
+};
+}  // namespace
 
 auto node::launch() -> void {
   m_thread = std::jthread([this] {
@@ -47,18 +64,35 @@ auto node::thread_main() -> void {
 
 auto node::generate_game() -> std::string {
   namespace rv = std::views;
+  namespace rg = std::ranges;
 
-  constexpr ctrls::search_control verify = ctrls::nodes{.soft_nodes = 50000, .hard_nodes = 8000000};
-  constexpr ctrls::search_control search = ctrls::nodes{.soft_nodes = 5000, .hard_nodes = 8000000};
+  constexpr ctrls::ctrls verify = ctrls::nodes{.soft_nodes = 50000, .hard_nodes = 8000000};
+  constexpr ctrls::ctrls search = ctrls::nodes{.soft_nodes = 5000, .hard_nodes = 8000000};
 
   auto output = std::make_shared<null_output>();
 
   game g{position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")};
 
+  auto game_result = [&]() -> double {
+    const position& pos = g.root();
+    const move_list ml  = generate_moves(pos);
+
+    if (ml.empty()) {
+      if (pos.checkers() != 0) {
+        return pos.stm() == color::white() ? 0.0 : 1.0;
+      }
+
+      return 0.5;
+    }
+
+    return 0.5;
+  };
+
   auto is_game_over = [&] {
+    g.set_uci_line();
     const move_list ml = generate_moves(g.root());
 
-    return ml.empty();
+    return ml.empty() || g.repetition_table().is_repetition(g.root());
   };
 
   // Select a position
@@ -83,7 +117,57 @@ auto node::generate_game() -> std::string {
     return generate_game();
   }
 
-  return out;
+  engine a;
+  engine b;
+
+  auto e = std::make_shared<extractor>();
+
+  a.set_output(e);
+  b.set_output(e);
+
+  // Verify exit
+  a.go(g, verify);
+
+  if (std::abs(e->sc) > 200) {
+    return generate_game();
+  }
+
+  while (true) {
+    a.go(g, search);
+    a.await();
+
+    if (is_game_over()) {
+      break;
+    }
+
+    const move_list a_ml = generate_moves(g.root());
+
+    if (const auto it = rg::find(a_ml, e->bm); it != a_ml.end()) {
+      return generate_game();
+    }
+
+    g.add_move(e->bm);
+    out += std::format(" {} {}", e->bm, e->sc);
+
+    b.go(g, search);
+    b.await();
+
+    if (is_game_over()) {
+      break;
+    }
+
+    const move_list b_ml = generate_moves(g.root());
+
+    if (const auto it = rg::find(b_ml, e->bm); it != b_ml.end()) {
+      return generate_game();
+    }
+
+    g.add_move(e->bm);
+
+    out += std::format(" {} {}", e->bm, e->sc);
+  }
+
+  return std::format("{} {}", game_result(), out);
 }
 
 }  // namespace surveyor_datagen
