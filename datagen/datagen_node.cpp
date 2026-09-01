@@ -113,7 +113,7 @@ auto node::generate_game() -> std::string {
   namespace rv = std::views;
 
   constexpr ctrls::ctrls verify = ctrls::nodes{.soft_nodes = 20000, .hard_nodes = 8000000};
-  constexpr ctrls::ctrls search = ctrls::nodes{.soft_nodes = 5000, .hard_nodes = 5000};
+  constexpr ctrls::ctrls search = ctrls::nodes{.soft_nodes = 5000, .hard_nodes = 50000};
 
   game g{position::parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")};
 
