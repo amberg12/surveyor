@@ -16,6 +16,8 @@
 
 #include "data.h"
 
+#include <random>
+
 namespace surveyor_tuner {
 
 auto parse(std::istream& is) -> std::vector<game> {
@@ -51,26 +53,41 @@ auto parse(std::istream& is) -> std::vector<game> {
 }
 
 auto filter(std::vector<game> games) -> std::vector<tuner_position> {
+  namespace rg = std::ranges;
+  namespace rv = std::views;
+
   std::vector<tuner_position> result;
+  std::mt19937_64             rng;
 
   for (const auto& g : games) {
-    i32 i = 0;
+
+    const i32 to_skip = static_cast<i32>(rg::count_if(g.moves, [](const auto& mv) {
+      return mv.second == "0";
+    }));
+
+    const auto candidate_idx =
+      rv::iota(to_skip, static_cast<i32>(g.moves.size())) | rg::to<std::vector<i32>>();
+
+    std::vector<i32> sampled_idx;
+
+    rg::sample(candidate_idx, std::back_inserter(sampled_idx),
+               std::min<i32>(25, static_cast<i32>(candidate_idx.size())), rng);
 
     position current_pos = g.root;
 
-    for (const auto [uci_best_move, eval] : g.moves) {
-      const f32 game_result = current_pos.stm() == color::white() ? g.result : 1.0f - g.result;
+    for (const auto [i, move_pair] : rv::enumerate(g.moves)) {
+      const auto& [uci_best_move, eval] = move_pair;
+      const f32  game_result = current_pos.stm() == color::white() ? g.result : 1.0f - g.result;
+      const move parsed_move = move::parse(uci_best_move, current_pos);
 
-      if (i > 8 && !move::parse(uci_best_move, current_pos).is_capture()
-          && !current_pos.checkers()) {
+      if (i >= to_skip && !parsed_move.is_capture() && !current_pos.checkers()
+          && rg::find(sampled_idx, static_cast<i32>(i)) != sampled_idx.end()) {
         result.emplace_back(game_result, current_pos);
       }
-      current_pos = current_pos.make_move(move::parse(uci_best_move, current_pos));
 
-      ++i;
+      current_pos = current_pos.make_move(parsed_move);
     }
   }
-
   return result;
 }
 }  // namespace surveyor_tuner
