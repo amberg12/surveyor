@@ -40,6 +40,7 @@ concept eval_tracer = requires(E et, color stm, square sq, i32 n) {
   { et.trace_rook_mobility(stm, n) };
   { et.trace_queen_mobility(stm, n) };
   { et.trace_passed_pawn(stm, n) };
+  { et.trace_isolated_pawn(stm) };
   { et.trace_shelter_edge(stm, n) };
   { et.trace_shelter_mid(stm, n) };
   { et.trace_shelter_centre(stm, n) };
@@ -135,6 +136,10 @@ auto trace_pawns(const position& pos, E& tracer) -> void {
       } else {
         tracer.trace_passed_pawn(stm, 7 - rank);
       }
+    }
+
+    if ((pos.bb(stm, piece_type::pawn()) & lane_3).ipopcount() == 1) {
+      tracer.trace_isolated_pawn(stm);
     }
   }
 }
@@ -262,6 +267,7 @@ inline auto evaluate(const position& pos) -> score {
     SURVEYOR_TRACE_NUMBER(rook_mobility);
     SURVEYOR_TRACE_NUMBER(queen_mobility);
     SURVEYOR_TRACE_NUMBER(passed_pawn);
+    SURVEYOR_TRACE_VALUE(isolated_pawn);
     SURVEYOR_TRACE_NUMBER(shelter_edge);
     SURVEYOR_TRACE_NUMBER(shelter_mid);
     SURVEYOR_TRACE_NUMBER(shelter_centre);
