@@ -27,9 +27,9 @@ namespace surveyor_tuner {
 namespace {
 namespace features {
 struct f {
-  std::string name;
-  usize       idx;
-  usize       cnt;
+  std::string_view name;
+  usize            idx;
+  usize            cnt;
 };
 
 #define CREATE_FEATURE(name, idx, cnt) constexpr f name = {#name, idx, cnt};
@@ -51,7 +51,8 @@ CREATE_FEATURE(bishop_mobility, knight_mobility.idx + knight_mobility.cnt, 14);
 CREATE_FEATURE(rook_mobility, bishop_mobility.idx + bishop_mobility.cnt, 15);
 CREATE_FEATURE(queen_mobility, rook_mobility.idx + rook_mobility.cnt, 28);
 CREATE_FEATURE(passed_pawn, queen_mobility.idx + queen_mobility.cnt, 8)
-CREATE_FEATURE(isolated_pawn, passed_pawn.idx + passed_pawn.cnt, 1);
+CREATE_FEATURE(defended_passed_pawn, passed_pawn.idx + passed_pawn.cnt, 8);
+CREATE_FEATURE(isolated_pawn, defended_passed_pawn.idx + defended_passed_pawn.cnt, 1);
 CREATE_FEATURE(shelter_edge, isolated_pawn.idx + isolated_pawn.cnt, 8)
 CREATE_FEATURE(shelter_mid, shelter_edge.idx + shelter_edge.cnt, 8)
 CREATE_FEATURE(shelter_centre, shelter_mid.idx + shelter_mid.cnt, 8)
@@ -118,6 +119,7 @@ auto extract_features(const position& pos) -> feature_array<i8> {
     SURVEYOR_TRACE_NUMBER(rook_mobility)
     SURVEYOR_TRACE_NUMBER(queen_mobility)
     SURVEYOR_TRACE_NUMBER(passed_pawn)
+    SURVEYOR_TRACE_NUMBER(defended_passed_pawn)
     SURVEYOR_TRACE_VALUE(isolated_pawn)
     SURVEYOR_TRACE_NUMBER(shelter_edge)
     SURVEYOR_TRACE_NUMBER(shelter_mid)
@@ -250,6 +252,7 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   print_feature(features::rook_mobility, weight_mg, weight_eg);
   print_feature(features::queen_mobility, weight_mg, weight_eg);
   print_feature(features::passed_pawn, weight_mg, weight_eg);
+  print_feature(features::defended_passed_pawn, weight_mg, weight_eg);
   print_feature(features::isolated_pawn, weight_mg, weight_eg);
   print_feature(features::shelter_centre, weight_mg, weight_eg);
   print_feature(features::shelter_mid, weight_mg, weight_eg);
