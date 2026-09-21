@@ -40,6 +40,7 @@ concept eval_tracer = requires(E et, color stm, square sq, i32 n) {
   { et.trace_rook_mobility(stm, n) };
   { et.trace_queen_mobility(stm, n) };
   { et.trace_passed_pawn(stm, n) };
+  { et.trace_defended_passed_pawn(stm, n) };
   { et.trace_isolated_pawn(stm) };
   { et.trace_shelter_edge(stm, n) };
   { et.trace_shelter_mid(stm, n) };
@@ -131,10 +132,16 @@ auto trace_pawns(const position& pos, E& tracer) -> void {
     }();
 
     if ((pos.bb(~stm, piece_type::pawn()) & ahead_bb & lane_3) == bitboard::empty()) {
-      if constexpr (stm == color::white()) {
-        tracer.trace_passed_pawn(stm, rank);
-      } else {
-        tracer.trace_passed_pawn(stm, 7 - rank);
+      const square destination_sq =
+        geometry::from_x88(geometry::to_x88(sq) + geometry::pawn_direction(stm));
+
+      tracer.trace_passed_pawn(stm, sq.relative_rank(stm));
+
+      const piece_mask dst_defenders = pos.attackers_to(stm, destination_sq);
+      const piece_mask dst_attackers = pos.attackers_to(~stm, destination_sq);
+
+      if (dst_defenders.ipopcount() > dst_attackers.ipopcount()) {
+        tracer.trace_defended_passed_pawn(stm, destination_sq.relative_rank(stm));
       }
     }
 
@@ -267,6 +274,7 @@ inline auto evaluate(const position& pos) -> score {
     SURVEYOR_TRACE_NUMBER(rook_mobility);
     SURVEYOR_TRACE_NUMBER(queen_mobility);
     SURVEYOR_TRACE_NUMBER(passed_pawn);
+    SURVEYOR_TRACE_NUMBER(defended_passed_pawn);
     SURVEYOR_TRACE_VALUE(isolated_pawn);
     SURVEYOR_TRACE_NUMBER(shelter_edge);
     SURVEYOR_TRACE_NUMBER(shelter_mid);
