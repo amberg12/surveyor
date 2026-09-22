@@ -93,7 +93,7 @@ struct attack_box {
 
   [[nodiscard]] constexpr auto bb(piece_id atk) const -> bitboard {
     const u16 bit = u16{1} << atk.idx();
-    u64 out = 0;
+    u64       out = 0;
 
 #if defined(__AVX2__)
     const auto*   p   = reinterpret_cast<const __m256i*>(word_board.data());
@@ -346,6 +346,11 @@ public:
     };
 
     return stm_phase(color::white()) + stm_phase(color::black());
+  }
+
+  [[nodiscard]] constexpr auto material() const -> i32 {
+    return m_piece_list[color::white()].mask.ipopcount()
+      + m_piece_list[color::black()].mask.ipopcount();
   }
 
   [[nodiscard]] constexpr auto pin_at() const -> const attack_box& {

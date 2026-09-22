@@ -81,7 +81,8 @@ auto filter(std::vector<game> games) -> std::vector<tuner_position> {
       const move parsed_move = move::parse(uci_best_move, current_pos);
 
       if (i >= to_skip && !parsed_move.is_capture() && !current_pos.checkers()
-          && rg::find(sampled_idx, static_cast<i32>(i)) != sampled_idx.end()) {
+          && rg::find(sampled_idx, static_cast<i32>(i)) != sampled_idx.end()
+          && current_pos.material() > 4) {
         result.emplace_back(game_result, current_pos);
       }
 
