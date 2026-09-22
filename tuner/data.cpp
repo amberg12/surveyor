@@ -19,6 +19,38 @@
 #include <random>
 
 namespace surveyor_tuner {
+namespace {
+// Based off sirius (yoinked, really)
+auto phase_p(i32 phase) {
+  const auto p = [&](const auto x) {
+    return std::round(x) - 2 * std::floor(std::round(x) / 2);
+  };
+
+  const auto l = [&](const auto x) {
+    return std::fmin(0.9, -0.09793221 * (x - 23) + 0.189393939);
+  };
+
+  const auto s = [&](const auto x) {
+    return p(x) * l(std::round(x)) + (1 - p(x));
+  };
+
+  const auto f = [&](const auto x) {
+    if (x > 16) {
+      return 1 - std::pow(std::round(x) - 16, 2) / 73.1428571;
+    }
+
+    return 1 - std::pow(std::round(x) - 16, 2) / 269.478634;
+  };
+
+  return phase > 12 ? s(phase) * f(phase) : f(phase);
+}
+
+const double phase_weight_sum = [] {
+  double sum = 0.0;
+  for (i32 ph = 0; ph <= 24; ++ph) sum += phase_p(ph);
+  return sum;
+}();
+}  // namespace
 
 auto parse(std::istream& is) -> std::vector<game> {
   std::vector<game> result;
@@ -56,6 +88,11 @@ auto filter(std::vector<game> games) -> std::vector<tuner_position> {
   namespace rg = std::ranges;
   namespace rv = std::views;
 
+  const auto num_games      = games.size();
+  const auto expected_pos = num_games * 25;
+
+  std::array<i64, 25> phase_distribution{};
+
   std::vector<tuner_position> result;
   std::mt19937_64             rng;
 
@@ -71,7 +108,7 @@ auto filter(std::vector<game> games) -> std::vector<tuner_position> {
     std::vector<i32> sampled_idx;
 
     rg::sample(candidate_idx, std::back_inserter(sampled_idx),
-               std::min<i32>(25, static_cast<i32>(candidate_idx.size())), rng);
+               std::min<i32>(40, static_cast<i32>(candidate_idx.size())), rng);
 
     position current_pos = g.root;
 
@@ -80,10 +117,19 @@ auto filter(std::vector<game> games) -> std::vector<tuner_position> {
       const f32  game_result = current_pos.stm() == color::white() ? g.result : 1.0f - g.result;
       const move parsed_move = move::parse(uci_best_move, current_pos);
 
+      const auto phase              = current_pos.phase();
+      const i64  expected_for_phase = expected_pos * phase_p(phase) / phase_weight_sum;
+      const i64  actual_for_phase   = phase_distribution[std::clamp(phase, 0, 24)];
+
+      const double sampling_p = std::clamp(
+        1.0 - static_cast<double>(actual_for_phase) / static_cast<double>(expected_for_phase), 0.0, 1.0);
+      std::uniform_real_distribution<double> dist(0.0, 1.0);
+
       if (i >= to_skip && !parsed_move.is_capture() && !current_pos.checkers()
           && rg::find(sampled_idx, static_cast<i32>(i)) != sampled_idx.end()
-          && current_pos.material() > 4) {
+          && current_pos.material() > 4 && dist(rng) < sampling_p) {
         result.emplace_back(game_result, current_pos);
+        phase_distribution[std::clamp(phase, 0, 24)] += 1;
       }
 
       current_pos = current_pos.make_move(parsed_move);
