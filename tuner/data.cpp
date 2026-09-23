@@ -16,6 +16,8 @@
 
 #include "data.h"
 
+#include "util/math.h"
+
 #include <random>
 
 namespace surveyor_tuner {
@@ -121,13 +123,18 @@ auto filter(std::vector<game> games) -> std::vector<tuner_position> {
       const i64  expected_for_phase = expected_pos * phase_p(phase) / phase_weight_sum;
       const i64  actual_for_phase   = phase_distribution[std::clamp(phase, 0, 24)];
 
-      const double sampling_p = std::clamp(
-        1.0 - static_cast<double>(actual_for_phase) / static_cast<double>(expected_for_phase), 0.0, 1.0);
+      const f64 sampling_p = std::clamp(
+        1.0 - static_cast<f64>(actual_for_phase) / static_cast<f64>(expected_for_phase), 0.0, 1.0);
       std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+      const f64 sigmoid_score = sigmoid(*parse_number<f64>(eval) / 300.0);
+
+      const f64 max_mismatch = std::max<f64>(game_result, 1.0 - game_result);
+      const f64 mismatch     = std::abs(game_result - sigmoid_score) / max_mismatch;
 
       if (i >= to_skip && !parsed_move.is_capture() && !current_pos.checkers()
           && rg::find(sampled_idx, static_cast<i32>(i)) != sampled_idx.end()
-          && current_pos.material() > 4 && dist(rng) < sampling_p) {
+          && current_pos.material() > 4 && dist(rng) < sampling_p && mismatch < 0.45) {
         result.emplace_back(game_result, current_pos);
         phase_distribution[std::clamp(phase, 0, 24)] += 1;
       }
