@@ -42,6 +42,7 @@ concept eval_tracer = requires(E et, color stm, square sq, i32 n) {
   { et.trace_passed_pawn(stm, n) };
   { et.trace_defended_passed_pawn(stm, n) };
   { et.trace_isolated_pawn(stm) };
+  { et.trace_defended_pawn(stm, n) };
   { et.trace_shelter_edge(stm, n) };
   { et.trace_shelter_mid(stm, n) };
   { et.trace_shelter_centre(stm, n) };
@@ -148,6 +149,15 @@ auto trace_pawns(const position& pos, E& tracer) -> void {
     if ((pos.bb(stm, piece_type::pawn()) & lane_3).ipopcount() == 1) {
       tracer.trace_isolated_pawn(stm);
     }
+  }
+
+  const auto pawn_bb = pos.bb(stm, piece_type::pawn());
+
+  const auto lhs_defend = pawn_bb.shift(geometry::pawn_direction(stm)).shift(geometry::w_orth);
+  const auto rhs_defend = pawn_bb.shift(geometry::pawn_direction(stm)).shift(geometry::e_orth);
+
+  for (const auto sq : pawn_bb & (lhs_defend | rhs_defend)) {
+    tracer.trace_defended_pawn(stm, sq.relative_rank(stm));
   }
 }
 
@@ -276,6 +286,7 @@ inline auto evaluate(const position& pos) -> score {
     SURVEYOR_TRACE_NUMBER(passed_pawn);
     SURVEYOR_TRACE_NUMBER(defended_passed_pawn);
     SURVEYOR_TRACE_VALUE(isolated_pawn);
+    SURVEYOR_TRACE_NUMBER(defended_pawn);
     SURVEYOR_TRACE_NUMBER(shelter_edge);
     SURVEYOR_TRACE_NUMBER(shelter_mid);
     SURVEYOR_TRACE_NUMBER(shelter_centre);

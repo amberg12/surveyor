@@ -97,6 +97,15 @@ struct bitboard {
       return bitboard{(raw & 18446744073709551360ull) >> 8};
     }
 
+    if (dir == geometry::e_orth) {
+      return bitboard{(*this & ~file_bb(7)).raw << 1};
+    }
+
+    if (dir == geometry::w_orth) {
+      return bitboard{(*this & ~file_bb(0)).raw >> 1};
+
+    }
+
     std::unreachable();
   }
 
