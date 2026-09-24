@@ -24,6 +24,8 @@ namespace surveyor {
 #ifdef EVALTUNE
 class pair {
 public:
+  constexpr pair() = default;
+
   constexpr pair(i32 mg, i32 eg) : m_mg(mg), m_eg(eg) {}
 
   [[nodiscard]] constexpr auto mg() const {
@@ -52,7 +54,11 @@ public:
     return lhs;
   }
 
-  auto phase(const i32 phase) -> surveyor::score {
+  friend auto operator-(const pair& p) -> pair {
+    return pair{} - p;
+  }
+
+  auto phase(const i32 phase) const -> surveyor::score {
     const auto mg = m_mg * phase;
     const auto eg = m_eg * (24 - phase);
     return mg * eg / 24;
@@ -68,7 +74,10 @@ private:
 #else
 class pair {
 public:
-  constexpr pair(i32 mg, i32 eg) : m_mg(mg), m_eg(eg) {}
+  constexpr pair() = default;
+
+  constexpr pair(i32 mg, i32 eg) : m_mg(mg), m_eg(eg) {
+  }
 
   [[nodiscard]] constexpr auto mg() const {
     return m_mg;
@@ -96,7 +105,11 @@ public:
     return lhs;
   }
 
-  auto phase(const i32 phase) -> score {
+  friend auto operator-(const pair& p) -> pair {
+    return pair{} - p;
+  }
+
+  auto phase(const i32 phase) const -> score {
     const auto mg = m_mg * phase;
     const auto eg = m_eg * (24 - phase);
     return mg * eg / 24;
