@@ -130,8 +130,8 @@ public:
   }
 
   friend auto operator+(evaltune_pair& lhs, const evaltune_c& rhs) -> evaltune_pair {
-    lhs.m_mg_vector[rhs.idx()] += rhs.mg();
-    lhs.m_eg_vector[rhs.idx()] += rhs.eg();
+    lhs.m_mg_vector[rhs.idx()] += 1.0;
+    lhs.m_eg_vector[rhs.idx()] += 1.0;
     return lhs;
   }
 
@@ -149,8 +149,8 @@ public:
   }
 
   friend auto operator+=(evaltune_pair& lhs, const evaltune_c& rhs) -> evaltune_pair {
-    lhs.m_mg_vector[rhs.idx()] += rhs.mg();
-    lhs.m_eg_vector[rhs.idx()] += rhs.eg();
+    lhs.m_mg_vector[rhs.idx()] += 1.0;
+    lhs.m_eg_vector[rhs.idx()] += 1.0;
     return lhs;
   }
 
@@ -165,8 +165,8 @@ public:
   }
 
   friend auto operator-(evaltune_pair& lhs, const evaltune_c& rhs) -> evaltune_pair {
-    lhs.m_mg_vector[rhs.idx()] -= rhs.mg();
-    lhs.m_eg_vector[rhs.idx()] -= rhs.eg();
+    lhs.m_mg_vector[rhs.idx()] -= 1.0;
+    lhs.m_eg_vector[rhs.idx()] -= 1.0;
     return lhs;
   }
 
@@ -184,8 +184,8 @@ public:
   }
 
   friend auto operator-=(evaltune_pair& lhs, const evaltune_c& rhs) -> evaltune_pair {
-    lhs.m_mg_vector[rhs.idx()] -= rhs.mg();
-    lhs.m_eg_vector[rhs.idx()] -= rhs.eg();
+    lhs.m_mg_vector[rhs.idx()] -= 1.0;
+    lhs.m_eg_vector[rhs.idx()] -= 1.0;
     return lhs;
   }
 
