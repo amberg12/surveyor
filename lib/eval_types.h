@@ -61,7 +61,7 @@ public:
   auto phase(const i32 phase) const -> surveyor::score {
     const auto mg = m_mg * phase;
     const auto eg = m_eg * (24 - phase);
-    return mg * eg / 24;
+    return (mg + eg) / 24;
   }
 
 private:
@@ -112,7 +112,7 @@ public:
   auto phase(const i32 phase) const -> score {
     const auto mg = m_mg * phase;
     const auto eg = m_eg * (24 - phase);
-    return mg * eg / 24;
+    return (mg + eg) / 24;
   }
 
 private:

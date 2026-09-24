@@ -187,11 +187,11 @@ auto evaluate_king_safety(color stm, const position& pos) -> pair {
     }
 
     if (rel_i == 0) {
-      out += shelter_edge[shelter_rank];
+      out += shelter_mid[shelter_rank];
     }
 
     if (rel_i == 1) {
-      out += shelter_edge[shelter_rank];
+      out += shelter_centre[shelter_rank];
     }
   }
 
