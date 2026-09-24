@@ -109,17 +109,17 @@ inline const std::array queen_mobility = {
 };
 
 inline const std::array passed_pawn = {
-  S(0, 0), S(3, 11), S(-5, 3), S(-9, 83), S(17, 142), S(66, 205), S(126, 316), S(0, 0),
+  S(3, 11), S(-5, 3), S(-9, 83), S(17, 142), S(66, 205), S(126, 316),
 };
 
 inline const std::array defended_passed_pawn = {
-  S(0, 0), S(0, 0), S(8, 0), S(13, 48), S(28, 63), S(12, 107), S(54, 141), S(71, 222),
+  S(8, 0), S(13, 48), S(28, 63), S(12, 107), S(54, 141), S(71, 222),
 };
 
 inline const pair isolated_pawn = S(-10, -3);
 
 inline const std::array defended_pawn = {
-  S(0, 0), S(0, 0), S(4, 25), S(12, 12), S(22, 19), S(89, 71), S(68, 112), S(0, 0),
+  S(4, 25), S(12, 12), S(22, 19), S(89, 71), S(68, 112),
 };
 
 inline const std::array shelter_centre = {
