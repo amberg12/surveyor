@@ -146,17 +146,18 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
       const auto [mg, eg] = evaluate_unnormalized(pos.pos).to_vector();
 
       const f64 dot_product_mg = std::ranges::fold_left(mg, 0.0, std::plus{});
-      const f64 dot_product_eg = std::ranges::fold_left(mg, 0.0, std::plus{});
+      const f64 dot_product_eg = std::ranges::fold_left(eg, 0.0, std::plus{});
 
       const f64 phase            = static_cast<f64>(pos.pos.phase()) / 24.0;
       const f64 predicted_result = sigmoid(phase * dot_product_mg + (1.0 - phase) * dot_product_eg);
       const f64 prediction_error = predicted_result - pos.result;
 
       for (usize i = 0; i < params.size(); ++i) {
-        const f64 feature_count = mg[i] / params[i]->mg();
+        const f64 mg_feature_count = mg[i] / params[i]->mg();
+        const f64 eg_feature_count = eg[i] / params[i]->eg();
 
-        gradient_mg[i] += prediction_error * phase * feature_count;
-        gradient_eg[i] += prediction_error * (1.0 - phase) * feature_count;
+        gradient_mg[i] += prediction_error * phase * mg_feature_count;
+        gradient_eg[i] += prediction_error * (1.0 - phase) * eg_feature_count;
       }
 
       ++batch_pos;

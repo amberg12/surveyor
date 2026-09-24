@@ -129,8 +129,10 @@ public:
     return {m_mg_vector, m_eg_vector};
   }
 
-  friend auto operator+(const evaltune_pair& lhs, const evaltune_c& rhs) -> evaltune_pair {
-    return lhs + rhs.to_pair();
+  friend auto operator+(evaltune_pair& lhs, const evaltune_c& rhs) -> evaltune_pair {
+    lhs.m_mg_vector[rhs.idx()] += rhs.mg();
+    lhs.m_eg_vector[rhs.idx()] += rhs.eg();
+    return lhs;
   }
 
   friend auto operator+(const evaltune_pair& lhs, const evaltune_pair& rhs) -> evaltune_pair {
@@ -147,16 +149,25 @@ public:
   }
 
   friend auto operator+=(evaltune_pair& lhs, const evaltune_c& rhs) -> evaltune_pair {
-    return lhs += rhs.to_pair();
-  }
-
-  friend auto operator+=(evaltune_pair& lhs, const evaltune_pair& rhs) -> evaltune_pair {
-    lhs = lhs + rhs;
+    lhs.m_mg_vector[rhs.idx()] += rhs.mg();
+    lhs.m_eg_vector[rhs.idx()] += rhs.eg();
     return lhs;
   }
 
-  friend auto operator-(const evaltune_pair& lhs, const evaltune_c& rhs) -> evaltune_pair {
-    return lhs - rhs.to_pair();
+  friend auto operator+=(evaltune_pair& lhs, const evaltune_pair& rhs)
+    -> evaltune_pair& {
+    for (usize i = 0; i < lhs.m_mg_vector.size(); ++i) {
+      lhs.m_mg_vector[i] += rhs.m_mg_vector[i];
+      lhs.m_eg_vector[i] += rhs.m_eg_vector[i];
+    }
+
+    return lhs;
+  }
+
+  friend auto operator-(evaltune_pair& lhs, const evaltune_c& rhs) -> evaltune_pair {
+    lhs.m_mg_vector[rhs.idx()] -= rhs.mg();
+    lhs.m_eg_vector[rhs.idx()] -= rhs.eg();
+    return lhs;
   }
 
   friend auto operator-(const evaltune_pair& lhs, const evaltune_pair& rhs) -> evaltune_pair {
@@ -173,11 +184,18 @@ public:
   }
 
   friend auto operator-=(evaltune_pair& lhs, const evaltune_c& rhs) -> evaltune_pair {
-    return lhs -= rhs.to_pair();
+    lhs.m_mg_vector[rhs.idx()] -= rhs.mg();
+    lhs.m_eg_vector[rhs.idx()] -= rhs.eg();
+    return lhs;
   }
 
-  friend auto operator-=(evaltune_pair& lhs, const evaltune_pair& rhs) -> evaltune_pair {
-    lhs = lhs - rhs;
+  friend auto operator-=(evaltune_pair& lhs, const evaltune_pair& rhs)
+    -> evaltune_pair& {
+    for (usize i = 0; i < lhs.m_mg_vector.size(); ++i) {
+      lhs.m_mg_vector[i] -= rhs.m_mg_vector[i];
+      lhs.m_eg_vector[i] -= rhs.m_eg_vector[i];
+    }
+
     return lhs;
   }
 
