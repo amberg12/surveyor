@@ -22,12 +22,14 @@
 #include <cmath>
 #include <print>
 #include <random>
+#include <span>
+#include <utility>
 
 namespace surveyor_tuner {
 
 namespace {
 auto print_constant(const evaltune_c&              constant,
-                    std::string_view        name,
+                    std::string_view               name,
                     const std::vector<f64>& mg_vector,
                     const std::vector<f64>& eg_vector) -> void {
   const i32 mg = mg_vector[constant.idx()] * config::result_scale;
@@ -191,6 +193,54 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
     mg[p->idx()] = p->mg();
     eg[p->idx()] = p->eg();
   }
+
+  // --- Normalization Logic ---
+  // Calculates the mean of a feature array, zero-centers the array, and returns the mean.
+  auto normalize = [&](std::span<const evaltune_c> constants) -> std::pair<f64, f64> {
+    f64 sum_mg = 0.0;
+    f64 sum_eg = 0.0;
+
+    for (const evaltune_c& c : constants) {
+      sum_mg += mg[c.idx()];
+      sum_eg += eg[c.idx()];
+    }
+
+    const f64 mean_mg = sum_mg / static_cast<f64>(constants.size());
+    const f64 mean_eg = sum_eg / static_cast<f64>(constants.size());
+
+    for (const evaltune_c& c : constants) {
+      mg[c.idx()] -= mean_mg;
+      eg[c.idx()] -= mean_eg;
+    }
+
+    return {mean_mg, mean_eg};
+  };
+
+  auto [p_psqt_mg, p_psqt_eg] = normalize(pawn_psqt);
+  mg[pawn_material.idx()] += p_psqt_mg;
+  eg[pawn_material.idx()] += p_psqt_eg;
+
+  auto [n_mob_mg, n_mob_eg]   = normalize(knight_mobility);
+  auto [n_psqt_mg, n_psqt_eg] = normalize(knight_psqt);
+  mg[knight_material.idx()] += n_mob_mg + n_psqt_mg;
+  eg[knight_material.idx()] += n_mob_eg + n_psqt_eg;
+
+  auto [b_mob_mg, b_mob_eg]   = normalize(bishop_mobility);
+  auto [b_psqt_mg, b_psqt_eg] = normalize(bishop_psqt);
+  mg[bishop_material.idx()] += b_mob_mg + b_psqt_mg;
+  eg[bishop_material.idx()] += b_mob_eg + b_psqt_eg;
+
+  auto [r_mob_mg, r_mob_eg]   = normalize(rook_mobility);
+  auto [r_psqt_mg, r_psqt_eg] = normalize(rook_psqt);
+  mg[rook_material.idx()] += r_mob_mg + r_psqt_mg;
+  eg[rook_material.idx()] += r_mob_eg + r_psqt_eg;
+
+  auto [q_mob_mg, q_mob_eg]   = normalize(queen_mobility);
+  auto [q_psqt_mg, q_psqt_eg] = normalize(queen_psqt);
+  mg[queen_material.idx()] += q_mob_mg + q_psqt_mg;
+  eg[queen_material.idx()] += q_mob_eg + q_psqt_eg;
+
+  normalize(king_psqt);
 
   PRINT_CONSTANT(pawn_material, mg, eg);
   PRINT_CONSTANT(knight_material, mg, eg);
