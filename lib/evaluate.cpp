@@ -21,8 +21,8 @@ using namespace surveyor::evaluation_constants;
 
 namespace surveyor {
 namespace {
-auto evaluate_pieces(color stm, const position& pos) -> pair {
-  pair out{};
+auto evaluate_pieces(color stm, const position& pos) -> out_pair {
+  out_pair out{};
 
   const piece_mask ids = pos.mask(stm);
 
@@ -64,8 +64,8 @@ auto evaluate_pieces(color stm, const position& pos) -> pair {
   return out;
 }
 
-auto evaluate_pawns(color stm, const position& pos) -> pair {
-  pair out{};
+auto evaluate_pawns(color stm, const position& pos) -> out_pair {
+  out_pair out{};
 
   const piece_mask pawns = pos.ptype_mask(stm, piece_type::pawn());
 
@@ -127,8 +127,8 @@ auto evaluate_pawns(color stm, const position& pos) -> pair {
   return out;
 }
 
-auto evaluate_threats(color stm, const position& pos) -> pair {
-  pair out{};
+auto evaluate_threats(color stm, const position& pos) -> out_pair {
+  out_pair out{};
 
   for (const piece_id id : pos.ptype_mask(stm, piece_type::knight())) {
     const bitboard attack_bb = pos.threat_bb(stm, id);
@@ -161,12 +161,12 @@ auto evaluate_threats(color stm, const position& pos) -> pair {
   return out;
 }
 
-auto evaluate_bishop_pair(color stm, const position& pos) -> pair {
-  return pos.bb(stm, piece_type::bishop()).popcount() >= 2 ? bishop_pair : pair{};
+auto evaluate_bishop_pair(color stm, const position& pos) -> out_pair {
+  return pos.bb(stm, piece_type::bishop()).popcount() >= 2 ? bishop_pair : out_pair{};
 }
 
-auto evaluate_king_safety(color stm, const position& pos) -> pair {
-  pair out{};
+auto evaluate_king_safety(color stm, const position& pos) -> out_pair {
+  out_pair out{};
 
   const square king_sq  = pos.king_square(stm);
   const bool   lhs_king = king_sq.file() < 4;
@@ -200,8 +200,8 @@ auto evaluate_king_safety(color stm, const position& pos) -> pair {
 
 }
 
-auto evaluate_unnormalized(const position& pos) -> pair {
-  pair out{};
+auto evaluate_unnormalized(const position& pos) -> out_pair {
+  out_pair out{};
 
   out += evaluate_pieces(color::white(), pos);
   out -= evaluate_pieces(color::black(), pos);

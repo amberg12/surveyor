@@ -20,7 +20,7 @@
 #include "eval_types.h"
 
 namespace surveyor {
-auto evaluate_unnormalized(const position&) -> pair;
+auto evaluate_unnormalized(const position&) -> out_pair;
 auto evaluate(const position&) -> score;
 }  // namespace surveyor
 #endif  // SURVEYOR_EVALUATE_H
