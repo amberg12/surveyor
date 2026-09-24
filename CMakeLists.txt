@@ -5,7 +5,7 @@ option(BUILD_TOOLS "Build extra tooling binaries" OFF)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_library(surveyorcore
+set(SURVEYORCORE_SRCS
         lib/util/bit.h
         lib/util/bit_iterator.h
         lib/util/cast_iterator.h
@@ -21,6 +21,7 @@ add_library(surveyorcore
         lib/engine.cpp
         lib/engine.h
         lib/engine_output.h
+        lib/evaluate.cpp
         lib/evaluate.h
         lib/game.cpp
         lib/game.h
@@ -49,9 +50,27 @@ add_library(surveyorcore
         lib/zobrist.h
 )
 
+add_library(surveyorcore
+        ${SURVEYORCORE_SRCS}
+)
+
 target_include_directories(surveyorcore
         PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/lib/include
+)
+
+add_library(surveyorcore_tuner
+        ${SURVEYORCORE_SRCS}
+)
+
+target_include_directories(surveyorcore_tuner
+        PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/lib/include
+)
+
+target_compile_definitions(surveyorcore_tuner
+        PRIVATE
+        EVALTUNE
 )
 
 add_executable(surveyor
@@ -80,7 +99,7 @@ if (BUILD_TOOLS)
     )
 
     target_link_libraries(tuner
-            PRIVATE surveyorcore
+            PRIVATE surveyorcore_tuner
     )
 
     add_executable(datagen

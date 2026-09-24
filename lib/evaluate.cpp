@@ -14,13 +14,17 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef SURVEYOR_EVALUATE_H
-#define SURVEYOR_EVALUATE_H
-#include "position.h"
-#include "eval_types.h"
+#include "evaluate.h"
+#include "evaluation_constants.h"
 
 namespace surveyor {
-auto evaluate_unnormalized(const position&) -> pair;
-auto evaluate(const position&) -> score;
+
+auto evaluate_unnormalized(const position&) -> pair {
+  return {0, 0};
+}
+
+auto evaluate(const position& pos) -> score {
+  return evaluate_unnormalized(pos).phase(pos.phase());
+}
+
 }  // namespace surveyor
-#endif  // SURVEYOR_EVALUATE_H

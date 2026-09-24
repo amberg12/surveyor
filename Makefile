@@ -42,7 +42,7 @@ x86-64:
 	cp build/x86-64/$(CMAKE_EXE_OUT) ./$(EXE)
 
 tuner:
-	cmake -S . -B build/native \
+	cmake -S . -B build/tools \
 			$(GENERATOR) \
     		-DCMAKE_BUILD_TYPE=Release \
     		-DCMAKE_CXX_FLAGS="-march=native" \
@@ -52,7 +52,7 @@ tuner:
 	cp build/native/tuner ./surveyor-tuner
 
 datagen:
-	cmake -S . -B build/native \
+	cmake -S . -B build/tools \
 			$(GENERATOR) \
     		-DCMAKE_BUILD_TYPE=Release \
     		-DCMAKE_CXX_FLAGS="-march=native" \
