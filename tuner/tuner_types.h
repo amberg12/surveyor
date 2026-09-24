@@ -16,8 +16,8 @@
 
 #ifndef SURVEYOR_TUNER_TYPES_H
 #define SURVEYOR_TUNER_TYPES_H
-#include "config.h"
 #include "../lib/util/integer.h"
+#include "config.h"
 
 #include <functional>
 #include <ranges>
@@ -29,6 +29,9 @@ using namespace surveyor;
 
 class evaltune_pair;
 
+class evaltune_pair;
+class evaltune_c;  // forward declaration
+
 class globals {
 public:
   static auto get() -> globals& {
@@ -36,7 +39,8 @@ public:
     return instance;
   }
 
-  [[nodiscard]] auto register_param() -> usize {
+  [[nodiscard]] auto register_param(evaltune_c* param) -> usize {
+    m_evaltune_params.push_back(param);
     return m_params++;
   }
 
@@ -44,18 +48,28 @@ public:
     return m_params;
   }
 
+  [[nodiscard]] auto evaltune_params() const -> const std::vector<evaltune_c*>& {
+    return m_evaltune_params;
+  }
+
 private:
-  usize m_params{};
+  usize                    m_params{};
+  std::vector<evaltune_c*> m_evaltune_params;
 };
 
 class evaltune_c {
 public:
   static auto create(i32 mg, i32 eg) -> evaltune_c {
-    const usize idx      = globals::get().register_param();
-    const f64   mg_prime = static_cast<f64>(mg) / config::result_scale;
-    const f64   eg_prime = static_cast<f64>(eg) / config::result_scale;
-    return evaltune_c{mg_prime, eg_prime, idx};
+    const f64 mg_prime = static_cast<f64>(mg) / config::result_scale;
+    const f64 eg_prime = static_cast<f64>(eg) / config::result_scale;
+    return evaltune_c{mg_prime, eg_prime};  // prvalue: constructed directly in the caller's storage
   }
+
+  // The registered pointer must remain valid, so the object can't be copied or moved.
+  evaltune_c(const evaltune_c&)                    = delete;
+  evaltune_c(evaltune_c&&)                         = delete;
+  auto operator=(const evaltune_c&) -> evaltune_c& = delete;
+  auto operator=(evaltune_c&&) -> evaltune_c&      = delete;
 
   [[nodiscard]] inline auto to_pair() const -> evaltune_pair;
 
@@ -63,11 +77,24 @@ public:
     return m_idx;
   }
 
+  [[nodiscard]] auto mg() const -> f64 {
+    return m_mg;
+  }
+
+  [[nodiscard]] auto eg() const -> f64 {
+    return m_eg;
+  }
+
+  auto set(f64 mg, f64 eg) const -> void {
+    m_mg = mg;
+    m_eg = eg;
+  }
+
 private:
-  evaltune_c(f64 mg, f64 eg, usize idx)
+  evaltune_c(f64 mg, f64 eg)
       : m_mg{mg}
       , m_eg{eg}
-      , m_idx{idx} {
+      , m_idx{globals::get().register_param(this)} {
   }
 
   mutable f64 m_mg{};

@@ -17,13 +17,16 @@
 #include "tune_evaluation.h"
 
 #include "../lib/evaluation_constants.h"
+#include "util/math.h"
 
+#include <cmath>
 #include <print>
+#include <random>
 
 namespace surveyor_tuner {
 
 namespace {
-auto print_constant(evaltune_c              constant,
+auto print_constant(const evaltune_c&              constant,
                     std::string_view        name,
                     const std::vector<f64>& mg_vector,
                     const std::vector<f64>& eg_vector) -> void {
@@ -43,7 +46,7 @@ auto print_array(std::span<const evaltune_c> constants,
 
   std::print("  ");
 
-  for (const auto constant : constants) {
+  for (const auto& constant : constants) {
     const i32 mg = mg_vector[constant.idx()] * config::result_scale;
     const i32 eg = eg_vector[constant.idx()] * config::result_scale;
 
@@ -66,7 +69,7 @@ auto print_psqt(std::span<const evaltune_c> constants,
     std::print("  ");
 
     for (usize file = 0; file < 8; ++file) {
-      const auto constant = constants[rank * 8 + file];
+      const auto& constant = constants[rank * 8 + file];
       const i32 mg = mg_vector[constant.idx()] * config::result_scale;
       const i32 eg = eg_vector[constant.idx()] * config::result_scale;
 
@@ -80,15 +83,113 @@ auto print_psqt(std::span<const evaltune_c> constants,
 }
 
 #define PRINT_PSQT(name, mg_vector, eg_vector) print_psqt(name, #name, mg_vector, eg_vector)
+
+auto calculate_local_learning_rate(f64 min, f64 max, usize step_counter, usize period_length)
+  -> f64 {
+  return min
+    + (max - min) * 0.5
+    * (1.0
+       + std::cos(std::numbers::pi * f64{static_cast<f64>(step_counter)}
+                  / f64{static_cast<f64>(period_length)}));
+}
 }  // namespace
 
 auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   using namespace surveyor::evaluation_constants;
 
-  const position& pos = dataset[0].pos;
-  auto            x   = evaluate_unnormalized(pos);
+  namespace rg = std::ranges;
+  namespace rv = std::views;
 
-  const auto [mg, eg] = x.to_vector();
+  std::mt19937_64 rng(std::random_device{}());
+
+  usize step_counter  = 0;
+  usize period_length = config::initial_period_length;
+
+  f64 learning_rate_max = config::initial_learning_rate_max;
+  f64 learning_rate_min = config::initial_learning_rate_min;
+
+  const auto feature_array = []<typename T>{
+    const auto s = globals::get().params();
+    return std::vector<T>(s, T{});
+  };
+
+  auto momentum_mg = feature_array.operator()<f64>();
+  auto momentum_eg = feature_array.operator()<f64>();
+
+  const auto& params = globals::get().evaltune_params();
+
+  for (const usize epoch : rv::iota(usize{0}, config::epochs)) {
+    rg::shuffle(dataset, rng);
+
+    if (step_counter == period_length) {
+      period_length *= 2;
+      step_counter = 0;
+
+      learning_rate_max *= 0.95;
+      learning_rate_min *= 0.95;
+
+      momentum_mg = {};
+      momentum_eg = {};
+    }
+
+    step_counter += 1;
+
+    const f64 local_learning_rate = calculate_local_learning_rate(
+      learning_rate_min, learning_rate_max, step_counter, period_length);
+
+    auto gradient_mg = feature_array.operator()<f64>();
+    auto gradient_eg = feature_array.operator()<f64>();
+
+    i32 batch_pos = 0;
+
+    for (tuner_position& pos : dataset) {
+      const auto [mg, eg] = evaluate_unnormalized(pos.pos).to_vector();
+
+      const f64 dot_product_mg = std::ranges::fold_left(mg, 0.0, std::plus{});
+      const f64 dot_product_eg = std::ranges::fold_left(mg, 0.0, std::plus{});
+
+      const f64 phase            = static_cast<f64>(pos.pos.phase()) / 24.0;
+      const f64 predicted_result = sigmoid(phase * dot_product_mg + (1.0 - phase) * dot_product_eg);
+      const f64 prediction_error = predicted_result - pos.result;
+
+      for (usize i = 0; i < params.size(); ++i) {
+        const f64 feature_count = mg[i] / params[i]->mg();
+
+        gradient_mg[i] += prediction_error * phase * feature_count;
+        gradient_eg[i] += prediction_error * (1.0 - phase) * feature_count;
+      }
+
+      ++batch_pos;
+
+      if (batch_pos == config::batch_size || &pos == &dataset.back()) {
+        const f64 inv_batch = 1.0 / static_cast<f64>(batch_pos);
+
+        for (auto [param, gmg, geg, mmg, meg] :
+             rv::zip(params, gradient_mg, gradient_eg, momentum_mg, momentum_eg)) {
+          const f64 avg_gmg = gmg * inv_batch + config::lambda * param->mg();
+          const f64 avg_geg = geg * inv_batch + config::lambda * param->eg();
+
+          mmg = config::mu * mmg + avg_gmg;
+          meg = config::mu * meg + avg_geg;
+
+          param->set(param->mg() - mmg * local_learning_rate,
+                     param->eg() - meg * local_learning_rate);
+             }
+
+        rg::fill(gradient_mg, 0.0);
+        rg::fill(gradient_eg, 0.0);
+        batch_pos = 0;
+      }
+    }
+
+    std::println("epoch {}/{}", epoch + 1, config::epochs);
+  }
+
+  std::vector<f64> mg(params.size()), eg(params.size());
+  for (const evaltune_c* p : params) {
+    mg[p->idx()] = p->mg();
+    eg[p->idx()] = p->eg();
+  }
 
   PRINT_CONSTANT(pawn_material, mg, eg);
   PRINT_CONSTANT(knight_material, mg, eg);
