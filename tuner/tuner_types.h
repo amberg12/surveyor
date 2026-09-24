@@ -59,6 +59,10 @@ public:
 
   [[nodiscard]] inline auto to_pair() const -> evaltune_pair;
 
+  [[nodiscard]] auto idx() const -> usize {
+    return m_idx;
+  }
+
 private:
   evaltune_c(f64 mg, f64 eg, usize idx)
       : m_mg{mg}
