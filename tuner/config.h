@@ -20,7 +20,7 @@
 #include <cstdint>
 namespace surveyor_tuner::config {
 
-constexpr size_t  epochs                    = 30;
+constexpr size_t  epochs                    = 20;
 constexpr size_t  initial_period_length     = 10;
 constexpr size_t  batch_size                = 32;
 constexpr double  initial_learning_rate_max = 0.01;
