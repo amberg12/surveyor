@@ -47,7 +47,7 @@ public:
     if (current_fen == total_fens) {
       const u64 nps = time::nps(total_nodes, time::clock::now() - start_time);
       std::println();
-      std::println("nodes {} nps {}", total_nodes, nps);
+      std::println("{} nodes {} nps", total_nodes, nps);
     }
   }
 };
