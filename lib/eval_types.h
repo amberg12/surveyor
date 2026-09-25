@@ -20,7 +20,7 @@
 #include "util/integer.h"
 
 #ifdef EVALTUNE
-#include "./../tuner/tuner_types.h"
+  #include "./../tuner/tuner_types.h"
 using namespace surveyor_tuner;
 #endif
 
@@ -32,14 +32,16 @@ using pair = evaltune_c;
 
 using out_pair = evaltune_pair;
 
-#define S(mg, eg) evaltune_c::create(mg, eg)
+  #define S(mg, eg) evaltune_c::create(mg, eg)
 
 #else
 class pair {
 public:
   constexpr pair() = default;
 
-  constexpr pair(i32 mg, i32 eg) : m_mg(mg), m_eg(eg) {
+  constexpr pair(i32 mg, i32 eg)
+      : m_mg(mg)
+      , m_eg(eg) {
   }
 
   [[nodiscard]] constexpr auto mg() const {
@@ -54,7 +56,7 @@ public:
     return {lhs.m_mg + rhs.m_mg, lhs.m_eg + rhs.m_eg};
   }
 
-  friend auto operator += (pair& lhs, const pair& rhs) -> pair {
+  friend auto operator+=(pair& lhs, const pair& rhs) -> pair {
     lhs = lhs + rhs;
     return lhs;
   }
@@ -66,6 +68,10 @@ public:
   friend auto operator-=(pair& lhs, const pair& rhs) -> pair {
     lhs = lhs - rhs;
     return lhs;
+  }
+
+  friend auto operator*(const pair& lhs, std::integral auto rhs) -> pair {
+    return {lhs.m_mg * rhs, lhs.m_eg * rhs};
   }
 
   friend auto operator-(const pair& p) -> pair {
@@ -85,11 +91,11 @@ private:
 
 using out_pair = pair;
 
-#define S(mg, eg) pair(mg, eg)
+  #define S(mg, eg) pair(mg, eg)
 
 #endif
 
-}
+}  // namespace surveyor
 
 
 #endif  // SURVEYOR_EVAL_TYPES_H

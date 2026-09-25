@@ -15,6 +15,7 @@
  */
 
 #include "evaluate.h"
+
 #include "evaluation_constants.h"
 
 using namespace surveyor::evaluation_constants;
@@ -120,7 +121,7 @@ auto evaluate_pawns(color stm, const position& pos) -> out_pair {
   const auto lhs_defend = pawn_bb.shift(geometry::pawn_direction(stm)).shift(geometry::w_orth);
   const auto rhs_defend = pawn_bb.shift(geometry::pawn_direction(stm)).shift(geometry::e_orth);
 
-  for (const auto sq : pawn_bb & (lhs_defend | rhs_defend)) {
+  for (const auto sq : pawn_bb&(lhs_defend | rhs_defend)) {
     out += defended_pawn[sq.relative_rank(stm) - 2];
   }
 
@@ -132,31 +133,42 @@ auto evaluate_threats(color stm, const position& pos) -> out_pair {
 
   for (const piece_id id : pos.ptype_mask(stm, piece_type::knight())) {
     const bitboard attack_bb = pos.threat_bb(stm, id);
-    const i32 mobility = (attack_bb & ~pos.bb()).ipopcount();
+    const i32      mobility  = (attack_bb & ~pos.bb()).ipopcount();
 
     out += knight_mobility[mobility];
   }
 
   for (const piece_id id : pos.ptype_mask(stm, piece_type::bishop())) {
     const bitboard attack_bb = pos.threat_bb(stm, id);
-    const i32 mobility = (attack_bb & ~pos.bb()).ipopcount();
+    const i32      mobility  = (attack_bb & ~pos.bb()).ipopcount();
 
     out += bishop_mobility[mobility];
   }
 
   for (const piece_id id : pos.ptype_mask(stm, piece_type::rook())) {
     const bitboard attack_bb = pos.threat_bb(stm, id);
-    const i32 mobility = (attack_bb & ~pos.bb()).ipopcount();
+    const i32      mobility  = (attack_bb & ~pos.bb()).ipopcount();
 
     out += rook_mobility[mobility];
   }
 
   for (const piece_id id : pos.ptype_mask(stm, piece_type::queen())) {
     const bitboard attack_bb = pos.threat_bb(stm, id);
-    const i32 mobility = (attack_bb & ~pos.bb()).ipopcount();
+    const i32      mobility  = (attack_bb & ~pos.bb()).ipopcount();
 
     out += queen_mobility[mobility];
   }
+
+  const auto pawn_bb    = pos.bb(stm, piece_type::pawn());
+  const auto lhs_defend = pawn_bb.shift(geometry::pawn_direction(stm)).shift(geometry::w_orth);
+  const auto rhs_defend = pawn_bb.shift(geometry::pawn_direction(stm)).shift(geometry::e_orth);
+
+  const auto pawn_threats = lhs_defend | rhs_defend;
+
+  out += pawn_threat_knight * (pos.bb(~stm, piece_type::knight()) & pawn_threats).ipopcount();
+  out += pawn_threat_bishop * (pos.bb(~stm, piece_type::bishop()) & pawn_threats).ipopcount();
+  out += pawn_threat_rook * (pos.bb(~stm, piece_type::rook()) & pawn_threats).ipopcount();
+  out += pawn_threat_queen * (pos.bb(~stm, piece_type::queen()) & pawn_threats).ipopcount();
 
   return out;
 }
@@ -198,7 +210,7 @@ auto evaluate_king_safety(color stm, const position& pos) -> out_pair {
   return out;
 }
 
-}
+}  // namespace
 
 auto evaluate_unnormalized(const position& pos) -> out_pair {
   out_pair out{};

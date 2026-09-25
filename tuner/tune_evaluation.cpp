@@ -56,7 +56,7 @@ auto print_array(std::span<const evaltune_c> constants,
   }
 
   std::println();
-  std::println("}}");
+  std::println("}};");
 }
 
 #define PRINT_ARRAY(name, mg_vector, eg_vector) print_array(name, #name, mg_vector, eg_vector)
@@ -261,31 +261,28 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   PRINT_CONSTANT(bishop_material, mg, eg);
   PRINT_CONSTANT(rook_material, mg, eg);
   PRINT_CONSTANT(queen_material, mg, eg);
-  PRINT_CONSTANT(bishop_pair, mg, eg);
-
   std::println();
-
+  PRINT_CONSTANT(bishop_pair, mg, eg);
+  std::println();
   PRINT_ARRAY(knight_mobility, mg, eg);
   PRINT_ARRAY(bishop_mobility, mg, eg);
   PRINT_ARRAY(rook_mobility, mg, eg);
   PRINT_ARRAY(queen_mobility, mg, eg);
-
   std::println();
-
+  PRINT_CONSTANT(pawn_threat_knight, mg, eg);
+  PRINT_CONSTANT(pawn_threat_bishop, mg, eg);
+  PRINT_CONSTANT(pawn_threat_rook, mg, eg);
+  PRINT_CONSTANT(pawn_threat_queen, mg, eg);
+  std::println();
   PRINT_CONSTANT(isolated_pawn, mg, eg);
-
   PRINT_ARRAY(passed_pawn, mg, eg);
   PRINT_ARRAY(defended_passed_pawn, mg, eg);
   PRINT_ARRAY(defended_pawn, mg, eg);
-
   std::println();
-
   PRINT_ARRAY(shelter_centre, mg, eg);
   PRINT_ARRAY(shelter_mid, mg, eg);
   PRINT_ARRAY(shelter_edge, mg, eg);
-
   std::println();
-
   PRINT_PSQT(pawn_psqt, mg, eg);
   PRINT_PSQT(knight_psqt, mg, eg);
   PRINT_PSQT(bishop_psqt, mg, eg);
