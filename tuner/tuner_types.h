@@ -19,6 +19,7 @@
 #include "../lib/util/integer.h"
 #include "config.h"
 
+#include <algorithm>
 #include <functional>
 #include <ranges>
 #include <utility>
@@ -90,6 +91,8 @@ public:
     m_eg = eg;
   }
 
+  friend auto operator*(const evaltune_c& lhs, std::integral auto rhs) -> evaltune_pair;
+
 private:
   evaltune_c(f64 mg, f64 eg)
       : m_mg{mg}
@@ -154,8 +157,7 @@ public:
     return lhs;
   }
 
-  friend auto operator+=(evaltune_pair& lhs, const evaltune_pair& rhs)
-    -> evaltune_pair& {
+  friend auto operator+=(evaltune_pair& lhs, const evaltune_pair& rhs) -> evaltune_pair& {
     for (usize i = 0; i < lhs.m_mg_vector.size(); ++i) {
       lhs.m_mg_vector[i] += rhs.m_mg_vector[i];
       lhs.m_eg_vector[i] += rhs.m_eg_vector[i];
@@ -189,8 +191,7 @@ public:
     return lhs;
   }
 
-  friend auto operator-=(evaltune_pair& lhs, const evaltune_pair& rhs)
-    -> evaltune_pair& {
+  friend auto operator-=(evaltune_pair& lhs, const evaltune_pair& rhs) -> evaltune_pair& {
     for (usize i = 0; i < lhs.m_mg_vector.size(); ++i) {
       lhs.m_mg_vector[i] -= rhs.m_mg_vector[i];
       lhs.m_eg_vector[i] -= rhs.m_eg_vector[i];
@@ -201,6 +202,22 @@ public:
 
   friend auto operator-(const evaltune_pair& p) -> evaltune_pair {
     return evaltune_pair{} - p;
+  }
+
+  friend auto operator*(const evaltune_pair& lhs, std::integral auto rhs) -> evaltune_pair {
+    namespace rg = std::ranges;
+
+    auto lhs_prime = lhs;
+
+    rg::for_each(lhs_prime.m_mg_vector, [rhs](f64& x) {
+      x *= rhs;
+    });
+
+    rg::for_each(lhs_prime.m_eg_vector, [rhs](f64& x) {
+      x *= rhs;
+    });
+
+    return lhs_prime;
   }
 
   [[nodiscard]] static auto phase(i32) -> i16 {
@@ -214,6 +231,12 @@ private:
 inline auto evaltune_c::to_pair() const -> evaltune_pair {
   return evaltune_pair{m_mg, m_eg, m_idx};
 }
+
+auto operator*(const evaltune_c& lhs, std::integral auto rhs) -> evaltune_pair {
+  const f64 feature_count = static_cast<f64>(rhs);
+  return evaltune_pair{feature_count, feature_count, lhs.idx()};
+}
+
 
 }  // namespace surveyor_tuner
 
