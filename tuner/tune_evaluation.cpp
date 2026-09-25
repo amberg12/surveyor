@@ -16,153 +16,93 @@
 
 #include "tune_evaluation.h"
 
-#include "config.h"
+#include "../lib/evaluation_constants.h"
 #include "util/math.h"
 
 #include <cmath>
 #include <print>
 #include <random>
+#include <span>
+#include <utility>
 
 namespace surveyor_tuner {
+
 namespace {
-namespace features {
-struct f {
-  std::string_view name;
-  usize            idx;
-  usize            cnt;
-};
+auto print_constant(const evaltune_c&              constant,
+                    std::string_view               name,
+                    const std::vector<f64>& mg_vector,
+                    const std::vector<f64>& eg_vector) -> void {
+  const i32 mg = mg_vector[constant.idx()] * config::result_scale;
+  const i32 eg = eg_vector[constant.idx()] * config::result_scale;
 
-#define CREATE_FEATURE(name, idx, cnt) constexpr f name = {#name, idx, cnt};
+  std::println("inline const pair {} = S({}, {});", name, mg, eg);
+}
 
-CREATE_FEATURE(pawn_material, 0, 1)
-CREATE_FEATURE(knight_material, pawn_material.idx + pawn_material.cnt, 1)
-CREATE_FEATURE(bishop_material, knight_material.idx + knight_material.cnt, 1)
-CREATE_FEATURE(rook_material, bishop_material.idx + bishop_material.cnt, 1)
-CREATE_FEATURE(queen_material, rook_material.idx + rook_material.cnt, 1)
-CREATE_FEATURE(pawn_psqt, queen_material.idx + queen_material.cnt, 64)
-CREATE_FEATURE(knight_psqt, pawn_psqt.idx + pawn_psqt.cnt, 64)
-CREATE_FEATURE(bishop_psqt, knight_psqt.idx + knight_psqt.cnt, 64)
-CREATE_FEATURE(rook_psqt, bishop_psqt.idx + bishop_psqt.cnt, 64)
-CREATE_FEATURE(queen_psqt, rook_psqt.idx + rook_psqt.cnt, 64)
-CREATE_FEATURE(king_psqt, queen_psqt.idx + queen_psqt.cnt, 64)
-CREATE_FEATURE(bishop_pair, king_psqt.idx + king_psqt.cnt, 1)
-CREATE_FEATURE(knight_mobility, bishop_pair.idx + bishop_pair.cnt, 9);
-CREATE_FEATURE(bishop_mobility, knight_mobility.idx + knight_mobility.cnt, 14);
-CREATE_FEATURE(rook_mobility, bishop_mobility.idx + bishop_mobility.cnt, 15);
-CREATE_FEATURE(queen_mobility, rook_mobility.idx + rook_mobility.cnt, 28);
-CREATE_FEATURE(passed_pawn, queen_mobility.idx + queen_mobility.cnt, 8)
-CREATE_FEATURE(defended_passed_pawn, passed_pawn.idx + passed_pawn.cnt, 8);
-CREATE_FEATURE(isolated_pawn, defended_passed_pawn.idx + defended_passed_pawn.cnt, 1);
-CREATE_FEATURE(defended_pawn, isolated_pawn.idx + isolated_pawn.cnt, 8);
-CREATE_FEATURE(shelter_edge, defended_pawn.idx + defended_pawn.cnt, 8)
-CREATE_FEATURE(shelter_mid, shelter_edge.idx + shelter_edge.cnt, 8)
-CREATE_FEATURE(shelter_centre, shelter_mid.idx + shelter_mid.cnt, 8)
+#define PRINT_CONSTANT(name, mg_vector, eg_vector) print_constant(name, #name, mg_vector, eg_vector)
 
-#undef CREATE_FEATURE
+auto print_array(std::span<const evaltune_c> constants,
+                 std::string_view            name,
+                 const std::vector<f64>&     mg_vector,
+                 const std::vector<f64>&     eg_vector) -> void {
+  std::println("inline const std::array {} = {{", name);
 
-}  // namespace features
+  std::print("  ");
 
-constexpr usize feature_count = features::shelter_centre.idx + features::shelter_centre.cnt;
+  for (const auto& constant : constants) {
+    const i32 mg = mg_vector[constant.idx()] * config::result_scale;
+    const i32 eg = eg_vector[constant.idx()] * config::result_scale;
 
-template<typename T>
-using feature_array = std::array<T, feature_count>;
+    std::print("S({}, {}), ", mg, eg);
+  }
+
+  std::println();
+  std::println("}}");
+}
+
+#define PRINT_ARRAY(name, mg_vector, eg_vector) print_array(name, #name, mg_vector, eg_vector)
+
+auto print_psqt(std::span<const evaltune_c> constants,
+                std::string_view            name,
+                const std::vector<f64>&     mg_vector,
+                const std::vector<f64>&     eg_vector) -> void {
+  std::println("inline const std::array {} = {{", name);
+
+  for (usize rank = 0; rank < constants.size() / 8; ++rank) {
+    std::print("  ");
+
+    for (usize file = 0; file < 8; ++file) {
+      const auto& constant = constants[rank * 8 + file];
+      const i32 mg = mg_vector[constant.idx()] * config::result_scale;
+      const i32 eg = eg_vector[constant.idx()] * config::result_scale;
+
+      std::print("S({:>4}, {:>4}), ", mg, eg);
+    }
+
+    std::println();
+  }
+
+  std::println("}};");
+}
+
+#define PRINT_PSQT(name, mg_vector, eg_vector) print_psqt(name, #name, mg_vector, eg_vector)
 
 auto calculate_local_learning_rate(f64 min, f64 max, usize step_counter, usize period_length)
   -> f64 {
   return min
     + (max - min) * 0.5
     * (1.0
-       + std::cos(std::numbers::pi * f64{static_cast<double>(step_counter)}
-                  / f64{static_cast<double>(period_length)}));
-}
-
-auto extract_features(const position& pos) -> feature_array<i8> {
-  feature_array<i8> out{};
-
-  struct extractor {
-    const position&    e_pos;
-    feature_array<i8>& backing_array;
-
-    auto sgn(color stm) const -> i8 {
-      return stm == e_pos.stm() ? 1 : -1;
-    }
-
-#define SURVEYOR_TRACE_VALUE(name)                 \
-  auto trace_##name(color stm) -> void {           \
-    backing_array[features::name.idx] += sgn(stm); \
-  }
-
-#define SURVEYOR_TRACE_SQUARE(name)                          \
-  auto trace_##name(color stm, square sq) -> void {          \
-    const square rel = sq.relative(stm);                     \
-    backing_array[features::name.idx + rel.idx] += sgn(stm); \
-  }
-
-#define SURVEYOR_TRACE_NUMBER(name)                    \
-  auto trace_##name(color stm, i32 n) -> void {        \
-    backing_array[features::name.idx + n] += sgn(stm); \
-  }
-
-    SURVEYOR_TRACE_VALUE(pawn_material)
-    SURVEYOR_TRACE_VALUE(knight_material)
-    SURVEYOR_TRACE_VALUE(bishop_material)
-    SURVEYOR_TRACE_VALUE(rook_material)
-    SURVEYOR_TRACE_VALUE(queen_material)
-    SURVEYOR_TRACE_SQUARE(pawn_psqt)
-    SURVEYOR_TRACE_SQUARE(knight_psqt)
-    SURVEYOR_TRACE_SQUARE(bishop_psqt)
-    SURVEYOR_TRACE_SQUARE(rook_psqt)
-    SURVEYOR_TRACE_SQUARE(queen_psqt)
-    SURVEYOR_TRACE_SQUARE(king_psqt)
-    SURVEYOR_TRACE_VALUE(bishop_pair)
-    SURVEYOR_TRACE_NUMBER(knight_mobility)
-    SURVEYOR_TRACE_NUMBER(bishop_mobility)
-    SURVEYOR_TRACE_NUMBER(rook_mobility)
-    SURVEYOR_TRACE_NUMBER(queen_mobility)
-    SURVEYOR_TRACE_NUMBER(passed_pawn)
-    SURVEYOR_TRACE_NUMBER(defended_passed_pawn)
-    SURVEYOR_TRACE_VALUE(isolated_pawn)
-    SURVEYOR_TRACE_NUMBER(defended_pawn)
-    SURVEYOR_TRACE_NUMBER(shelter_edge)
-    SURVEYOR_TRACE_NUMBER(shelter_mid)
-    SURVEYOR_TRACE_NUMBER(shelter_centre)
-
-#undef SURVEYOR_TRACE_VALUE
-#undef SURVEYOR_TRACE_SQUARE
-#undef SURVEYOR_TRACE_NUMBER
-  };
-
-  extractor e{pos, out};
-  trace_eval(pos, e);
-
-  return out;
-}
-
-auto print_feature(features::f feat, feature_array<f64> mg, feature_array<f64> eg) {
-  if (feat.cnt == 1) {
-    const i32 mg_score = mg[feat.idx] * config::result_scale;
-    const i32 eg_score = eg[feat.idx] * config::result_scale;
-    std::println("constexpr std::pair<score, score> {} = {{{}, {}}};", feat.name, mg_score,
-                 eg_score);
-  } else {
-    std::print("constexpr std::array<std::pair<score, score>, {}> {} = {{{{", feat.cnt, feat.name);
-
-    for (i32 i = 0; i < feat.cnt; ++i) {
-      const i32 mg_score = mg[feat.idx + i] * config::result_scale;
-      const i32 eg_score = eg[feat.idx + i] * config::result_scale;
-      std::print("{{{}, {}}}, ", mg_score, eg_score);
-    }
-
-    std::println("}}}};");
-  }
+       + std::cos(std::numbers::pi * f64{static_cast<f64>(step_counter)}
+                  / f64{static_cast<f64>(period_length)}));
 }
 }  // namespace
 
 auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
-  namespace rg = std::ranges;
-  namespace rv = std::ranges::views;
+  using namespace surveyor::evaluation_constants;
 
-  std::mt19937 rng(std::random_device{}());
+  namespace rg = std::ranges;
+  namespace rv = std::views;
+
+  std::mt19937_64 rng(std::random_device{}());
 
   usize step_counter  = 0;
   usize period_length = config::initial_period_length;
@@ -170,11 +110,15 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   f64 learning_rate_max = config::initial_learning_rate_max;
   f64 learning_rate_min = config::initial_learning_rate_min;
 
-  feature_array<f64> momentum_mg{};
-  feature_array<f64> momentum_eg{};
+  const auto feature_array = []<typename T>{
+    const auto s = globals::get().params();
+    return std::vector<T>(s, T{});
+  };
 
-  feature_array<f64> weight_mg{};
-  feature_array<f64> weight_eg{};
+  auto momentum_mg = feature_array.operator()<f64>();
+  auto momentum_eg = feature_array.operator()<f64>();
+
+  const auto& params = globals::get().evaltune_params();
 
   for (const usize epoch : rv::iota(usize{0}, config::epochs)) {
     rg::shuffle(dataset, rng);
@@ -195,70 +139,159 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
     const f64 local_learning_rate = calculate_local_learning_rate(
       learning_rate_min, learning_rate_max, step_counter, period_length);
 
-    feature_array<f64> gradient_mg{};
-    feature_array<f64> gradient_eg{};
+    auto gradient_mg = feature_array.operator()<f64>();
+    auto gradient_eg = feature_array.operator()<f64>();
 
     i32 batch_pos = 0;
 
     for (tuner_position& pos : dataset) {
-      const feature_array<i8> feature_vector = extract_features(pos.pos);
+      const auto [mg, eg] = evaluate_unnormalized(pos.pos).to_vector();
 
-      const f64 dot_product_mg = dot_product(feature_vector, weight_mg);
-      const f64 dot_product_eg = dot_product(feature_vector, weight_eg);
+      const f64 dot_product_mg = [&] {
+        f64 out = 0;
+
+        for (i32 i = 0; i < mg.size(); ++i) {
+          out += mg[i] * params[i]->mg();
+        }
+
+        return out;
+      }();
+
+      const f64 dot_product_eg = [&] {
+        f64 out = 0;
+
+        for (i32 i = 0; i < eg.size(); ++i) {
+          out += eg[i] * params[i]->eg();
+        }
+
+        return out;
+      }();
 
       const f64 phase            = static_cast<f64>(pos.pos.phase()) / 24.0;
       const f64 predicted_result = sigmoid(phase * dot_product_mg + (1.0 - phase) * dot_product_eg);
       const f64 prediction_error = predicted_result - pos.result;
 
-      for (auto [gmg, geg, feat] : rv::zip(gradient_mg, gradient_eg, feature_vector)) {
-        gmg += prediction_error * phase * feat;
-        geg += prediction_error * (1.0 - phase) * feat;
+      for (usize i = 0; i < params.size(); ++i) {
+        gradient_mg[i] += prediction_error * phase * mg[i];
+        gradient_eg[i] += prediction_error * (1.0 - phase) * eg[i];
       }
 
       ++batch_pos;
 
       if (batch_pos == config::batch_size || &pos == &dataset.back()) {
-        for (auto [gmg, geg, mmg, meg, wmg, weg] :
-             rv::zip(gradient_mg, gradient_eg, momentum_mg, momentum_eg, weight_mg, weight_eg)) {
-          const f64 avg_gmg = gmg / static_cast<f64>(batch_pos) + config::lambda * wmg;
-          const f64 avg_geg = geg / static_cast<f64>(batch_pos) + config::lambda * weg;
-          mmg               = config::mu * mmg + avg_gmg;
-          meg               = config::mu * meg + avg_geg;
-          wmg -= mmg * local_learning_rate;
-          weg -= meg * local_learning_rate;
-        }
+        const f64 inv_batch = 1.0 / static_cast<f64>(batch_pos);
 
-        gradient_mg = {};
-        gradient_eg = {};
-        batch_pos   = 0;
+        for (auto [param, gmg, geg, mmg, meg] :
+             rv::zip(params, gradient_mg, gradient_eg, momentum_mg, momentum_eg)) {
+          const f64 avg_gmg = gmg * inv_batch + config::lambda * param->mg();
+          const f64 avg_geg = geg * inv_batch + config::lambda * param->eg();
+
+          mmg = config::mu * mmg + avg_gmg;
+          meg = config::mu * meg + avg_geg;
+
+          param->set(param->mg() - mmg * local_learning_rate,
+                     param->eg() - meg * local_learning_rate);
+             }
+
+        rg::fill(gradient_mg, 0.0);
+        rg::fill(gradient_eg, 0.0);
+        batch_pos = 0;
       }
     }
 
     std::println("epoch {}/{}", epoch + 1, config::epochs);
   }
 
-  print_feature(features::pawn_material, weight_mg, weight_eg);
-  print_feature(features::knight_material, weight_mg, weight_eg);
-  print_feature(features::bishop_material, weight_mg, weight_eg);
-  print_feature(features::rook_material, weight_mg, weight_eg);
-  print_feature(features::queen_material, weight_mg, weight_eg);
-  print_feature(features::pawn_psqt, weight_mg, weight_eg);
-  print_feature(features::knight_psqt, weight_mg, weight_eg);
-  print_feature(features::bishop_psqt, weight_mg, weight_eg);
-  print_feature(features::rook_psqt, weight_mg, weight_eg);
-  print_feature(features::queen_psqt, weight_mg, weight_eg);
-  print_feature(features::king_psqt, weight_mg, weight_eg);
-  print_feature(features::bishop_pair, weight_mg, weight_eg);
-  print_feature(features::knight_mobility, weight_mg, weight_eg);
-  print_feature(features::bishop_mobility, weight_mg, weight_eg);
-  print_feature(features::rook_mobility, weight_mg, weight_eg);
-  print_feature(features::queen_mobility, weight_mg, weight_eg);
-  print_feature(features::passed_pawn, weight_mg, weight_eg);
-  print_feature(features::defended_passed_pawn, weight_mg, weight_eg);
-  print_feature(features::isolated_pawn, weight_mg, weight_eg);
-  print_feature(features::defended_pawn, weight_mg, weight_eg);
-  print_feature(features::shelter_centre, weight_mg, weight_eg);
-  print_feature(features::shelter_mid, weight_mg, weight_eg);
-  print_feature(features::shelter_edge, weight_mg, weight_eg);
+  std::vector<f64> mg(params.size()), eg(params.size());
+  for (const evaltune_c* p : params) {
+    mg[p->idx()] = p->mg();
+    eg[p->idx()] = p->eg();
+  }
+
+  // --- Normalization Logic ---
+  // Calculates the mean of a feature array, zero-centers the array, and returns the mean.
+  auto normalize = [&](std::span<const evaltune_c> constants) -> std::pair<f64, f64> {
+    f64 sum_mg = 0.0;
+    f64 sum_eg = 0.0;
+
+    for (const evaltune_c& c : constants) {
+      sum_mg += mg[c.idx()];
+      sum_eg += eg[c.idx()];
+    }
+
+    const f64 mean_mg = sum_mg / static_cast<f64>(constants.size());
+    const f64 mean_eg = sum_eg / static_cast<f64>(constants.size());
+
+    for (const evaltune_c& c : constants) {
+      mg[c.idx()] -= mean_mg;
+      eg[c.idx()] -= mean_eg;
+    }
+
+    return {mean_mg, mean_eg};
+  };
+
+  auto [p_psqt_mg, p_psqt_eg] = normalize(pawn_psqt);
+  mg[pawn_material.idx()] += p_psqt_mg;
+  eg[pawn_material.idx()] += p_psqt_eg;
+
+  auto [n_mob_mg, n_mob_eg]   = normalize(knight_mobility);
+  auto [n_psqt_mg, n_psqt_eg] = normalize(knight_psqt);
+  mg[knight_material.idx()] += n_mob_mg + n_psqt_mg;
+  eg[knight_material.idx()] += n_mob_eg + n_psqt_eg;
+
+  auto [b_mob_mg, b_mob_eg]   = normalize(bishop_mobility);
+  auto [b_psqt_mg, b_psqt_eg] = normalize(bishop_psqt);
+  mg[bishop_material.idx()] += b_mob_mg + b_psqt_mg;
+  eg[bishop_material.idx()] += b_mob_eg + b_psqt_eg;
+
+  auto [r_mob_mg, r_mob_eg]   = normalize(rook_mobility);
+  auto [r_psqt_mg, r_psqt_eg] = normalize(rook_psqt);
+  mg[rook_material.idx()] += r_mob_mg + r_psqt_mg;
+  eg[rook_material.idx()] += r_mob_eg + r_psqt_eg;
+
+  auto [q_mob_mg, q_mob_eg]   = normalize(queen_mobility);
+  auto [q_psqt_mg, q_psqt_eg] = normalize(queen_psqt);
+  mg[queen_material.idx()] += q_mob_mg + q_psqt_mg;
+  eg[queen_material.idx()] += q_mob_eg + q_psqt_eg;
+
+  normalize(king_psqt);
+
+  PRINT_CONSTANT(pawn_material, mg, eg);
+  PRINT_CONSTANT(knight_material, mg, eg);
+  PRINT_CONSTANT(bishop_material, mg, eg);
+  PRINT_CONSTANT(rook_material, mg, eg);
+  PRINT_CONSTANT(queen_material, mg, eg);
+  PRINT_CONSTANT(bishop_pair, mg, eg);
+
+  std::println();
+
+  PRINT_ARRAY(knight_mobility, mg, eg);
+  PRINT_ARRAY(bishop_mobility, mg, eg);
+  PRINT_ARRAY(rook_mobility, mg, eg);
+  PRINT_ARRAY(queen_mobility, mg, eg);
+
+  std::println();
+
+  PRINT_CONSTANT(isolated_pawn, mg, eg);
+
+  PRINT_ARRAY(passed_pawn, mg, eg);
+  PRINT_ARRAY(defended_passed_pawn, mg, eg);
+  PRINT_ARRAY(defended_pawn, mg, eg);
+
+  std::println();
+
+  PRINT_ARRAY(shelter_centre, mg, eg);
+  PRINT_ARRAY(shelter_mid, mg, eg);
+  PRINT_ARRAY(shelter_edge, mg, eg);
+
+  std::println();
+
+  PRINT_PSQT(pawn_psqt, mg, eg);
+  PRINT_PSQT(knight_psqt, mg, eg);
+  PRINT_PSQT(bishop_psqt, mg, eg);
+  PRINT_PSQT(rook_psqt, mg, eg);
+  PRINT_PSQT(queen_psqt, mg, eg);
+  PRINT_PSQT(king_psqt, mg, eg);
 }
+
 }  // namespace surveyor_tuner

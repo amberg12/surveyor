@@ -16,6 +16,11 @@
 
 #ifndef UCI_COMMON_H
 #define UCI_COMMON_H
+
+#ifndef EVALTUNE
+#define EVALTUNE
+#endif
+
 #include <surveyor/include.h>
 
 namespace surveyor_tuner {

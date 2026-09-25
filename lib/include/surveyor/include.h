@@ -18,6 +18,7 @@
 #ifndef SURVEYOR_INCLUDE_H
 #define SURVEYOR_INCLUDE_H
 
+#include "../../util/integer.h"
 #include "../../util/parse.h"
 #include "../../util/tokenizer.h"
 #include "../engine.h"

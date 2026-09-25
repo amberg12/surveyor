@@ -22,11 +22,11 @@
 
 namespace surveyor_tuner {
 
-template<typename T, typename U, usize cnt>
-auto dot_product(const std::array<T, cnt> l, const std::array<U, cnt> r) {
+template<typename T, typename U>
+auto dot_product(const std::span<const T> l, const std::span<const U> r) {
   decltype(std::declval<T>() * std::declval<U>()) result{};
 
-  for (usize i = 0; i < cnt; ++i) {
+  for (usize i = 0; i < l.size(); ++i) {
     result += l[i] * r[i];
   }
 

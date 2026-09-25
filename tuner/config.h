@@ -16,18 +16,18 @@
 
 #ifndef UCI_CONFIG_H
 #define UCI_CONFIG_H
-#include "util/common.h"
-
+#include <cstddef>
+#include <cstdint>
 namespace surveyor_tuner::config {
 
-constexpr usize epochs                    = 200;
-constexpr usize initial_period_length     = 10;
-constexpr usize batch_size                = 32;
-constexpr f64   initial_learning_rate_max = 0.01;
-constexpr f64   initial_learning_rate_min = 0.001;
-constexpr f64   mu                        = 0.9;
-constexpr f64   lambda                    = 1e-4;
-constexpr i64   result_scale              = 300;
+constexpr size_t  epochs                    = 30;
+constexpr size_t  initial_period_length     = 10;
+constexpr size_t  batch_size                = 32;
+constexpr double  initial_learning_rate_max = 0.01;
+constexpr double  initial_learning_rate_min = 0.001;
+constexpr double  mu                        = 0.9;
+constexpr double  lambda                    = 1e-4;
+constexpr int64_t result_scale              = 300;
 
 
 }  // namespace surveyor_tuner::config
