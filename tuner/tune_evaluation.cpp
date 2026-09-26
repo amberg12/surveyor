@@ -274,9 +274,11 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   PRINT_CONSTANT(pawn_threat_rook, mg, eg);
   PRINT_CONSTANT(pawn_threat_queen, mg, eg);
   std::println();
-  PRINT_CONSTANT(isolated_pawn, mg, eg);
   PRINT_ARRAY(passed_pawn, mg, eg);
   PRINT_ARRAY(defended_passed_pawn, mg, eg);
+  PRINT_ARRAY(blocked_passed_pawn, mg, eg);
+  std::println();
+  PRINT_CONSTANT(isolated_pawn, mg, eg);
   PRINT_ARRAY(defended_pawn, mg, eg);
   PRINT_ARRAY(phalanx, mg, eg);
   std::println();
