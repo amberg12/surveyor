@@ -8,7 +8,7 @@ UCI Chess Engine written in C++.
 
 | Version | CCRL Blitz | COPE Bullet | COPE Rapid |
 |---------|------------|-------------|------------|
-| ONE.1   | 2830*      | 2854        | 3043       |
+| ONE.1   | 2830*      | 2854        | 3007       |
 
 *Rough estimate based on games of known playing strength.
 
