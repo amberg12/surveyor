@@ -125,6 +125,10 @@ auto evaluate_pawns(color stm, const position& pos) -> out_pair {
     out += defended_pawn[sq.relative_rank(stm) - 2];
   }
 
+  for (const auto sq : pawn_bb & pawn_bb.shift(geometry::e_orth)) {
+    out += phalanx[sq.relative_rank(stm) - 1];
+  }
+
   return out;
 }
 

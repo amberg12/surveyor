@@ -278,6 +278,7 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   PRINT_ARRAY(passed_pawn, mg, eg);
   PRINT_ARRAY(defended_passed_pawn, mg, eg);
   PRINT_ARRAY(defended_pawn, mg, eg);
+  PRINT_ARRAY(phalanx, mg, eg);
   std::println();
   PRINT_ARRAY(shelter_centre, mg, eg);
   PRINT_ARRAY(shelter_mid, mg, eg);
