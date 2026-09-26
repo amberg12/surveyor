@@ -238,6 +238,12 @@ auto evaluate_unnormalized(const position& pos) -> out_pair {
   out += evaluate_pawns(color::white(), pos);
   out -= evaluate_pawns(color::black(), pos);
 
+  if (pos.stm() == color::white()) {
+    out += tempo;
+  } else {
+    out -= tempo;
+  }
+
   return pos.stm() == color::white() ? out : -out;
 }
 

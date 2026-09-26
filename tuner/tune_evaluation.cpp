@@ -263,6 +263,7 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   PRINT_CONSTANT(queen_material, mg, eg);
   std::println();
   PRINT_CONSTANT(bishop_pair, mg, eg);
+  PRINT_CONSTANT(tempo, mg, eg);
   std::println();
   PRINT_ARRAY(knight_mobility, mg, eg);
   PRINT_ARRAY(bishop_mobility, mg, eg);
