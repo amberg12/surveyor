@@ -17,11 +17,13 @@
 #ifndef SURVEYOR_TUNER_TYPES_H
 #define SURVEYOR_TUNER_TYPES_H
 #include "../lib/util/integer.h"
+#include "../lib/util/static_vector.h"
 #include "config.h"
 
 #include <algorithm>
 #include <functional>
 #include <ranges>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -29,9 +31,7 @@ namespace surveyor_tuner {
 using namespace surveyor;
 
 class evaltune_pair;
-
-class evaltune_pair;
-class evaltune_c;  // forward declaration
+class evaltune_c;
 
 class globals {
 public:
@@ -41,6 +41,9 @@ public:
   }
 
   [[nodiscard]] auto register_param(evaltune_c* param) -> usize {
+    if (m_params == 768) {
+      throw std::length_error("tuner supports at most 768 parameters");
+    }
     m_evaltune_params.push_back(param);
     return m_params++;
   }
@@ -119,7 +122,7 @@ public:
     m_eg_vector[idx] = eg;
   }
 
-  evaltune_pair(const std::vector<f64>& mg, const std::vector<f64>& eg)
+  evaltune_pair(const static_vector<f64, 768>& mg, const static_vector<f64, 768>& eg)
       : m_mg_vector(mg)
       , m_eg_vector(eg) {
   }
@@ -128,7 +131,8 @@ public:
     *this = c.to_pair();
   }
 
-  [[nodiscard]] auto to_vector() const -> std::pair<std::vector<f64>, std::vector<f64>> {
+  [[nodiscard]] auto to_vector() const
+    -> std::pair<const static_vector<f64, 768>&, const static_vector<f64, 768>&> {
     return {m_mg_vector, m_eg_vector};
   }
 
@@ -139,16 +143,9 @@ public:
   }
 
   friend auto operator+(const evaltune_pair& lhs, const evaltune_pair& rhs) -> evaltune_pair {
-    namespace rg = std::ranges;
-    namespace rv = std::views;
-
-    const auto [lhs_mg, lhs_eg] = lhs.to_vector();
-    const auto [rhs_mg, rhs_eg] = rhs.to_vector();
-
-    const auto mg = rv::zip_transform(std::plus{}, lhs_mg, rhs_mg) | rg::to<std::vector>();
-    const auto eg = rv::zip_transform(std::plus{}, lhs_eg, rhs_eg) | rg::to<std::vector>();
-
-    return {mg, eg};
+    auto result = lhs;
+    result += rhs;
+    return result;
   }
 
   friend auto operator+=(evaltune_pair& lhs, const evaltune_c& rhs) -> evaltune_pair {
@@ -173,16 +170,9 @@ public:
   }
 
   friend auto operator-(const evaltune_pair& lhs, const evaltune_pair& rhs) -> evaltune_pair {
-    namespace rg = std::ranges;
-    namespace rv = std::views;
-
-    const auto [lhs_mg, lhs_eg] = lhs.to_vector();
-    const auto [rhs_mg, rhs_eg] = rhs.to_vector();
-
-    const auto mg = rv::zip_transform(std::minus{}, lhs_mg, rhs_mg) | rg::to<std::vector>();
-    const auto eg = rv::zip_transform(std::minus{}, lhs_eg, rhs_eg) | rg::to<std::vector>();
-
-    return {mg, eg};
+    auto result = lhs;
+    result -= rhs;
+    return result;
   }
 
   friend auto operator-=(evaltune_pair& lhs, const evaltune_c& rhs) -> evaltune_pair {
@@ -225,7 +215,7 @@ public:
   }
 
 private:
-  std::vector<f64> m_mg_vector, m_eg_vector;
+  static_vector<f64, 768> m_mg_vector, m_eg_vector;
 };
 
 inline auto evaltune_c::to_pair() const -> evaltune_pair {

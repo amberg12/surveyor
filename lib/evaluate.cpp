@@ -154,6 +154,10 @@ auto evaluate_threats(color stm, const position& pos) -> out_pair {
     const bitboard attack_bb = pos.threat_bb(stm, id);
     const i32      mobility  = (attack_bb & ~pos.bb()).ipopcount();
 
+    out += bishop_threat_pawn * (attack_bb & pos.bb(~stm, piece_type::pawn())).ipopcount();
+    out += bishop_threat_knight * (attack_bb & pos.bb(~stm, piece_type::knight())).ipopcount();
+    out += bishop_threat_rook * (attack_bb & pos.bb(~stm, piece_type::rook())).ipopcount();
+    out += bishop_threat_queen * (attack_bb & pos.bb(~stm, piece_type::queen())).ipopcount();
     out += bishop_mobility[mobility];
   }
 
