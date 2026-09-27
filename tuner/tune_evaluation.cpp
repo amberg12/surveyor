@@ -30,8 +30,8 @@ namespace surveyor_tuner {
 namespace {
 auto print_constant(const evaltune_c&              constant,
                     std::string_view               name,
-                    const std::vector<f64>& mg_vector,
-                    const std::vector<f64>& eg_vector) -> void {
+                    const static_vector<f64, 768>& mg_vector,
+                    const static_vector<f64, 768>& eg_vector) -> void {
   const i32 mg = mg_vector[constant.idx()] * config::result_scale;
   const i32 eg = eg_vector[constant.idx()] * config::result_scale;
 
@@ -42,8 +42,8 @@ auto print_constant(const evaltune_c&              constant,
 
 auto print_array(std::span<const evaltune_c> constants,
                  std::string_view            name,
-                 const std::vector<f64>&     mg_vector,
-                 const std::vector<f64>&     eg_vector) -> void {
+                 const static_vector<f64, 768>& mg_vector,
+                 const static_vector<f64, 768>& eg_vector) -> void {
   std::println("inline const std::array {} = {{", name);
 
   std::print("  ");
@@ -63,8 +63,8 @@ auto print_array(std::span<const evaltune_c> constants,
 
 auto print_psqt(std::span<const evaltune_c> constants,
                 std::string_view            name,
-                const std::vector<f64>&     mg_vector,
-                const std::vector<f64>&     eg_vector) -> void {
+                const static_vector<f64, 768>& mg_vector,
+                const static_vector<f64, 768>& eg_vector) -> void {
   std::println("inline const std::array {} = {{", name);
 
   for (usize rank = 0; rank < constants.size() / 8; ++rank) {
@@ -112,7 +112,7 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
 
   const auto feature_array = []<typename T>{
     const auto s = globals::get().params();
-    return std::vector<T>(s, T{});
+    return static_vector<T, 768>(s, T{});
   };
 
   auto momentum_mg = feature_array.operator()<f64>();
@@ -202,7 +202,7 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
     std::println("epoch {}/{}", epoch + 1, config::epochs);
   }
 
-  std::vector<f64> mg(params.size()), eg(params.size());
+  static_vector<f64, 768> mg(params.size(), 0.0), eg(params.size(), 0.0);
   for (const evaltune_c* p : params) {
     mg[p->idx()] = p->mg();
     eg[p->idx()] = p->eg();
@@ -278,6 +278,11 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   PRINT_CONSTANT(knight_threat_bishop, mg, eg);
   PRINT_CONSTANT(knight_threat_rook, mg, eg);
   PRINT_CONSTANT(knight_threat_queen, mg, eg);
+  std::println();
+  PRINT_CONSTANT(bishop_threat_pawn, mg, eg);
+  PRINT_CONSTANT(bishop_threat_knight, mg, eg);
+  PRINT_CONSTANT(bishop_threat_rook, mg, eg);
+  PRINT_CONSTANT(bishop_threat_queen, mg, eg);
   std::println();
   PRINT_ARRAY(passed_pawn, mg, eg);
   PRINT_ARRAY(defended_passed_pawn, mg, eg);

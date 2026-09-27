@@ -58,6 +58,12 @@ public:
     rg::uninitialized_copy_n(inlist.begin(), inlist.end(), data());
   }
 
+  static_vector(usize cnt, T value) {
+    for (usize i = 0; i < cnt; ++i) {
+      emplace_back(value);
+    }
+  }
+
   // Methods
   constexpr auto clear() -> void {
     destroy(begin(), end());
