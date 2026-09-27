@@ -136,6 +136,5 @@ inline const std::array king_psqt = {
   S(   0,   -9), S(   4,   15), S(   8,   33), S(   6,   23), S(   7,   27), S(   9,   41), S(   3,   32), S(   0,   -2),
   S(   0,   -8), S(   2,   -2), S(   2,    5), S(   0,    0), S(   0,    0), S(   2,    5), S(   0,    3), S(   0,   -4),
 };
-
 }
 #endif  // SURVEYOR_EVALUATION_CONSTANTS_H
