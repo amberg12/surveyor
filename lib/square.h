@@ -63,6 +63,10 @@ struct square {
     return idx / 8;
   }
 
+  [[nodiscard]] constexpr auto king_distance(square rhs) const -> i32 {
+    return std::max(std::abs(file() - rhs.file()), std::abs(rank() - rhs.rank()));
+  }
+
   [[nodiscard]] constexpr auto relative_rank(color stm) const -> i8 {
     return stm == color::white() ? rank() : mirror().rank();
   }

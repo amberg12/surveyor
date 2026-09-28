@@ -103,6 +103,9 @@ auto evaluate_pawns(color stm, const position& pos) -> out_pair {
 
       out += passed_pawn[sq.relative_rank(stm) - 1];
 
+      out += friendly_passer_tropism[sq.king_distance(pos.king_square(stm)) - 1];
+      out += enemy_passer_tropism[sq.king_distance(pos.king_square(~stm)) - 1];
+
       if (pos.has_value(destination_sq)) {
         out += blocked_passed_pawn[relative_rank - 2];
       }
