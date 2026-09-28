@@ -22,6 +22,20 @@ using namespace surveyor::evaluation_constants;
 
 namespace surveyor {
 namespace {
+constexpr std::array<bitboard, 64> king_rings = [] {
+  std::array<bitboard, 64> out{};
+
+  for (const square sq : squares) {
+    for (const geometry::direction dir : geometry::king_directions) {
+      if (const auto dst = geometry::shift(sq, dir)) {
+        out[sq.idx].set(*dst);
+      }
+    }
+  }
+
+  return out;
+}();
+
 auto evaluate_pieces(color stm, const position& pos) -> out_pair {
   out_pair out{};
 
@@ -223,6 +237,22 @@ auto evaluate_king_safety(color stm, const position& pos) -> out_pair {
 
     if (rel_i == 1) {
       out += shelter_centre[shelter_rank];
+    }
+  }
+
+  const auto king_ring_sqs = king_rings[king_sq.idx];
+
+  for (const auto sq : king_ring_sqs) {
+    const piece_mask attackers = pos.attackers_to(~stm, sq);
+
+    for (const auto attacker : attackers) {
+      const piece_type ptype = pos.ptype_of(~stm, attacker);
+
+      if (ptype == piece_type::king()) {
+        continue;
+      }
+
+      out += king_ring[ptype.compressed_idx()];
     }
   }
 

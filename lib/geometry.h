@@ -104,5 +104,9 @@ constexpr auto shift(square src, direction dir) -> std::optional<square> {
   return from_x88(dst);
 }
 
+constexpr std::array<direction, 8> king_directions = {
+  n_orth, ne_diag, e_orth, se_diag, s_orth, sw_diag, w_orth, nw_diag,
+};
+
 }  // namespace surveyor::geometry
 #endif  // SURVEYOR_GEOMETRY_H
