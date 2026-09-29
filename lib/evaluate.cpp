@@ -98,11 +98,11 @@ auto evaluate_pawns(color stm, const position& pos) -> out_pair {
     const auto ahead_bb = [&] {
       auto out = bitboard::full();
       if (stm == color::white()) {
-        for (i32 i = 0; i < rank; ++i) {
+        for (i32 i = 0; i < sq.relative_rank(stm); ++i) {
           out = out.shift(geometry::n_orth);
         }
       } else {
-        for (i32 i = 0; i < rank; ++i) {
+        for (i32 i = 0; i < sq.relative_rank(stm); ++i) {
           out = out.shift(geometry::s_orth);
         }
       }
