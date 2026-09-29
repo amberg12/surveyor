@@ -298,6 +298,8 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   PRINT_ARRAY(shelter_mid, mg, eg);
   PRINT_ARRAY(shelter_edge, mg, eg);
   std::println();
+  PRINT_ARRAY(king_ring, mg, eg);
+  std::println();
   PRINT_PSQT(pawn_psqt, mg, eg);
   PRINT_PSQT(knight_psqt, mg, eg);
   PRINT_PSQT(bishop_psqt, mg, eg);
