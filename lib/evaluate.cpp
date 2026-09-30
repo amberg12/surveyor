@@ -221,22 +221,29 @@ auto evaluate_king_safety(color stm, const position& pos) -> out_pair {
   for (i32 i = -1; i <= 1; ++i) {
     const auto     file      = bitboard::file_bb(shelter_mid_file + i);
     const bitboard our_pawns = pos.bb(stm, piece_type::pawn());
+    const bitboard opp_pawns = pos.bb(~stm, piece_type::pawn());
 
     const i32 shelter_rank =
       (our_pawns & file).any() ? (our_pawns & file).backmost(stm).relative_rank(stm) : 0;
+
+    const i32 storm_rank =
+      (opp_pawns & file).any() ? (opp_pawns & file).backmost(stm).relative_rank(stm) : 0;
 
     const i32 rel_i = lhs_king ? i : -i;
 
     if (rel_i == -1) {
       out += shelter_edge[shelter_rank];
+      out += storm_edge[storm_rank];
     }
 
     if (rel_i == 0) {
       out += shelter_mid[shelter_rank];
+      out += storm_mid[storm_rank];
     }
 
     if (rel_i == 1) {
       out += shelter_centre[shelter_rank];
+      out += storm_centre[storm_rank];
     }
   }
 
