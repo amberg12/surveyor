@@ -223,7 +223,7 @@ auto evaluate_king_safety(color stm, const position& pos) -> out_pair {
     const bitboard our_pawns = pos.bb(stm, piece_type::pawn());
 
     const i32 shelter_rank =
-      (our_pawns & file).any() ? our_pawns.backmost(stm).relative_rank(stm) : 0;
+      (our_pawns & file).any() ? (our_pawns & file).backmost(stm).relative_rank(stm) : 0;
 
     const i32 rel_i = lhs_king ? i : -i;
 
