@@ -235,6 +235,10 @@ auto worker::search(Ctrls&          ctrls,
       return *sc;
     }
 
+    if (pos.insufficient_material()) {
+      return 0;
+    }
+
     if (m_repetition_table.is_repetition(pos)) {
       return 0;
     }
