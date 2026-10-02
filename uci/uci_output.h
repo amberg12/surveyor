@@ -46,6 +46,7 @@ public:
     std::println("info depth {} score {} time {} nodes {} nps {} pv {}", info.depth,
                  scoring::to_uci(info.sc), time::cast<time::milliseconds>(info.elapsed).count(),
                  info.nodes, time::nps(info.nodes, info.elapsed), uci_stringify_pv(info.pv));
+    std::flush(std::cout);
   }
 
   auto best_move(move mv) -> void override {
