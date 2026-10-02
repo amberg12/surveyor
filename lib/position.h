@@ -353,6 +353,8 @@ public:
       + m_piece_list[color::black()].mask.ipopcount();
   }
 
+  [[nodiscard]] auto insufficient_material() const -> bool;
+
   [[nodiscard]] constexpr auto pin_at() const -> const attack_box& {
     if (!m_pin_cache_updated) {
       lazy_generate_pinner();

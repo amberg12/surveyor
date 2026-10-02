@@ -177,6 +177,52 @@ auto position::move_rule(i32 ply) const -> std::optional<score> {
   return 0;
 }
 
+auto position::insufficient_material() const -> bool {
+  if (ptype_bb(piece_type::pawn(), piece_type::rook(), piece_type::queen()).popcount() != 0) {
+    return false;
+  }
+
+  constexpr u64 light_squares = 0x55AA55AA55AA55AAULL;  // a1 is dark
+
+  const color w = color::white();
+  const color b = color::black();
+
+  const i32 wn  = ptype_count(w, piece_type::knight());
+  const i32 bn  = ptype_count(b, piece_type::knight());
+  const i32 wb  = ptype_count(w, piece_type::bishop());
+  const i32 bb_ = ptype_count(b, piece_type::bishop());
+
+  const i32 w_minors = wn + wb;
+  const i32 b_minors = bn + bb_;
+  const i32 total    = w_minors + b_minors;
+
+  if (total <= 1) {
+    return true;
+  }
+
+  if (wn + bn == 0) {
+    const bitboard bishops = ptype_bb(piece_type::bishop());
+    const bool     on_light =
+      (bishops.popcount() != 0) && ((bishops & bitboard{light_squares}).popcount() != 0);
+    const bool on_dark = (bishops & bitboard{~light_squares}).popcount() != 0;
+
+    if (!(on_light && on_dark)) {
+      return true;
+    }
+  }
+
+  if (total == 2) {
+    const bool one_side_has_both = w_minors == 2 || b_minors == 2;
+    const bool any_bishop        = wb + bb_ > 0;
+
+    if (!one_side_has_both || !any_bishop) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 auto position::lazy_generate_key() -> void {
   m_key                = 0;
   m_pawn_key           = 0;
@@ -398,7 +444,7 @@ auto position::generate_sliders_to(square to) -> void {
 }
 
 auto position::update_slider(color stm, piece_id id, square to) -> void {
-  const square src = sq_of(stm, id);
+  const square     src   = sq_of(stm, id);
   const piece_type ptype = ptype_of(stm, id);
 
   if (!ptype.slider()) {
