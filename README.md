@@ -6,11 +6,13 @@ UCI Chess Engine written in C++.
 
 ### Estimated playing strength:
 
-| Version | CCRL Blitz | COPE Bullet | COPE Rapid |
-|---------|------------|-------------|------------|
-| ONE.1   | 2830*      | 2854        | 3007       |
+| Version | CCRL Blitz | CCRL Rapid | COPE Bullet | COPE Rapid |
+|---------|------------|------------|-------------|------------|
+| ONE.1   | 2830*      | 2960**     | 2854        | 3007       |
 
 *Rough estimate based on games of known playing strength.
+
+**Based on a small sample size.
 
 ### Building
 
@@ -42,3 +44,10 @@ the speed of the program on your machine, but will produce a less portable buid.
  - Lily (87Flowers), Lofty and Clockwork Authors for help and references for attack board style board representation.
  - Ciekce, Nanopixel and Stockfish Authors for references for search.
  - Naman Thanki for assisting with Windows builds.
+
+### Data
+In terms of data, version ONE and ONE.1 had their evaluations tuned with
+lichess-big-3 resolved by John Dart and Jay Honnold. Any other version,
+including master after the release of ONE.1, was generated with self-generated
+data based on a population count evaluation function, meaning that the data is
+fully original and not based on any innate chess knowledge.
