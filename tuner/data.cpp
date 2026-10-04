@@ -49,7 +49,9 @@ auto phase_p(i32 phase) {
 
 const double phase_weight_sum = [] {
   double sum = 0.0;
-  for (i32 ph = 0; ph <= 24; ++ph) sum += phase_p(ph);
+  for (i32 ph = 0; ph <= 24; ++ph) {
+    sum += phase_p(ph);
+  }
   return sum;
 }();
 }  // namespace
@@ -90,7 +92,7 @@ auto filter(std::vector<game> games) -> std::vector<tuner_position> {
   namespace rg = std::ranges;
   namespace rv = std::views;
 
-  const auto num_games      = games.size();
+  const auto num_games    = games.size();
   const auto expected_pos = num_games * 25;
 
   std::array<i64, 25> phase_distribution{};
@@ -133,6 +135,7 @@ auto filter(std::vector<game> games) -> std::vector<tuner_position> {
       const f64 mismatch     = std::abs(game_result - sigmoid_score) / max_mismatch;
 
       if (i >= to_skip && !parsed_move.is_capture() && !current_pos.checkers()
+          && !parsed_move.is_promo()
           && rg::find(sampled_idx, static_cast<i32>(i)) != sampled_idx.end()
           && current_pos.material() > 4 && dist(rng) < sampling_p && mismatch < 0.45) {
         result.emplace_back(game_result, current_pos);
