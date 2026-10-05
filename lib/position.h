@@ -60,6 +60,18 @@ struct attack_box {
     return word_board[sq.idx];
   }
 
+  [[nodiscard]] constexpr auto by_two() const -> bitboard {
+    u64 out = 0;
+
+    for (usize i = 0; i < square::count; ++i) {
+      if (word_board[i].popcount() >= 2) {
+        out |= u64{1} << i;
+      }
+    }
+
+    return bitboard{out};
+  }
+
   [[nodiscard]] constexpr auto bb() const -> bitboard {
 #ifdef __AVX2__
     u64 out = 0;
@@ -385,6 +397,10 @@ public:
 
   [[nodiscard]] constexpr auto threat_bb(color c, piece_id id) const -> bitboard {
     return m_attack_box[c].bb(id);
+  }
+
+  [[nodiscard]] auto attacked_by_two(color c) const -> bitboard {
+    return m_attack_box[c].by_two();
   }
 
 private:
