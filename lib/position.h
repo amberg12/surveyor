@@ -60,6 +60,41 @@ struct attack_box {
     return word_board[sq.idx];
   }
 
+  [[nodiscard]] constexpr auto by_two() const -> bitboard {
+#ifdef __AVX2__
+    const auto*   p    = reinterpret_cast<const __m256i*>(word_board.data());
+    const __m256i ones = _mm256_set1_epi16(1);
+    const __m256i zero = _mm256_setzero_si256();
+
+    u64 out = 0;
+
+    for (i32 i = 0; i < 4; ++i) {
+      const __m256i w = p[i];
+
+      const __m256i multi   = _mm256_and_si256(w, _mm256_sub_epi16(w, ones));
+      const __m256i is_zero = _mm256_cmpeq_epi16(multi, zero);
+
+      const u16 zero_mask = static_cast<u16>(_mm_movemask_epi8(
+        _mm_packs_epi16(_mm256_castsi256_si128(is_zero), _mm256_extracti128_si256(is_zero, 1))));
+
+      out |= static_cast<u64>(static_cast<u16>(~zero_mask)) << 16 * i;
+    }
+
+    return bitboard{out};
+#else
+    u64 out = 0;
+
+    for (usize i = 0; i < square::count; ++i) {
+      const u16 w = std::bit_cast<u16>(word_board[i]);
+      if ((w & (w - 1)) != 0) {
+        out |= u64{1} << i;
+      }
+    }
+
+    return bitboard{out};
+#endif
+  }
+
   [[nodiscard]] constexpr auto bb() const -> bitboard {
 #ifdef __AVX2__
     u64 out = 0;
@@ -385,6 +420,10 @@ public:
 
   [[nodiscard]] constexpr auto threat_bb(color c, piece_id id) const -> bitboard {
     return m_attack_box[c].bb(id);
+  }
+
+  [[nodiscard]] auto attacked_by_two(color c) const -> bitboard {
+    return m_attack_box[c].by_two();
   }
 
 private:

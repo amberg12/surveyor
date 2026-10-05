@@ -17,6 +17,7 @@
 #include "evaluate.h"
 
 #include "evaluation_constants.h"
+#include "util/inline.h"
 
 using namespace surveyor::evaluation_constants;
 
@@ -146,15 +147,38 @@ auto evaluate_pawns(color stm, const position& pos) -> out_pair {
     out += defended_pawn[sq.relative_rank(stm) - 2];
   }
 
-  for (const auto sq : pawn_bb & pawn_bb.shift(geometry::e_orth)) {
+  for (const auto sq : pawn_bb& pawn_bb.shift(geometry::e_orth)) {
     out += phalanx[sq.relative_rank(stm) - 1];
   }
 
   return out;
 }
 
-auto evaluate_threats(color stm, const position& pos) -> out_pair {
+ALWAYS_INLINE auto evaluate_threats(color stm, const position& pos) -> out_pair {
   out_pair out{};
+
+  const auto pawn_bb    = pos.bb(stm, piece_type::pawn());
+  const auto lhs_defend = pawn_bb.shift(geometry::pawn_direction(stm)).shift(geometry::w_orth);
+  const auto rhs_defend = pawn_bb.shift(geometry::pawn_direction(stm)).shift(geometry::e_orth);
+
+  const auto pawn_threats = lhs_defend | rhs_defend;
+
+  const auto opp_pawn_bb = pos.bb(~stm, piece_type::pawn());
+  const auto opp_lhs_defend =
+    opp_pawn_bb.shift(geometry::pawn_direction(~stm)).shift(geometry::w_orth);
+  const auto opp_rhs_defend =
+    opp_pawn_bb.shift(geometry::pawn_direction(~stm)).shift(geometry::e_orth);
+
+  const auto opp_pawn_threats = opp_lhs_defend | opp_rhs_defend;
+
+  bitboard strongly_protected =
+    opp_pawn_threats | (pos.attacked_by_two(~stm) & ~pos.attacked_by_two(stm));
+
+  bitboard opp_non_pawn = pos.color_bb(~stm) & ~opp_pawn_bb;
+
+  // bitboard defended = opp_non_pawn & strongly_protected;
+
+  bitboard weak = pos.color_bb(~stm) & ~strongly_protected & pos.threat_bb(stm);
 
   for (const piece_id id : pos.ptype_mask(stm, piece_type::knight())) {
     const bitboard attack_bb = pos.threat_bb(stm, id);
@@ -196,12 +220,6 @@ auto evaluate_threats(color stm, const position& pos) -> out_pair {
     out += queen_mobility[mobility];
   }
 
-  const auto pawn_bb    = pos.bb(stm, piece_type::pawn());
-  const auto lhs_defend = pawn_bb.shift(geometry::pawn_direction(stm)).shift(geometry::w_orth);
-  const auto rhs_defend = pawn_bb.shift(geometry::pawn_direction(stm)).shift(geometry::e_orth);
-
-  const auto pawn_threats = lhs_defend | rhs_defend;
-
   out += pawn_threat_knight * (pos.bb(~stm, piece_type::knight()) & pawn_threats).ipopcount();
   out += pawn_threat_bishop * (pos.bb(~stm, piece_type::bishop()) & pawn_threats).ipopcount();
   out += pawn_threat_rook * (pos.bb(~stm, piece_type::rook()) & pawn_threats).ipopcount();
@@ -213,6 +231,10 @@ auto evaluate_threats(color stm, const position& pos) -> out_pair {
   out += pp_threat_bishop * (pos.bb(~stm, piece_type::bishop()) & pp_threats).ipopcount();
   out += pp_threat_rook * (pos.bb(~stm, piece_type::rook()) & pp_threats).ipopcount();
   out += pp_threat_queen * (pos.bb(~stm, piece_type::queen()) & pp_threats).ipopcount();
+
+  bitboard hanging_threats =
+    weak & (~pos.threat_bb(~stm) | (opp_non_pawn & pos.attacked_by_two(stm)));
+  out += hanging * (pos.color_bb(~stm) & hanging_threats).ipopcount();
 
   return out;
 }
