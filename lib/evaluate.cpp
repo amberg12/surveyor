@@ -17,6 +17,7 @@
 #include "evaluate.h"
 
 #include "evaluation_constants.h"
+#include "util/inline.h"
 
 using namespace surveyor::evaluation_constants;
 
@@ -153,7 +154,7 @@ auto evaluate_pawns(color stm, const position& pos) -> out_pair {
   return out;
 }
 
-auto evaluate_threats(color stm, const position& pos) -> out_pair {
+ALWAYS_INLINE auto evaluate_threats(color stm, const position& pos) -> out_pair {
   out_pair out{};
 
   const auto pawn_bb    = pos.bb(stm, piece_type::pawn());
