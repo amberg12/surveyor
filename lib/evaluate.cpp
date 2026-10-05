@@ -207,6 +207,13 @@ auto evaluate_threats(color stm, const position& pos) -> out_pair {
   out += pawn_threat_rook * (pos.bb(~stm, piece_type::rook()) & pawn_threats).ipopcount();
   out += pawn_threat_queen * (pos.bb(~stm, piece_type::queen()) & pawn_threats).ipopcount();
 
+  const auto pp_threats = pawn_threats.shift(geometry::pawn_direction(stm));
+
+  out += pp_threat_knight * (pos.bb(~stm, piece_type::knight()) & pp_threats).ipopcount();
+  out += pp_threat_bishop * (pos.bb(~stm, piece_type::bishop()) & pp_threats).ipopcount();
+  out += pp_threat_rook * (pos.bb(~stm, piece_type::rook()) & pp_threats).ipopcount();
+  out += pp_threat_queen * (pos.bb(~stm, piece_type::queen()) & pp_threats).ipopcount();
+
   return out;
 }
 
