@@ -64,14 +64,17 @@ auto print_array(std::span<const evaltune_c> constants,
 auto print_psqt(std::span<const evaltune_c> constants,
                 std::string_view            name,
                 const static_vector<f64, 768>& mg_vector,
-                const static_vector<f64, 768>& eg_vector) -> void {
+                const static_vector<f64, 768>& eg_vector,
+                bool is_king = false) -> void {
   std::println("inline const std::array {} = {{", name);
 
-  for (usize rank = 0; rank < constants.size() / 8; ++rank) {
+  const usize files = is_king ? 4 : 8;
+
+  for (usize rank = 0; rank < constants.size() / files; ++rank) {
     std::print("  ");
 
-    for (usize file = 0; file < 8; ++file) {
-      const auto& constant = constants[rank * 8 + file];
+    for (usize file = 0; file < files; ++file) {
+      const auto& constant = constants[rank * files + file];
       const i32 mg = mg_vector[constant.idx()] * config::result_scale;
       const i32 eg = eg_vector[constant.idx()] * config::result_scale;
 
@@ -85,6 +88,7 @@ auto print_psqt(std::span<const evaltune_c> constants,
 }
 
 #define PRINT_PSQT(name, mg_vector, eg_vector) print_psqt(name, #name, mg_vector, eg_vector)
+#define PRINT_KING_PSQT(name, mg_vector, eg_vector) print_psqt(name, #name, mg_vector, eg_vector, true)
 
 auto calculate_local_learning_rate(f64 min, f64 max, usize step_counter, usize period_length)
   -> f64 {
@@ -317,7 +321,7 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   PRINT_PSQT(bishop_psqt, mg, eg);
   PRINT_PSQT(rook_psqt, mg, eg);
   PRINT_PSQT(queen_psqt, mg, eg);
-  PRINT_PSQT(king_psqt, mg, eg);
+  PRINT_KING_PSQT(king_psqt, mg, eg);
 }
 
 }  // namespace surveyor_tuner

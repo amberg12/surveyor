@@ -42,6 +42,8 @@ auto evaluate_pieces(color stm, const position& pos) -> out_pair {
 
   const piece_mask ids = pos.mask(stm);
 
+  const i32 xor_by = pos.king_square(stm).rank() < 4 ? 0 : 7;
+
   for (const auto id : ids) {
     const piece_type ptype  = pos.ptype_of(stm, id);
     const square     sq     = pos.sq_of(stm, id);
@@ -49,31 +51,33 @@ auto evaluate_pieces(color stm, const position& pos) -> out_pair {
 
     if (ptype == piece_type::pawn()) {
       out += pawn_material;
-      out += pawn_psqt[rel_sq.idx - 8];
+      out += pawn_psqt[(rel_sq.idx - 8) ^ xor_by];
     }
 
     if (ptype == piece_type::knight()) {
       out += knight_material;
-      out += knight_psqt[rel_sq.idx];
+      out += knight_psqt[rel_sq.idx ^ xor_by];
     }
 
     if (ptype == piece_type::bishop()) {
       out += bishop_material;
-      out += bishop_psqt[rel_sq.idx];
+      out += bishop_psqt[rel_sq.idx ^ xor_by];
     }
 
     if (ptype == piece_type::rook()) {
       out += rook_material;
-      out += rook_psqt[rel_sq.idx];
+      out += rook_psqt[rel_sq.idx ^ xor_by];
     }
 
     if (ptype == piece_type::queen()) {
       out += queen_material;
-      out += queen_psqt[rel_sq.idx];
+      out += queen_psqt[rel_sq.idx ^ xor_by];
     }
 
     if (ptype == piece_type::king()) {
-      out += king_psqt[rel_sq.idx];
+      const i32 idx  = rel_sq.idx ^ xor_by;
+      const i32 file = std::min(idx & 7, 7 - (idx & 7));
+      out += king_psqt[(idx >> 3) * 4 + file];
     }
   }
 
