@@ -58,7 +58,7 @@ struct node::extractor : public engine_output {
 
 node::node(i32 id, manager& m)
     : m_manager(m) {
-  m_rng.seed(id * 0x8008153);
+  m_rng.seed(std::random_device{}());
 
   m_a_extractor = std::make_shared<extractor>();
   m_b_extractor = std::make_shared<extractor>();

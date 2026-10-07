@@ -59,6 +59,6 @@ datagen:
     		-DBUILD_TOOLS="ON" \
     		$(TOOLCHAIN_FILE)
 	cmake --build build/tools
-	cp build/native/datagen ./surveyor-datagen
+	cp build/tools/datagen ./surveyor-datagen
 
 .PHONY: default native avx2-bmi2 x86-64.cmake tuner datagen
