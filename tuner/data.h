@@ -29,6 +29,7 @@ struct game {
 
 struct tuner_position {
   f32      result;
+  f32      eval;
   position pos;
 };
 

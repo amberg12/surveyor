@@ -40,8 +40,8 @@ auto print_constant(const evaltune_c&              constant,
 
 #define PRINT_CONSTANT(name, mg_vector, eg_vector) print_constant(name, #name, mg_vector, eg_vector)
 
-auto print_array(std::span<const evaltune_c> constants,
-                 std::string_view            name,
+auto print_array(std::span<const evaltune_c>    constants,
+                 std::string_view               name,
                  const static_vector<f64, 768>& mg_vector,
                  const static_vector<f64, 768>& eg_vector) -> void {
   std::println("inline const std::array {} = {{", name);
@@ -61,8 +61,8 @@ auto print_array(std::span<const evaltune_c> constants,
 
 #define PRINT_ARRAY(name, mg_vector, eg_vector) print_array(name, #name, mg_vector, eg_vector)
 
-auto print_psqt(std::span<const evaltune_c> constants,
-                std::string_view            name,
+auto print_psqt(std::span<const evaltune_c>    constants,
+                std::string_view               name,
                 const static_vector<f64, 768>& mg_vector,
                 const static_vector<f64, 768>& eg_vector) -> void {
   std::println("inline const std::array {} = {{", name);
@@ -72,8 +72,8 @@ auto print_psqt(std::span<const evaltune_c> constants,
 
     for (usize file = 0; file < 8; ++file) {
       const auto& constant = constants[rank * 8 + file];
-      const i32 mg = mg_vector[constant.idx()] * config::result_scale;
-      const i32 eg = eg_vector[constant.idx()] * config::result_scale;
+      const i32   mg       = mg_vector[constant.idx()] * config::result_scale;
+      const i32   eg       = eg_vector[constant.idx()] * config::result_scale;
 
       std::print("S({:>4}, {:>4}), ", mg, eg);
     }
@@ -110,7 +110,7 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   f64 learning_rate_max = config::initial_learning_rate_max;
   f64 learning_rate_min = config::initial_learning_rate_min;
 
-  const auto feature_array = []<typename T>{
+  const auto feature_array = []<typename T> {
     const auto s = globals::get().params();
     return static_vector<T, 768>(s, T{});
   };
@@ -169,7 +169,11 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
 
       const f64 phase            = static_cast<f64>(pos.pos.phase()) / 24.0;
       const f64 predicted_result = sigmoid(phase * dot_product_mg + (1.0 - phase) * dot_product_eg);
-      const f64 prediction_error = predicted_result - pos.result;
+
+      std::bernoulli_distribution dist(0.2);
+      const f64 target = dist(rng) ? pos.eval : pos.result;
+
+      const f64 prediction_error = predicted_result - target;
 
       for (usize i = 0; i < params.size(); ++i) {
         gradient_mg[i] += prediction_error * phase * mg[i];
@@ -191,7 +195,7 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
 
           param->set(param->mg() - mmg * local_learning_rate,
                      param->eg() - meg * local_learning_rate);
-             }
+        }
 
         rg::fill(gradient_mg, 0.0);
         rg::fill(gradient_eg, 0.0);
@@ -208,8 +212,6 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
     eg[p->idx()] = p->eg();
   }
 
-  // --- Normalization Logic ---
-  // Calculates the mean of a feature array, zero-centers the array, and returns the mean.
   auto normalize = [&](std::span<const evaltune_c> constants) -> std::pair<f64, f64> {
     f64 sum_mg = 0.0;
     f64 sum_eg = 0.0;

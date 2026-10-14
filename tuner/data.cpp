@@ -138,7 +138,7 @@ auto filter(std::vector<game> games) -> std::vector<tuner_position> {
           && !parsed_move.is_promo()
           && rg::find(sampled_idx, static_cast<i32>(i)) != sampled_idx.end()
           && current_pos.material() > 4 && dist(rng) < sampling_p && mismatch < 0.45) {
-        result.emplace_back(game_result, current_pos);
+        result.emplace_back(game_result, sigmoid_score, current_pos);
         phase_distribution[std::clamp(phase, 0, 24)] += 1;
       }
 
