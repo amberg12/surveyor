@@ -239,6 +239,13 @@ ALWAYS_INLINE auto evaluate_threats(color stm, const position& pos) -> out_pair 
     weak & (~pos.threat_bb(~stm) | (opp_non_pawn & pos.attacked_by_two(stm)));
   out += hanging * (pos.color_bb(~stm) & hanging_threats).ipopcount();
 
+  const auto king_threats = king_rings[pos.king_square(stm).idx] & weak;
+
+  out += king_threat_pawn * (pos.bb(~stm, piece_type::pawn()) & king_threats).ipopcount();
+  out += king_threat_knight * (pos.bb(~stm, piece_type::knight()) & king_threats).ipopcount();
+  out += king_threat_bishop * (pos.bb(~stm, piece_type::bishop()) & king_threats).ipopcount();
+  out += king_threat_rook * (pos.bb(~stm, piece_type::rook()) & king_threats).ipopcount();
+
   return out;
 }
 
