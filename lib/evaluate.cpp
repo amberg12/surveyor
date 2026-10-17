@@ -228,7 +228,11 @@ ALWAYS_INLINE auto evaluate_threats(color stm, const position& pos) -> out_pair 
   out += pawn_threat_rook * (pos.bb(~stm, piece_type::rook()) & pawn_threats).ipopcount();
   out += pawn_threat_queen * (pos.bb(~stm, piece_type::queen()) & pawn_threats).ipopcount();
 
-  const auto pp_threats = pawn_threats.shift(geometry::pawn_direction(stm));
+  const auto pp_bb =
+    pos.bb(stm, piece_type::pawn()).shift(geometry::pawn_direction(stm)) & ~pos.color_bb(~stm);
+  const auto pp_lhs_defend = pp_bb.shift(geometry::pawn_direction(stm)).shift(geometry::w_orth);
+  const auto pp_rhs_defend = pp_bb.shift(geometry::pawn_direction(stm)).shift(geometry::e_orth);
+  const auto pp_threats    = pp_lhs_defend | pp_rhs_defend;
 
   out += pp_threat_knight * (pos.bb(~stm, piece_type::knight()) & pp_threats).ipopcount();
   out += pp_threat_bishop * (pos.bb(~stm, piece_type::bishop()) & pp_threats).ipopcount();
