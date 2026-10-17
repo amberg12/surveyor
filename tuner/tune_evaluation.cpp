@@ -294,6 +294,11 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   PRINT_CONSTANT(rook_threat_bishop, mg, eg);
   PRINT_CONSTANT(rook_threat_queen, mg, eg);
   std::println();
+  PRINT_CONSTANT(king_threat_pawn, mg, eg);
+  PRINT_CONSTANT(king_threat_knight, mg, eg);
+  PRINT_CONSTANT(king_threat_bishop, mg, eg);
+  PRINT_CONSTANT(king_threat_rook, mg, eg);
+  std::println();
   PRINT_CONSTANT(hanging, mg, eg);
   std::println();
   PRINT_ARRAY(passed_pawn, mg, eg);
