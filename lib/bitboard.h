@@ -103,7 +103,6 @@ struct bitboard {
 
     if (dir == geometry::w_orth) {
       return bitboard{(*this & ~file_bb(0)).raw >> 1};
-
     }
 
     std::unreachable();
@@ -185,7 +184,7 @@ struct bitboard {
 
   static constexpr auto ray_inclusive(square src, square dst) -> bitboard {
     constexpr auto rays = [] {
-      constexpr auto exclusive = calculate_rays_exclusive();
+      constexpr auto                           exclusive = calculate_rays_exclusive();
       std::array<std::array<bitboard, 64>, 64> out{};
 
       for (const square src : squares) {
@@ -202,6 +201,75 @@ struct bitboard {
     }();
 
     return rays[src.idx][dst.idx];
+  }
+
+  static constexpr auto rook_mask(square src, bitboard stm, bitboard opp) -> bitboard {
+    using namespace geometry;
+
+    bitboard out;
+
+    for (const auto direction : {n_orth, e_orth, s_orth, w_orth}) {
+      auto scanner = geometry::shift(src, direction);
+
+      while (scanner) {
+        if (opp.has_value(*scanner)) {
+          break;
+        }
+
+        out.set(*scanner);
+
+        if (stm.has_value(*scanner)) {
+          break;
+        }
+
+        scanner = geometry::shift(*scanner, direction);
+      }
+    }
+
+    return out;
+  }
+
+  static constexpr auto bishop_mask(square src, bitboard stm, bitboard opp) -> bitboard {
+    using namespace geometry;
+
+    bitboard out;
+
+    for (const auto direction : {ne_diag, se_diag, sw_diag, nw_diag}) {
+      auto scanner = geometry::shift(src, direction);
+
+      while (scanner) {
+        if (opp.has_value(*scanner)) {
+          break;
+        }
+
+        out.set(*scanner);
+
+        if (stm.has_value(*scanner)) {
+          break;
+        }
+
+        scanner = geometry::shift(*scanner, direction);
+      }
+    }
+
+    return out;
+  }
+
+  static constexpr auto knight_mask(square src, bitboard stm, bitboard opp) -> bitboard {
+    using namespace geometry;
+
+    bitboard out;
+
+    for (const auto direction : {nne_horsie, nee_horsie, see_horsie, sse_horsie, ssw_horsie,
+                                 sww_horsie, nww_horsie, nnw_horsie}) {
+      const auto dst = geometry::shift(src, direction);
+
+      if (dst && !stm.has_value(*dst)) {
+        out.set(*dst);
+      }
+    }
+
+    return out;
   }
 };
 
