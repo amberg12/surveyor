@@ -253,7 +253,7 @@ auto evaluate_bishop_pair(color stm, const position& pos) -> out_pair {
   return pos.bb(stm, piece_type::bishop()).popcount() >= 2 ? bishop_pair : out_pair{};
 }
 
-auto evaluate_king_safety(color stm, const position& pos) -> out_pair {
+ALWAYS_INLINE auto evaluate_king_safety(color stm, const position& pos) -> out_pair {
   out_pair out{};
 
   const square king_sq  = pos.king_square(stm);
@@ -298,6 +298,22 @@ auto evaluate_king_safety(color stm, const position& pos) -> out_pair {
       out += king_ring[ptype.compressed_idx()];
     }
   }
+
+  const auto orth_mask = bitboard::rook_mask(king_sq, pos.color_bb(stm), pos.color_bb(~stm));
+  const auto diag_mask = bitboard::bishop_mask(king_sq, pos.color_bb(stm), pos.color_bb(~stm));
+  const auto horsie_mask = bitboard::knight_mask(king_sq, pos.color_bb(stm), pos.color_bb(~stm));
+
+  const auto knight_threat_mask = pos.threat_bb(~stm, pos.ptype_mask(~stm, piece_type::knight()));
+  out += knight_check_threat * (horsie_mask & knight_threat_mask).ipopcount();
+
+  const auto bishop_threat_mask = pos.threat_bb(~stm, pos.ptype_mask(~stm, piece_type::bishop()));
+  out += bishop_check_threat * (diag_mask & bishop_threat_mask).ipopcount();
+
+  const auto rook_threat_mask = pos.threat_bb(~stm, pos.ptype_mask(~stm, piece_type::rook()));
+  out += rook_check_threat * (orth_mask & rook_threat_mask).ipopcount();
+
+  const auto queen_threat_mask = pos.threat_bb(~stm, pos.ptype_mask(~stm, piece_type::queen()));
+  out += queen_check_threat * ((orth_mask | diag_mask) & queen_threat_mask).ipopcount();
 
   return out;
 }
