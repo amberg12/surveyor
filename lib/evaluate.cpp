@@ -151,6 +151,8 @@ auto evaluate_pawns(color stm, const position& pos) -> out_pair {
     out += phalanx[sq.relative_rank(stm) - 1];
   }
 
+  out += doubled_pawn * (pawn_bb & pawn_bb.shift(geometry::n_orth)).ipopcount();
+
   return out;
 }
 
