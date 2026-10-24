@@ -220,9 +220,14 @@ ALWAYS_INLINE auto evaluate_threats(color stm, const position& pos) -> out_pair 
 
   for (const piece_id id : pos.ptype_mask(stm, piece_type::queen())) {
     const bitboard attack_bb = pos.threat_bb(stm, id);
+    const bitboard threat_bb = attack_bb & weak;
     const i32      mobility  = (attack_bb & ~pos.bb()).ipopcount();
 
     out += queen_mobility[mobility];
+    out += queen_threat_pawn * (threat_bb & pos.bb(~stm, piece_type::pawn())).ipopcount();
+    out += queen_threat_knight * (threat_bb & pos.bb(~stm, piece_type::knight())).ipopcount();
+    out += queen_threat_bishop * (threat_bb & pos.bb(~stm, piece_type::bishop())).ipopcount();
+    out += queen_threat_rook * (threat_bb & pos.bb(~stm, piece_type::rook())).ipopcount();
   }
 
   out += pawn_threat_knight * (pos.bb(~stm, piece_type::knight()) & pawn_threats).ipopcount();
