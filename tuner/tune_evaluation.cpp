@@ -311,6 +311,7 @@ auto tune_evaluation(std::vector<tuner_position> dataset) -> void {
   PRINT_ARRAY(blocked_passed_pawn, mg, eg);
   PRINT_ARRAY(friendly_passer_tropism, mg, eg);
   PRINT_ARRAY(enemy_passer_tropism, mg, eg);
+  PRINT_ARRAY(candidate_passed_pawn, mg, eg);
   std::println();
   PRINT_CONSTANT(isolated_pawn, mg, eg);
   PRINT_CONSTANT(doubled_pawn, mg, eg);

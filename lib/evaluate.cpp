@@ -85,6 +85,23 @@ auto evaluate_pawns(color stm, const position& pos) -> out_pair {
 
   const piece_mask pawns = pos.ptype_mask(stm, piece_type::pawn());
 
+  const auto pawn_bb    = pos.bb(stm, piece_type::pawn());
+  const auto lhs_defend = pawn_bb.shift(geometry::pawn_direction(stm)).shift(geometry::w_orth);
+  const auto rhs_defend = pawn_bb.shift(geometry::pawn_direction(stm)).shift(geometry::e_orth);
+  const auto our_defend = lhs_defend | rhs_defend;
+
+  const auto opp_pawn_bb = pos.bb(~stm, piece_type::pawn());
+  const auto opp_lhs_defend =
+    opp_pawn_bb.shift(geometry::pawn_direction(~stm)).shift(geometry::w_orth);
+  const auto opp_rhs_defend =
+    opp_pawn_bb.shift(geometry::pawn_direction(~stm)).shift(geometry::e_orth);
+  const auto opp_defend = opp_lhs_defend | opp_rhs_defend;
+
+  const auto opp_double = opp_lhs_defend & opp_rhs_defend;
+  const auto our_double = lhs_defend & rhs_defend;
+
+  const auto candidate_unsafe = (opp_defend & ~our_defend) | (opp_double & ~our_double);
+
   for (const auto id : pawns) {
     const square sq   = pos.sq_of(stm, id);
     const i32    file = sq.file();
@@ -131,6 +148,9 @@ auto evaluate_pawns(color stm, const position& pos) -> out_pair {
       if (dst_defenders.ipopcount() > dst_attackers.ipopcount()) {
         out += defended_passed_pawn[relative_rank - 2];
       }
+    } else if (const auto safe_path = (candidate_unsafe & file_bb & ahead_bb).ipopcount() == 0;
+               (pos.bb(~stm, piece_type::pawn()) & file_bb).ipopcount() == 0 && safe_path) {
+      out += candidate_passed_pawn[sq.relative_rank(stm) - 1];
     }
 
     if ((pos.bb(stm, piece_type::pawn()) & lane_3).ipopcount() == 1) {
@@ -138,12 +158,7 @@ auto evaluate_pawns(color stm, const position& pos) -> out_pair {
     }
   }
 
-  const auto pawn_bb = pos.bb(stm, piece_type::pawn());
-
-  const auto lhs_defend = pawn_bb.shift(geometry::pawn_direction(stm)).shift(geometry::w_orth);
-  const auto rhs_defend = pawn_bb.shift(geometry::pawn_direction(stm)).shift(geometry::e_orth);
-
-  for (const auto sq : pawn_bb&(lhs_defend | rhs_defend)) {
+  for (const auto sq : pawn_bb& our_defend) {
     out += defended_pawn[sq.relative_rank(stm) - 2];
   }
 
@@ -301,8 +316,8 @@ ALWAYS_INLINE auto evaluate_king_safety(color stm, const position& pos) -> out_p
     }
   }
 
-  const auto orth_mask = bitboard::rook_mask(king_sq, pos.color_bb(stm), pos.color_bb(~stm));
-  const auto diag_mask = bitboard::bishop_mask(king_sq, pos.color_bb(stm), pos.color_bb(~stm));
+  const auto orth_mask   = bitboard::rook_mask(king_sq, pos.color_bb(stm), pos.color_bb(~stm));
+  const auto diag_mask   = bitboard::bishop_mask(king_sq, pos.color_bb(stm), pos.color_bb(~stm));
   const auto horsie_mask = bitboard::knight_mask(king_sq, pos.color_bb(stm), pos.color_bb(~stm));
 
   const auto knight_threat_mask = pos.threat_bb(~stm, pos.ptype_mask(~stm, piece_type::knight()));
