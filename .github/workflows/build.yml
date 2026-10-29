@@ -1,0 +1,76 @@
+name: Build release binaries
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.platform }} ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            platform: linux
+            target: x86-64
+            extension: ""
+            shell: bash
+          - runner: ubuntu-latest
+            platform: linux
+            target: avx2-bmi2
+            extension: ""
+            shell: bash
+          - runner: windows-latest
+            platform: windows
+            target: x86-64
+            extension: .exe
+            shell: msys2 {0}
+          - runner: windows-latest
+            platform: windows
+            target: avx2-bmi2
+            extension: .exe
+            shell: msys2 {0}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up MinGW
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            make
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-make
+
+      - name: Build release binary
+        shell: ${{ matrix.shell }}
+        run: make "${{ matrix.target }}"
+
+      - name: Run benchmark smoke test
+        shell: ${{ matrix.shell }}
+        run: ./surveyor${{ matrix.extension }} bench
+
+      - name: Name binary for upload
+        shell: ${{ matrix.shell }}
+        run: mv surveyor${{ matrix.extension }} surveyor-dev-${{ matrix.platform }}-${{ matrix.target }}${{ matrix.extension }}
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: surveyor-dev-${{ matrix.platform }}-${{ matrix.target }}${{ matrix.extension }}
+          path: surveyor-dev-${{ matrix.platform }}-${{ matrix.target }}${{ matrix.extension }}
+          if-no-files-found: error
+          retention-days: 30
