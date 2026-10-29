@@ -89,6 +89,8 @@ if (WIN32)
     target_link_libraries(surveyor PRIVATE stdc++exp)
 endif ()
 
+target_link_options(surveyor PRIVATE -static)
+
 if (BUILD_TOOLS)
     add_executable(tuner
             tuner/util/common.h
