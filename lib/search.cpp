@@ -26,6 +26,15 @@
 #include <thread>
 
 namespace surveyor {
+namespace {
+auto lerp(score n, score beta) -> score {
+  if (scoring::is_mate(n) || scoring::is_mate(beta)) {
+    return n;
+  }
+
+  return static_cast<score>((static_cast<i32>(n) + static_cast<i32>(beta)) / 2);
+}
+}
 
 worker::worker(search_shared& shared)
     : m_shared(shared) {
@@ -314,7 +323,7 @@ auto worker::search(Ctrls&          ctrls,
   if (!singular && expected != node_type::pv() && !pos.checkers()) {
     // Reverse futility pruning.
     if (static_eval >= beta + 128 * depth - 96 * improving && depth <= 6) {
-      return static_eval;
+      return lerp(static_eval, beta);
     }
 
     // Null move pruning.
