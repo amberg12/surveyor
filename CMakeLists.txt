@@ -85,6 +85,10 @@ target_link_libraries(surveyor
         PRIVATE surveyorcore
 )
 
+if (WIN32)
+    target_link_libraries(surveyor PRIVATE stdc++exp)
+endif ()
+
 if (BUILD_TOOLS)
     add_executable(tuner
             tuner/util/common.h
