@@ -11,40 +11,48 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    name: ${{ matrix.platform }} ${{ matrix.target }}
-    runs-on: ${{ matrix.runner }}
+  build-linux:
+    name: Linux ${{ matrix.target }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - runner: ubuntu-latest
-            platform: linux
-            target: x86-64
-            extension: ""
-            shell: bash
-          - runner: ubuntu-latest
-            platform: linux
-            target: avx2-bmi2
-            extension: ""
-            shell: bash
-          - runner: windows-latest
-            platform: windows
-            target: x86-64
-            extension: .exe
-            shell: msys2 {0}
-          - runner: windows-latest
-            platform: windows
-            target: avx2-bmi2
-            extension: .exe
-            shell: msys2 {0}
+        target: [x86-64, avx2-bmi2]
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build release binary
+        run: make "${{ matrix.target }}"
+
+      - name: Run benchmark smoke test
+        run: ./surveyor bench
+
+      - name: Name binary for upload
+        run: mv surveyor "surveyor-dev-linux-${{ matrix.target }}"
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: surveyor-dev-linux-${{ matrix.target }}
+          path: surveyor-dev-linux-${{ matrix.target }}
+          if-no-files-found: error
+          retention-days: 30
+
+  build-windows:
+    name: Windows ${{ matrix.target }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [x86-64, avx2-bmi2]
 
     steps:
       - name: Check out source
         uses: actions/checkout@v4
 
       - name: Set up MinGW
-        if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
@@ -56,21 +64,21 @@ jobs:
             mingw-w64-x86_64-make
 
       - name: Build release binary
-        shell: ${{ matrix.shell }}
+        shell: msys2 {0}
         run: make "${{ matrix.target }}"
 
       - name: Run benchmark smoke test
-        shell: ${{ matrix.shell }}
-        run: ./surveyor${{ matrix.extension }} bench
+        shell: msys2 {0}
+        run: ./surveyor.exe bench
 
       - name: Name binary for upload
-        shell: ${{ matrix.shell }}
-        run: mv surveyor${{ matrix.extension }} surveyor-dev-${{ matrix.platform }}-${{ matrix.target }}${{ matrix.extension }}
+        shell: msys2 {0}
+        run: mv surveyor.exe "surveyor-dev-windows-${{ matrix.target }}.exe"
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: surveyor-dev-${{ matrix.platform }}-${{ matrix.target }}${{ matrix.extension }}
-          path: surveyor-dev-${{ matrix.platform }}-${{ matrix.target }}${{ matrix.extension }}
+          name: surveyor-dev-windows-${{ matrix.target }}.exe
+          path: surveyor-dev-windows-${{ matrix.target }}.exe
           if-no-files-found: error
           retention-days: 30
