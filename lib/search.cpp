@@ -196,7 +196,7 @@ auto worker::iterative_deepening(const position& pos) -> void {
       last_score = entry->sc;
     } else {
       const position child = pos.make_move(last_pv[0]);
-      last_score = evaluate(child);
+      last_score           = evaluate(child);
     }
   }
 
@@ -285,6 +285,8 @@ auto worker::search(Ctrls&          ctrls,
     return raw_eval + m_corrhist.read(pos);
   }();
 
+  const i32 corrplexity = std::abs(raw_eval - static_eval);
+
   ss->static_eval = static_eval;
   ss->raw_eval    = raw_eval;
 
@@ -313,7 +315,8 @@ auto worker::search(Ctrls&          ctrls,
   // whole-node pruning is not valid in pv nodes, singular searches or when in check.
   if (!singular && expected != node_type::pv() && !pos.checkers()) {
     // Reverse futility pruning.
-    if (static_eval >= beta + 128 * depth - 96 * improving && depth <= 6) {
+    if (static_eval >= beta + 128 * depth - 96 * improving + corrplexity * 8192 / 1024
+        && depth <= 6) {
       return static_eval;
     }
 
