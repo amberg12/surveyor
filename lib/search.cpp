@@ -313,7 +313,7 @@ auto worker::search(Ctrls&          ctrls,
   // whole-node pruning is not valid in pv nodes, singular searches or when in check.
   if (!singular && expected != node_type::pv() && !pos.checkers()) {
     // Reverse futility pruning.
-    if (static_eval >= beta + 128 * depth - 96 * improving && depth <= 6) {
+    if (static_eval >= beta + 128 * depth - 96 * improving && depth <= 13) {
       return static_eval;
     }
 
