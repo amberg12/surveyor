@@ -42,6 +42,10 @@ public:
     m_skip_quiet = true;
   }
 
+  auto bad_noisy() -> bool {
+    return m_phase == phase::emit_bad_noisy;
+  }
+
   auto next_move() -> move {
     const auto inc_sort_move = [&](move_list& ml, std::array<i32, 256>& scores,
                                    usize& idx) -> move {

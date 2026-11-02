@@ -196,7 +196,7 @@ auto worker::iterative_deepening(const position& pos) -> void {
       last_score = entry->sc;
     } else {
       const position child = pos.make_move(last_pv[0]);
-      last_score = evaluate(child);
+      last_score           = evaluate(child);
     }
   }
 
@@ -288,6 +288,8 @@ auto worker::search(Ctrls&          ctrls,
   ss->static_eval = static_eval;
   ss->raw_eval    = raw_eval;
 
+  const move tt_move = entry.has_value() ? entry->mv : move::null();
+
   const bool improving = [&] {
     if (pos.checkers()) {
       return false;
@@ -341,9 +343,47 @@ auto worker::search(Ctrls&          ctrls,
         return scoring::is_mate(null_score) ? beta : null_score;
       }
     }
-  }
 
-  const move tt_move = entry.has_value() ? entry->mv : move::null();
+    const auto probcut_beta  = beta + 250;
+    const auto probcut_depth = std::max(depth - 3, 1);
+
+    if (entry && entry->sc < probcut_beta && entry->depth >= probcut_depth && depth >= 7
+        && !scoring::is_mate(beta)) {
+      const auto see_threshold = probcut_beta - static_eval;
+
+      move_picker probcut_picker{pos, tt_move, m_piece_to, m_capthist, ss, see_threshold};
+      probcut_picker.skip_quiet();
+
+      for (move mv = probcut_picker.next_move(); mv.has_value() && !probcut_picker.bad_noisy();
+           mv      = probcut_picker.next_move()) {
+        const position child = pos.make_move(mv);
+        make_move(pos, child, mv, ply, ss);
+
+        line probcut_line{};
+
+        const auto qsearch_score = -quiesce(ctrls, expected.next(), child, probcut_line,
+                                            -probcut_beta, -probcut_beta + 1, ply + 1, ss + 1);
+
+        if (m_shared.stopped || ctrls.hard_limit(m_nodes, ply)) {
+          m_shared.stopped = true;
+          return 0;
+        }
+
+        if (qsearch_score >= probcut_beta) {
+          const auto probcut_score =
+            -search(ctrls, expected.next(), child, probcut_line, -probcut_beta, -probcut_beta + 1,
+                    ply + 1, probcut_depth, ss + 1);
+
+          if (probcut_score >= probcut_beta) {
+            unmake_move();
+            return probcut_score;
+          }
+        }
+
+        unmake_move();
+      }
+    }
+  }
 
   move_picker mp{pos, tt_move, m_piece_to, m_capthist, ss, -250};
 
