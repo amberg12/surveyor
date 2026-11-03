@@ -348,7 +348,7 @@ auto worker::search(Ctrls&          ctrls,
     const auto probcut_depth = std::max(depth - 3, 1);
 
     if (entry && entry->sc < probcut_beta && entry->depth >= probcut_depth && depth >= 7
-        && !scoring::is_mate(beta)) {
+        && !scoring::is_mate(beta) && (entry->mv == move::null() || entry->mv.is_noisy())) {
       const auto see_threshold = probcut_beta - static_eval;
 
       move_picker probcut_picker{pos, tt_move, m_piece_to, m_capthist, ss, see_threshold};
