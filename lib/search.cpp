@@ -318,7 +318,7 @@ auto worker::search(Ctrls&          ctrls,
     }
 
     // Null move pruning.
-    if (depth >= 3 && static_eval >= beta) {
+    if (depth >= 3 && static_eval >= beta && pos.phase() != 0) {
       line null_pv;
 
       const position null_child = pos.make_null_move();
