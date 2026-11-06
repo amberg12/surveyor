@@ -402,8 +402,13 @@ auto worker::search(Ctrls&          ctrls,
         continue;
       }
 
-      // See pruning
-      if (depth <= 6 && see(pos, mv) <= (mv.is_noisy() ? -128 * depth : -96 * depth)) {
+      // Noisy SEE
+      if (mv.is_noisy() && depth <= 6 && see(pos, mv) <= -128 * depth) {
+        continue;
+      }
+
+      // Quiet SEE
+      if (!mv.is_noisy() && depth <= 6 && see(pos, mv) <= -96 * depth - 16 * history / 1024) {
         continue;
       }
     }
