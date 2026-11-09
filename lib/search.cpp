@@ -196,7 +196,7 @@ auto worker::iterative_deepening(const position& pos) -> void {
       last_score = entry->sc;
     } else {
       const position child = pos.make_move(last_pv[0]);
-      last_score = evaluate(child);
+      last_score           = evaluate(child);
     }
   }
 
@@ -468,6 +468,15 @@ auto worker::search(Ctrls&          ctrls,
       if (search_score > alpha && lmr_depth < new_depth) {
         search_score = -search(ctrls, expected.next(), child, child_pv, -alpha - 1, -alpha, ply + 1,
                                new_depth, ss + 1);
+
+        if (!mv.is_noisy() && (search_score <= alpha || search_score >= beta)) {
+          for (i32 conthist_ply : conthist_plies) {
+            if (ss[-conthist_ply].conthist_subtable) {
+              ss[-conthist_ply].conthist_subtable->write(
+                pos, mv, search_score >= beta ? bonus(depth) : malus(depth));
+            }
+          }
+        }
       }
     }
     // PV search
